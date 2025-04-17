@@ -11,13 +11,13 @@ screen = pygame.display.set_mode((800, 600))
 clock = pygame.time.Clock()
 
 zombie_img = pygame.image.load("haojun/image/zombie.png").convert_alpha()  # <--- STEP 1
-zombie_img = pygame.transform.scale(zombie_img, (32, 32))
+zombie_img = pygame.transform.scale(zombie_img, (64, 64))
 zombie_walk_images = [
-    pygame.transform.scale(pygame.image.load("haojun/image/zombiewalk1.png").convert_alpha(), (32, 32)),
-    pygame.transform.scale(pygame.image.load("haojun/image/zombiewalk2.png").convert_alpha(), (32, 32)),
-    pygame.transform.scale(pygame.image.load("haojun/image/zombiewalk3.png").convert_alpha(), (32, 32)),
-    pygame.transform.scale(pygame.image.load("haojun/image/zombiewalk4.png").convert_alpha(), (32, 32)),
-    pygame.transform.scale(pygame.image.load("haojun/image/zombiewalk5.png").convert_alpha(), (32, 32)),
+    pygame.transform.scale(pygame.image.load("haojun/image/zombiewalk1.png").convert_alpha(), (64, 64)),
+    pygame.transform.scale(pygame.image.load("haojun/image/zombiewalk2.png").convert_alpha(), (64, 64)),
+    pygame.transform.scale(pygame.image.load("haojun/image/zombiewalk3.png").convert_alpha(), (64, 64)),
+    pygame.transform.scale(pygame.image.load("haojun/image/zombiewalk4.png").convert_alpha(), (64, 64)),
+    pygame.transform.scale(pygame.image.load("haojun/image/zombiewalk5.png").convert_alpha(), (64, 64)),
 ]
 
 # Player class
