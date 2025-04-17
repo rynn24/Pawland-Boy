@@ -9,10 +9,10 @@ win = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("PAWLAND BOII")
 
 # Load walking frames
-walk_down = [pygame.image.load("down1.png"),pygame.image.load("down2.png"), pygame.image.load("down1.png"),pygame.image.load("down3.png")]
-walk_up = [pygame.image.load("up1.png"),pygame.image.load("up2.png"),pygame.image.load("up4.png")]
-walk_left = [pygame.image.load("L1.png"), pygame.image.load("L2.png"),pygame.image.load("L3.png"),pygame.image.load("L4.png")]
-walk_right = [pygame.image.load("R0.png"),pygame.image.load("R1.png"), pygame.image.load("R2.png"),pygame.image.load("R3.png")]
+walk_down = [pygame.image.load("minting/down1.png"),pygame.image.load("minting/down2.png"), pygame.image.load("minting/down1.png"),pygame.image.load("minting/down3.png")]
+walk_up = [pygame.image.load("minting/up1.png"),pygame.image.load("minting/up2.png"),pygame.image.load("minting/up4.png")]
+walk_left = [pygame.image.load("minting/L1.png"), pygame.image.load("minting/L2.png"),pygame.image.load("minting/L3.png"),pygame.image.load("minting/L4.png")]
+walk_right = [pygame.image.load("minting/R0.png"),pygame.image.load("minting/R1.png"), pygame.image.load("minting/R2.png"),pygame.image.load("minting/R3.png")]
 
 # Character position
 x, y = 300, 200
