@@ -12,11 +12,11 @@ clock = pygame.time.Clock()
 map_image = pygame.image.load(os.path.join("Map.png")).convert()
 
 # Game settings
-camera_width, camera_height = 320, 180  # Smaller = more zoomed in
+camera_width, camera_height = 320, 180  
 camera = pygame.Rect(0, 0, camera_width, camera_height)
 zoom_surface = pygame.Surface((camera_width, camera_height))
 player_position = pygame.Vector2(320, 180)
-speed = 3
+speed = 2
 restricted_zones = []
 
 # Day-night cycle
@@ -27,7 +27,7 @@ cycle_speed = (2 * math.pi) / 30  # 30 second cycle
 # Minimap settings
 minimap_radius = 80
 minimap_pos = (minimap_radius + 10, minimap_radius + 10)
-minimap_zoom_factor = 2.5  # Zoom in more by default
+minimap_zoom_factor = 0.5  # Zoom in minimap
 minimap_border_color = (0, 0, 0)
 minimap_border_width = 2
 minimap_viewport_color = (255, 100, 100, 180)
