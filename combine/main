@@ -1,0 +1,158 @@
+import pygame
+import math
+import sys
+
+# Initialize
+pygame.init()
+screen = pygame.display.set_mode((640, 480))
+pygame.display.set_caption("Pawland Boy")
+clock = pygame.time.Clock()
+
+#See coordinates *TESTING
+font = pygame.font.SysFont(None, 24)  # Default font, size 24
+
+
+# Load images
+map_image = pygame.image.load("Map.png").convert()
+walk_down = [pygame.image.load("minting/down1.png"), pygame.image.load("minting/down2.png")]
+walk_up = [pygame.image.load("minting/up1.png"), pygame.image.load("minting/up2.png")]
+walk_left = [pygame.image.load("minting/L1.png"), pygame.image.load("minting/L2.png")]
+walk_right = [pygame.image.load("minting/R0.png"), pygame.image.load("minting/R1.png")]
+
+# Settings
+camera_width, camera_height = 300, 180
+camera = pygame.Rect(0, 0, camera_width, camera_height)
+zoom_surface = pygame.Surface((camera_width, camera_height))
+player_position = pygame.Vector2(320, 180)
+speed = 2
+restricted_zones = [
+    
+]
+
+# Day-night overlay
+overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
+time_counter = 0
+cycle_speed = (2 * math.pi) / 30  # 30 seconds
+
+# Minimap
+minimap_radius = 80
+minimap_pos = (minimap_radius + 10, minimap_radius + 10)
+minimap_zoom_factor = 0.5
+minimap_mask = pygame.Surface((minimap_radius*2, minimap_radius*2), pygame.SRCALPHA)
+pygame.draw.circle(minimap_mask, (255, 255, 255), (minimap_radius, minimap_radius), minimap_radius)
+
+# Player animation
+direction = 'down'
+moving = False
+frame = 0
+anim_timer = 0
+frame_delay = 0.2  # seconds per frame
+
+# Game loop
+running = True
+while running:
+    dt = clock.tick(60) / 1000
+
+    # Events
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+        elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_EQUALS:
+                minimap_zoom_factor = min(4.0, minimap_zoom_factor + 0.1)
+            elif event.key == pygame.K_MINUS:
+                minimap_zoom_factor = max(0.5, minimap_zoom_factor - 0.1)
+
+    # Movement
+    new_position = player_position.copy()
+    keys = pygame.key.get_pressed()
+    moving = False
+    move_distance = speed * dt * 60
+
+    if keys[pygame.K_a]:
+        new_position.x -= move_distance
+        direction = 'left'
+        moving = True
+    elif keys[pygame.K_d]:
+        new_position.x += move_distance
+        direction = 'right'
+        moving = True
+    elif keys[pygame.K_w]:
+        new_position.y -= move_distance
+        direction = 'up'
+        moving = True
+    elif keys[pygame.K_s]:
+        new_position.y += move_distance
+        direction = 'down'
+        moving = True
+
+    # Bounds & restrictions
+    new_position.x = max(0, min(new_position.x, map_image.get_width()))
+    new_position.y = max(0, min(new_position.y, map_image.get_height()))
+    player_rect = pygame.Rect(new_position.x - 2, new_position.y - 2, 4, 4)
+    if not any(zone.colliderect(player_rect) for zone in restricted_zones):
+        player_position = new_position
+
+    # Animation
+    if moving:
+        anim_timer += dt
+        if anim_timer >= frame_delay:
+            frame = (frame + 1) % 2
+            anim_timer = 0
+    else:
+        frame = 0  # idle frame
+
+    # Select sprite
+    if direction == 'down':
+        sprite = walk_down[frame]
+    elif direction == 'up':
+        sprite = walk_up[frame]
+    elif direction == 'left':
+        sprite = walk_left[frame]
+    elif direction == 'right':
+        sprite = walk_right[frame]
+
+    # Camera
+    camera.center = player_position
+    camera.clamp_ip(map_image.get_rect())
+
+    # World render
+    zoom_surface.blit(map_image, (0, 0), camera)
+    zoomed_view = pygame.transform.scale(zoom_surface, screen.get_size())
+    screen.blit(zoomed_view, (0, 0))
+
+    # Draw player (sprite centered)
+    screen.blit(sprite, (screen.get_width()//2 - sprite.get_width()//2,
+                         screen.get_height()//2 - sprite.get_height()//2))
+
+    # Minimap
+    minimap_surface = pygame.Surface((minimap_radius*2, minimap_radius*2), pygame.SRCALPHA)
+    mini_camera_size = minimap_radius * 2 / minimap_zoom_factor
+    mini_camera = pygame.Rect(0, 0, mini_camera_size, mini_camera_size)
+    mini_camera.center = player_position
+    mini_camera.clamp_ip(map_image.get_rect())
+
+    mini_view = map_image.subsurface(mini_camera).copy()
+    scaled_mini_view = pygame.transform.scale(mini_view, (minimap_radius * 2, minimap_radius * 2))
+    minimap_surface.blit(scaled_mini_view, (0, 0))
+    masked_minimap = minimap_surface.copy()
+    masked_minimap.blit(minimap_mask, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
+    pygame.draw.circle(masked_minimap, (255, 50, 50), (minimap_radius, minimap_radius), 3)
+    pygame.draw.circle(masked_minimap, (0, 0, 0), (minimap_radius, minimap_radius), minimap_radius, 2)
+    screen.blit(masked_minimap, (minimap_pos[0] - minimap_radius, minimap_pos[1] - minimap_radius))
+
+    # Day-night cycle
+    time_counter += dt
+    alpha = int((math.sin(time_counter * cycle_speed) + 1) / 2 * 150)
+    overlay.fill((0, 0, 0, alpha))
+    screen.blit(overlay, (0, 0))
+
+    # Create the coordinate text *TEST
+    coord_text = f"X: {int(player_position.x)}  Y: {int(player_position.y)}"
+    text_surface = font.render(coord_text, True, (255, 255, 255))  # White text
+    screen.blit(text_surface, (10, screen.get_height() - 30))  # Bottom-left corner
+
+    pygame.display.flip()
+
+pygame.quit()
+sys.exit()
