@@ -4,96 +4,113 @@ import math
 
 # Initialize Pygame
 pygame.init()
-screen = pygame.display.set_mode((640, 360))
+screen = pygame.display.set_mode((1280, 720))
 pygame.display.set_caption("Pawland Boy")
 clock = pygame.time.Clock()
 
-# Load map 
-map_path = os.path.join("map","map.png")
-map_image = pygame.image.load(map_path).convert()
+# Load assets
+map_image = pygame.image.load(os.path.join("Map.png")).convert()
 
-# Zoom settings
-camera_width, camera_height =  160, 90
+# Game settings
+camera_width, camera_height = 320, 180  
 camera = pygame.Rect(0, 0, camera_width, camera_height)
 zoom_surface = pygame.Surface((camera_width, camera_height))
-
-# Player position
-player_position = pygame.Vector2(200, 150)
+player_position = pygame.Vector2(320, 180)
 speed = 2
+restricted_zones = []
 
-# Restricted zones: more on left, water areas restricted, sand (top) not restricted
-restricted_zones = [
-    # Pond area (bottom-center right)
-    pygame.Rect(360, 260, 60, 60),
-    # Bottom left sea
-    pygame.Rect(0, 440, 150, 40),
-    # Left sea/blue edge
-    pygame.Rect(0, 160, 50, 250),
-    # Top-left blue water patch
-    pygame.Rect(0, 0, 40, 100),
-    # Far bottom-right blue edge
-    pygame.Rect(600, 400, 40, 80),
-    # Right-mid blue strip
-    pygame.Rect(580, 180, 60, 140),
-]
-
-# Day-night overlay surface
-overlay = pygame.Surface(screen.get_size()).convert_alpha()
-
-# Day-night cycle timer (30s full cycle)
+# Day-night cycle
+overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
 time_counter = 0
-cycle_speed = (2 * math.pi) / 30  # 1 full sine wave every 30 seconds
+cycle_speed = (2 * math.pi) / 30  # 30 second cycle
 
+# Minimap settings
+minimap_radius = 80
+minimap_pos = (minimap_radius + 10, minimap_radius + 10)
+minimap_zoom_factor = 0.5  # Zoom in minimap
+minimap_border_color = (0, 0, 0)
+minimap_border_width = 2
+minimap_viewport_color = (255, 100, 100, 180)
+player_minimap_color = (255, 50, 50)
+minimap_mask = pygame.Surface((minimap_radius*2, minimap_radius*2), pygame.SRCALPHA)
+pygame.draw.circle(minimap_mask, (255, 255, 255), (minimap_radius, minimap_radius), minimap_radius)
+
+# Main loop
 running = True
 while running:
-    dt = clock.tick(60) / 1000  # Seconds per frame
+    dt = clock.tick(60) / 1000
 
+    # Event handling
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+        elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_EQUALS:  # Zoom in minimap
+                minimap_zoom_factor = min(4.0, minimap_zoom_factor + 0.1)
+            elif event.key == pygame.K_MINUS:  # Zoom out minimap
+                minimap_zoom_factor = max(0.5, minimap_zoom_factor - 0.1)
 
-    # Store current position to test collision
+    # Player movement
     new_position = player_position.copy()
-
-    # Player Movement Input
     keys = pygame.key.get_pressed()
-    if keys[pygame.K_w]:
-        new_position.y -= speed
-    if keys[pygame.K_s]:
-        new_position.y += speed
-    if keys[pygame.K_a]:
-        new_position.x -= speed
-    if keys[pygame.K_d]:
-        new_position.x += speed
+    move_distance = speed * dt * 60
+    if keys[pygame.K_w]: new_position.y -= move_distance
+    if keys[pygame.K_s]: new_position.y += move_distance
+    if keys[pygame.K_a]: new_position.x -= move_distance
+    if keys[pygame.K_d]: new_position.x += move_distance
 
-    # Clamp to map boundaries
+    # Boundary
     new_position.x = max(0, min(new_position.x, map_image.get_width()))
     new_position.y = max(0, min(new_position.y, map_image.get_height()))
-
-    # Collision check with restricted zones
     player_rect = pygame.Rect(new_position.x - 2, new_position.y - 2, 4, 4)
     if not any(zone.colliderect(player_rect) for zone in restricted_zones):
-        player_position = new_position  # update only if safe
+        player_position = new_position
 
-    # Camera Update
+    # Camera update
     camera.center = player_position
     camera.clamp_ip(map_image.get_rect())
 
-    # Draw Zoomed View
+    # World view
+    zoom_surface.fill((0, 0, 0))
     zoom_surface.blit(map_image, (0, 0), camera)
     zoomed_view = pygame.transform.scale(zoom_surface, screen.get_size())
     screen.blit(zoomed_view, (0, 0))
 
-    # Draw Player (center of screen) 
-    pygame.draw.circle(screen, (255, 0, 0), (screen.get_width() // 2, screen.get_height() // 2), 5)
+    # Draw player (smaller)
+    pygame.draw.circle(screen, (255, 0, 0),
+                       (screen.get_width() // 2, screen.get_height() // 2), 4)
 
-    # Day-Night Cycle
+    # Minimap (moving with player and zoomed in)
+    minimap_surface = pygame.Surface((minimap_radius * 2, minimap_radius * 2), pygame.SRCALPHA)
+    mini_camera_size = minimap_radius * 2 / minimap_zoom_factor
+    mini_camera = pygame.Rect(0, 0, mini_camera_size, mini_camera_size)
+    mini_camera.center = player_position
+    mini_camera.clamp_ip(map_image.get_rect())
+
+    mini_view = map_image.subsurface(mini_camera).copy()
+    scaled_mini_view = pygame.transform.scale(mini_view, (minimap_radius * 2, minimap_radius * 2))
+    minimap_surface.blit(scaled_mini_view, (0, 0))
+
+    # Apply circular mask
+    masked_minimap = minimap_surface.copy()
+    masked_minimap.blit(minimap_mask, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
+
+    # Player on minimap (always center)
+    pygame.draw.circle(masked_minimap, player_minimap_color,
+                       (minimap_radius, minimap_radius), 3)
+
+    # Border
+    pygame.draw.circle(masked_minimap, minimap_border_color,
+                       (minimap_radius, minimap_radius), minimap_radius, minimap_border_width)
+
+    screen.blit(masked_minimap, (minimap_pos[0] - minimap_radius, minimap_pos[1] - minimap_radius))
+
+    # Day-night overlay
     time_counter += dt
-    alpha = int((math.sin(time_counter * cycle_speed) + 1) / 2 * 150)  # range 0–150
-    overlay.fill((0, 0, 0, alpha))  # Black overlay with variable transparency
+    alpha = int((math.sin(time_counter * cycle_speed) + 1) / 2 * 150)
+    overlay.fill((0, 0, 0, alpha))
     screen.blit(overlay, (0, 0))
 
-    # Update Display
     pygame.display.flip()
 
 pygame.quit()
