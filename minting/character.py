@@ -4,35 +4,45 @@ import sys
 pygame.init()
 
 # Window setup
-WIDTH, HEIGHT = 640, 480
-win = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("PAWLAND BOII")
 
-# Load walking frames
-walk_down = [pygame.image.load("down1.png"),pygame.image.load("down2.png"), pygame.image.load("down1.png"),pygame.image.load("down3.png")]
-walk_up = [pygame.image.load("up1.png"),pygame.image.load("up2.png"),pygame.image.load("up4.png")]
-walk_left = [pygame.image.load("L1.png"), pygame.image.load("L2.png"),pygame.image.load("L3.png"),pygame.image.load("L4.png")]
-walk_right = [pygame.image.load("R0.png"),pygame.image.load("R1.png"), pygame.image.load("R2.png"),pygame.image.load("R3.png")]
+FRAME_WIDTH, FRAME_HEIGHT =200 , 200
+WIDTH = 5 * FRAME_WIDTH  
+HEIGHT = 4 * FRAME_HEIGHT  
+win = pygame.display.set_mode((WIDTH,HEIGHT))
+pygame.display.set_caption("PAWLAND BOY")
+
+#Load the spriteseet
+spritesheet = pygame.image.load("minting/character.png").convert_alpha()
+
+# extract frames from row i the spritesheet
+def load_frames(sheet , frame_width , frame_height , row , num_frames):
+    frames = []
+    for i in range(num_frames):
+        rect = pygame.Rect(i * frame_width, row * frame_height ,frame_width ,frame_height)
+        frame = sheet.subsurface(rect)
+        frames.append(frame)
+    return frames
+
+# Extract frames from the spritesheet
+walk_down = load_frames(spritesheet, FRAME_WIDTH, FRAME_HEIGHT, row=0, num_frames=3)
+walk_up = load_frames(spritesheet, FRAME_WIDTH, FRAME_HEIGHT, row=1, num_frames=4)
+walk_left = load_frames(spritesheet, FRAME_WIDTH, FRAME_HEIGHT, row=2, num_frames=4)
+walk_right = load_frames(spritesheet, FRAME_WIDTH, FRAME_HEIGHT, row=3, num_frames=4)
 
 # Character position
 x, y = 300, 200
-speed = 4
+speed = 9
 
 # Animation control
 frame = 0
 direction = 'down'
 moving = False
 clock = pygame.time.Clock()
-
-# Load a sample image
-item_image = pygame.Surface((64, 64))
-item_image.fill((255, 0, 0))  # Red block = item
-
  
 # Main loop
 running = True
 while running:
-    clock.tick(10)  # Limits the loop to 10 frames per second (controls animation speed)
+    clock.tick(15)  # Limits the loop to 15 frames per second (controls animation speed)
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -61,13 +71,13 @@ while running:
 
     # Choose frame based on direction and animation frame
     if direction == 'down':
-        sprite = walk_down[frame % 2]
+        sprite = walk_down[frame % len(walk_down)]
     elif direction == 'up':
-        sprite = walk_up[frame % 2]
+        sprite = walk_up[frame % len(walk_up)]
     elif direction == 'left':
-        sprite = walk_left[frame % 2]
+        sprite = walk_left[frame % len(walk_left)]
     elif direction == 'right':
-        sprite = walk_right[frame % 2]
+        sprite = walk_right[frame % len(walk_right)]
 
     # Update frame only when moving
     if moving:
@@ -79,9 +89,5 @@ while running:
     pygame.display.update()
 
      
-
-    pygame.display.flip()
-    clock.tick(60)
-
 pygame.quit()
 sys.exit()
