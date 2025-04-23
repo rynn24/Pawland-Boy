@@ -1,139 +1,75 @@
 import pygame
+import os
 import math
 import sys
-import random
-import time
 
-# Initialize
 pygame.init()
-screen = pygame.display.set_mode((640, 480))
+screen = pygame.display.set_mode((620, 480))
 pygame.display.set_caption("Pawland Boy")
 clock = pygame.time.Clock()
 
-# Load images
-map_image = pygame.image.load("map/Map.png").convert()
-try:
-    walk_down = [pygame.image.load("minting/down1.png"), pygame.image.load("minting/down2.png")]
-    walk_up = [pygame.image.load("minting/up1.png"), pygame.image.load("minting/up2.png")]
-    walk_left = [pygame.image.load("minting/L1.png"), pygame.image.load("minting/L2.png")]
-    walk_right = [pygame.image.load("minting/R0.png"), pygame.image.load("minting/R1.png")]
-except pygame.error as e:
-    print(f"Error loading images: {e}")
-    sys.exit()
+# Load assets
+map_image = pygame.image.load(os.path.join("rynn/Map.png")).convert()
 
-#See coordinates *TESTING
-font = pygame.font.SysFont(None, 24)  # Default font, size 24
-class Player(pygame.sprite.Sprite):
-    def __init__(self, x, y):
-        super().__init__()
-        self.position = pygame.Vector2(x, y)
-        self.health = 100
-        self.last_attack_time = 0
-        self.attack_cooldown = 1
-        self.speed = 2
-        self.direction = 'down'
-        self.moving = False
-        self.frame = 0
-        self.anim_timer = 0
-        self.frame_delay = 0.2
-        self.sprite_sets = {
-            'down': walk_down,
-            'up': walk_up,
-            'left': walk_left,
-            'right': walk_right,
-        }
-
-    def update(self, keys, dt, map_image, restricted_zones):
-        move_distance = self.speed * dt * 60
-        self.moving = False
-        if keys[pygame.K_a]:
-            self.position.x -= move_distance
-            self.direction = 'left'
-            self.moving = True
-        elif keys[pygame.K_d]:
-            self.position.x += move_distance
-            self.direction = 'right'
-            self.moving = True
-        elif keys[pygame.K_w]:
-            self.position.y -= move_distance
-            self.direction = 'up'
-            self.moving = True
-        elif keys[pygame.K_s]:
-            self.position.y += move_distance
-            self.direction = 'down'
-            self.moving = True
-
-        self.position.x = max(0, min(self.position.x, map_image.get_width()))
-        self.position.y = max(0, min(self.position.y, map_image.get_height()))
-
-        if self.moving:
-            self.anim_timer += dt
-            if self.anim_timer >= self.frame_delay:
-                self.frame = (self.frame + 1) % 2
-                self.anim_timer = 0
-        else:
-            self.frame = 0
-
-    def get_sprite(self):
-        return self.sprite_sets[self.direction][self.frame]
-
-    def can_attack(self):
-        return time.time() - self.last_attack_time >= self.attack_cooldown
-
-    def take_damage(self, amount):
-        self.health = max(0, self.health - amount)
-
-    def draw_health_bar(self, surface):
-        bar_width = 200
-        bar_height = 20
-        fill = (self.health / 100) * bar_width
-        x = (surface.get_width() - bar_width) // 2
-        y = 570
-        pygame.draw.rect(surface, (255, 0, 0), (x, y, bar_width, bar_height))
-        pygame.draw.rect(surface, (0, 255, 0), (x, y, fill, bar_height))
-        pygame.draw.rect(surface, (255, 255, 255), (x, y, bar_width, bar_height), 2)
-
-
-
-player = Player(x=400, y=300)  # Set the initial position for the player
-all_sprites = pygame.sprite.Group()
-all_sprites.add(player)
-
-
-# Settings
-camera_width, camera_height = 300, 180
+# Game settings
+camera_width, camera_height = 320, 180
 camera = pygame.Rect(0, 0, camera_width, camera_height)
 zoom_surface = pygame.Surface((camera_width, camera_height))
+player_position = pygame.Vector2(320, 180)
 speed = 2
-restricted_zones = [
-    
-]
+restricted_zones = []
 
-# Day-night overlay
+# Day-night cycle
 overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
 time_counter = 0
-cycle_speed = (2 * math.pi) / 30  # 30 seconds
+cycle_speed = (2 * math.pi) / 30  # 30-second cycle
 
-# Minimap
+# Minimap settings
 minimap_radius = 80
-minimap_pos = (minimap_radius + 10, minimap_radius + 10)
 minimap_zoom_factor = 0.5
-minimap_mask = pygame.Surface((minimap_radius*2, minimap_radius*2), pygame.SRCALPHA)
+minimap_pos = (minimap_radius + 10, minimap_radius + 10)
+minimap_border_color = (0, 0, 0)
+minimap_border_width = 2
+player_minimap_color = (255, 50, 50)
+minimap_mask = pygame.Surface((minimap_radius * 2, minimap_radius * 2), pygame.SRCALPHA)
 pygame.draw.circle(minimap_mask, (255, 255, 255), (minimap_radius, minimap_radius), minimap_radius)
 
-# Player animation
-direction = 'down'
-moving = False
-frame = 0
-anim_timer = 0
-frame_delay = 0.2  # seconds per frame
+# Frame dimensions
+FRAME_WIDTH, FRAME_HEIGHT = 200, 200
 
-# Game loop
+# Load sprite sheets
+walk_sheet = pygame.image.load("minting/character.png").convert_alpha()
+attack_sheet = pygame.image.load("minting/attack.png").convert_alpha()
+
+def load_frames(sheet, frame_width, frame_height, row, num_frames):
+    frames = []
+    for i in range(num_frames):
+        rect = pygame.Rect(i * frame_width, row * frame_height, frame_width, frame_height)
+        frame = sheet.subsurface(rect)
+        frames.append(frame)
+    return frames
+
+# Walking animations
+walk_down = load_frames(walk_sheet, FRAME_WIDTH, FRAME_HEIGHT, 0, 3)
+walk_up = load_frames(walk_sheet, FRAME_WIDTH, FRAME_HEIGHT, 1, 4)
+walk_left = load_frames(walk_sheet, FRAME_WIDTH, FRAME_HEIGHT, 2, 4)
+walk_right = load_frames(walk_sheet, FRAME_WIDTH, FRAME_HEIGHT, 3, 4)
+
+# Attack animations
+attack_right = load_frames(attack_sheet, FRAME_WIDTH, FRAME_HEIGHT, 0, 4)
+attack_left = load_frames(attack_sheet, FRAME_WIDTH, FRAME_HEIGHT, 1, 4)
+
+# Animation state
+frame = 0
+attack_frame = 0
+direction = 'down'
+attacking = False
+
+# Main loop
 running = True
 while running:
     dt = clock.tick(60) / 1000
 
-    # Events
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
@@ -144,61 +80,97 @@ while running:
                 minimap_zoom_factor = max(0.5, minimap_zoom_factor - 0.1)
 
     # Movement
+    new_position = player_position.copy()
     keys = pygame.key.get_pressed()
-    player.update(keys, dt,map_image, restricted_zones)
+    move_distance = speed * dt * 60
+    moving = False
 
+    if not attacking and keys[pygame.K_SPACE]:
+        attacking = True
+        attack_frame = 0
 
-    # Bounds & restrictions
+    if attacking:
+        if direction == 'left':
+            current_sprite = attack_left[attack_frame // 2]
+        else:
+            current_sprite = attack_right[attack_frame // 2]
+        attack_frame += 1
+        if attack_frame // 2 >= len(attack_right):
+            attacking = False
+    else:
+        if keys[pygame.K_w]:
+            new_position.y -= move_distance
+            direction = 'up'
+            moving = True
+        if keys[pygame.K_s]:
+            new_position.y += move_distance
+            direction = 'down'
+            moving = True
+        if keys[pygame.K_a]:
+            new_position.x -= move_distance
+            direction = 'left'
+            moving = True
+        if keys[pygame.K_d]:
+            new_position.x += move_distance
+            direction = 'right'
+            moving = True
 
-    # Get the current sprite from the player
-    sprite = player.get_sprite()
+        if direction == 'down':
+            current_sprite = walk_down[frame % len(walk_down)]
+        elif direction == 'up':
+            current_sprite = walk_up[frame % len(walk_up)]
+        elif direction == 'left':
+            current_sprite = walk_left[frame % len(walk_left)]
+        elif direction == 'right':
+            current_sprite = walk_right[frame % len(walk_right)]
 
-    
-    zoom_surface.blit(map_image, (0, 0), camera)
-    zoomed_view = pygame.transform.scale(zoom_surface, screen.get_size())
-    screen.blit(zoomed_view, (0, 0))
+        if moving:
+            frame += 1
+        else:
+            frame = 0
 
-    # Camera
-    camera.center = player.position
+    # Bounds and restriction
+    new_position.x = max(0, min(new_position.x, map_image.get_width()))
+    new_position.y = max(0, min(new_position.y, map_image.get_height()))
+    player_rect = pygame.Rect(new_position.x - 2, new_position.y - 2, 4, 4)
+    if not any(zone.colliderect(player_rect) for zone in restricted_zones):
+        player_position = new_position
+
+    # Camera update
+    camera.center = player_position
     camera.clamp_ip(map_image.get_rect())
 
-    # World render
+    # Render world
+    zoom_surface.fill((0, 0, 0))
     zoom_surface.blit(map_image, (0, 0), camera)
     zoomed_view = pygame.transform.scale(zoom_surface, screen.get_size())
     screen.blit(zoomed_view, (0, 0))
 
+    # Draw character (centered)
+    sprite_x = screen.get_width() // 2 - FRAME_WIDTH // 2
+    sprite_y = screen.get_height() // 2 - FRAME_HEIGHT // 2
+    screen.blit(current_sprite, (sprite_x, sprite_y))
 
     # Minimap
-    minimap_surface = pygame.Surface((minimap_radius*2, minimap_radius*2), pygame.SRCALPHA)
+    minimap_surface = pygame.Surface((minimap_radius * 2, minimap_radius * 2), pygame.SRCALPHA)
     mini_camera_size = minimap_radius * 2 / minimap_zoom_factor
     mini_camera = pygame.Rect(0, 0, mini_camera_size, mini_camera_size)
-    mini_camera.center = player.position
+    mini_camera.center = player_position
     mini_camera.clamp_ip(map_image.get_rect())
-
     mini_view = map_image.subsurface(mini_camera).copy()
     scaled_mini_view = pygame.transform.scale(mini_view, (minimap_radius * 2, minimap_radius * 2))
     minimap_surface.blit(scaled_mini_view, (0, 0))
     masked_minimap = minimap_surface.copy()
     masked_minimap.blit(minimap_mask, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
-    pygame.draw.circle(masked_minimap, (255, 50, 50), (minimap_radius, minimap_radius), 3)
-    pygame.draw.circle(masked_minimap, (0, 0, 0), (minimap_radius, minimap_radius), minimap_radius, 2)
+    pygame.draw.circle(masked_minimap, player_minimap_color, (minimap_radius, minimap_radius), 3)
+    pygame.draw.circle(masked_minimap, minimap_border_color, (minimap_radius, minimap_radius), minimap_radius, minimap_border_width)
     screen.blit(masked_minimap, (minimap_pos[0] - minimap_radius, minimap_pos[1] - minimap_radius))
 
-    # Draw player (sprite centered)
-    screen.blit(sprite, (screen.get_width() // 2 - sprite.get_width() // 2,
-                        screen.get_height() // 2 - sprite.get_height() // 2))
-
-    # Day-night cycle
+    # Day-night overlay
     time_counter += dt
     alpha = int((math.sin(time_counter * cycle_speed) + 1) / 2 * 150)
     overlay.fill((0, 0, 0, alpha))
     screen.blit(overlay, (0, 0))
-
-    # Create the coordinate text *TEST
-    coord_text = f"X: {int(player.position.x)}  Y: {int(player.position.y)}"
-    text_surface = font.render(coord_text, True, (255, 255, 255))  # White text
-    screen.blit(text_surface, (10, screen.get_height() - 30))  # Bottom-left corner
-
 
     pygame.display.flip()
 
