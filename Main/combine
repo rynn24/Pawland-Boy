@@ -13,7 +13,7 @@ font = pygame.font.SysFont(None, 24)  # Default font, size 24
 
 
 # Load images
-map_image = pygame.image.load("Map.png").convert()
+map_image = pygame.image.load("rynn/Map.png").convert()
 walk_down = [pygame.image.load("minting/down1.png"), pygame.image.load("minting/down2.png")]
 walk_up = [pygame.image.load("minting/up1.png"), pygame.image.load("minting/up2.png")]
 walk_left = [pygame.image.load("minting/L1.png"), pygame.image.load("minting/L2.png")]
