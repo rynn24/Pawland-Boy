@@ -7,8 +7,8 @@ screen = pygame.display.set_mode((640, 480))
 clock = pygame.time.Clock()
 
 # Load tree sprite images
-tree_image = pygame.image.load("Tree.png").convert_alpha()
-tree_sprite_sheet = pygame.image.load("tree sprite.png").convert_alpha()
+tree_image = pygame.image.load("tree/Tree.png").convert_alpha()
+tree_sprite_sheet = pygame.image.load("tree/tree sprite.png").convert_alpha()
 frame_width, frame_height = 100, 100
 chop_frames = [
     tree_sprite_sheet.subsurface(pygame.Rect(i * frame_width, 0, frame_width, frame_height))
