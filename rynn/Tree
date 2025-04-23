@@ -1,0 +1,40 @@
+class Tree:
+    def __init__(self, x, y, frames, frame_duration=200, hold_duration=60000):
+        self.x = x
+        self.y = y
+        self.frames = frames
+        self.frame_duration = frame_duration  # ms between frames
+        self.hold_duration = hold_duration    # how long to hold last frame
+        self.current_frame = 0
+        self.last_update = pygame.time.get_ticks()
+        self.state = 'forward'  # 'forward', 'hold', 'backward'
+        self.hold_start = None
+
+    def update(self):
+        now = pygame.time.get_ticks()
+
+        if self.state == 'forward':
+            if now - self.last_update > self.frame_duration:
+                self.last_update = now
+                self.current_frame += 1
+                if self.current_frame >= len(self.frames):
+                    self.current_frame = len(self.frames) - 1
+                    self.state = 'hold'
+                    self.hold_start = now
+
+        elif self.state == 'hold':
+            if now - self.hold_start >= self.hold_duration:
+                self.state = 'backward'
+                self.last_update = now
+
+        elif self.state == 'backward':
+            if now - self.last_update > self.frame_duration:
+                self.last_update = now
+                self.current_frame -= 1
+                if self.current_frame <= 0:
+                    self.current_frame = 0
+                    self.state = 'forward'
+
+    def draw(self, surface):
+        surface.blit(self.frames[self.current_frame], (self.x, self.y))
+
