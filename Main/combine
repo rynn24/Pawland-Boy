@@ -110,7 +110,7 @@ class Tree:
 
     def draw(self, surface, camera):
         if self.index >= len(self.frames):
-            self.index = len(self.frames) - 1  # Ensure the index is within bounds
+            self.index = len(self.frames) - 1  
 
         pos_on_surface = self.position - pygame.Vector2(camera.topleft)
 
