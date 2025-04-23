@@ -20,6 +20,24 @@ zombie_walk_images = [
     pygame.transform.scale(pygame.image.load("haojun/image/zombiewalk5.png").convert_alpha(), (64, 64)),
 ]
 
+def load_boss_frames(sheet_path, frame_width, frame_height, rows, columns):
+    sheet = pygame.image.load(sheet_path).convert_alpha()
+    frames = []
+
+    for row in range(rows):
+        row_frames = []
+        for col in range(columns):
+            x = col * frame_width
+            y = row * frame_height
+            frame = sheet.subsurface(pygame.Rect(x, y, frame_width, frame_height))
+            row_frames.append(pygame.transform.scale(frame, (96, 96)))  # optional resize
+        frames.append(row_frames)
+    
+    return frames  # e.g., frames[0] = walk, frames[1] = attack
+
+boss_walk_frames = load_boss_frames("haojun/image/boss walk.png", 96, 96, 1, 3)[0]
+boss_attack_frames = load_boss_frames("haojun/image/boss attack.png", 96, 96, 1, 5)[0]
+
 # Player class
 class Player(pygame.sprite.Sprite):
     def __init__(self):
@@ -133,7 +151,7 @@ class Zombie(pygame.sprite.Sprite):
                     length = math.hypot(*self.wander_direction)
                     if length != 0:
                         self.wander_direction[0] /= length
-                        self.wander_direction[1] /= length #repeat the code again to let the zombie change the direction
+                        self.wander_direction[1] /= length#repeat the code again to let the zombie change the direction
 
         if self.is_moving:
             if time.time() - self.last_animation_time > self.animation_speed:
@@ -179,8 +197,9 @@ class Zombie(pygame.sprite.Sprite):
 class Boss(pygame.sprite.Sprite):
     def __init__(self, x, y, player, area_rect):
         super().__init__()
-        self.image = pygame.Surface((96, 96))
-        self.image.fill((255, 0, 255))  # Magenta for the boss
+        self.walk_images = boss_walk_frames
+        self.attack_images = boss_attack_frames
+        self.image = self.walk_images[0]
         self.rect = self.image.get_rect(center=(x, y))
         self.player = player
         self.area_rect = area_rect  # pygame.Rect defining movement area
@@ -191,30 +210,61 @@ class Boss(pygame.sprite.Sprite):
         self.attack_cooldown = 2
         self.hp = 200
         self.max_hp = 200
+        self.attack_duration = 0.5  # seconds to show attack animation
+        self.attack_animation_end_time = 0  # when the attack animation should stop
+
+        self.state = "idle"  # or "walking", "attacking"
+        self.animation_index = 0
+        self.last_animation_time = time.time()
+        self.animation_speed = 0.2
+        if self.state == "walk":
+            self.image = self.walk_frames[self.frame_index]
+        elif self.state == "attack":
+            self.image = self.attack_frames[self.frame_index]
 
     def update(self):
+        current_time = time.time()
         dx = self.player.rect.centerx - self.rect.centerx
         dy = self.player.rect.centery - self.rect.centery
         dist = math.hypot(dx, dy)
 
-        if dist < 300:  # Boss aggro range
+        # Check if we're still in attack animation lock
+        if current_time < self.attack_animation_end_time:
+            self.state = "attacking"
+        elif dist < 300:
             if dist == 0:
-                dist = 1#avoid 0 division
-            dx, dy = dx / dist, dy / dist if dist != 0 else (0, 0)
+                dist = 1
+            dx, dy = dx / dist, dy / dist
             new_x = self.rect.x + dx * self.speed
             new_y = self.rect.y + dy * self.speed
 
-            # Restrict movement within the area
             if self.area_rect.collidepoint(new_x, new_y):
                 self.rect.x = new_x
                 self.rect.y = new_y
 
-            if dist < self.attack_range and time.time() - self.last_attack_time >= self.attack_cooldown:
+            if dist < self.attack_range and current_time - self.last_attack_time >= self.attack_cooldown:
                 self.attack_player()
+            self.state = "walking"
+        else:
+            self.state = "idle"
+
+        # Animation update
+        if time.time() - self.last_animation_time > self.animation_speed:
+            if self.state == "walking":
+                self.animation_index = (self.animation_index + 1) % len(self.walk_images)
+                self.image = self.walk_images[self.animation_index]
+            elif self.state == "attacking":
+                self.animation_index = (self.animation_index + 1) % len(self.attack_images)
+                self.image = self.attack_images[self.animation_index]
+            else:
+                self.image = self.walk_images[0]
+            self.last_animation_time = time.time()
+
 
     def attack_player(self):
         self.player.take_damage(self.attack_damage)
         self.last_attack_time = time.time()
+        self.attack_animation_end_time = self.last_attack_time + self.attack_duration
         print("Boss attacks!")
 
     def take_damage(self, amount):
