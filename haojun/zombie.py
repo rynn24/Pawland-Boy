@@ -20,7 +20,7 @@ zombie_walk_images = [
     pygame.transform.scale(pygame.image.load("haojun/image/zombiewalk5.png").convert_alpha(), (64, 64)),
 ]
 
-def load_boss_frames(sheet_path, frame_width, frame_height, rows, columns):
+def load_frames_from_sheet(sheet_path, frame_width, frame_height, rows, columns):
     sheet = pygame.image.load(sheet_path).convert_alpha()
     frames = []
 
@@ -35,9 +35,10 @@ def load_boss_frames(sheet_path, frame_width, frame_height, rows, columns):
     
     return frames  # e.g., frames[0] = walk, frames[1] = attack
 
-boss_walk_frames = load_boss_frames("haojun/image/boss walk.png", 96, 96, 1, 3)[0]
-boss_attack_frames = load_boss_frames("haojun/image/boss attack.png", 96, 96, 1, 5)[0]
-
+boss_walk_frames = load_frames_from_sheet("haojun/image/boss walk.png", 96, 96, 1, 3)[0]
+boss_attack_frames = load_frames_from_sheet("haojun/image/boss attack.png", 96, 96, 1, 5)[0]
+zombie_attack_images = load_frames_from_sheet("haojun/image/zombie attack.png", 64, 64,1, 4)[0]
+zombie_die_images = load_frames_from_sheet("haojun/image/zombie get attack.png", 64, 64,1, 4)[0]
 # Player class
 class Player(pygame.sprite.Sprite):
     def __init__(self):
@@ -101,7 +102,7 @@ class Zombie(pygame.sprite.Sprite):
         self.rect = self.image.get_rect(center=(x, y))
         self.animation_index = 0
         self.last_animation_time = time.time()
-        self.animation_speed = 0.2  # Seconds between frames
+        self.animation_speed = 0.5  # Seconds between frames
 
         # Wandering
         self.is_wandering = True#need more explaination
@@ -110,6 +111,17 @@ class Zombie(pygame.sprite.Sprite):
         self.wander_interval = 2#how long should zombie wander
         self.pause_duration = 2#stop 2s after wandering
 
+        self.attack_images = zombie_attack_images
+        self.die_images = zombie_die_images
+
+        self.state = "idle"  # could be "idle", "walk", "attack", "die"
+        self.animation_index = 0
+        self.last_animation_time = time.time()
+        self.animation_speed = 0.2
+        self.is_dead = False
+        self.death_time = 0
+        self.death_duration = 1  # 1 second to play die animation
+
     def update(self):
         current_time = time.time()
         dx = self.player.rect.x - self.rect.x
@@ -117,6 +129,32 @@ class Zombie(pygame.sprite.Sprite):
         dist = math.hypot(dx, dy)#hypothenuse
 
         chase_range = 200
+        # Right at the start of update() in Zombie class
+        if self.state == "attack" and time.time() - self.last_attack_time < len(self.attack_images) * self.animation_speed:
+            # During attack animation, don't move or switch states
+            self.is_moving = False
+            if time.time() - self.last_animation_time > self.animation_speed:
+                self.animation_index += 1
+                if self.animation_index < len(self.attack_images):
+                    self.image = self.attack_images[self.animation_index]
+                else:
+                    self.state = "walk"
+                    self.animation_index = 0
+                self.last_animation_time = time.time()
+            return  # <--- Don't do anything else while attacking
+
+        if self.is_dead:
+            if time.time() - self.last_animation_time > self.animation_speed:
+                self.animation_index += 1
+                if self.animation_index < len(self.die_images):
+                    self.image = self.die_images[self.animation_index]
+                else:
+                    self.image = self.die_images[-1]
+                self.last_animation_time = time.time()
+
+            if time.time() - self.death_time > self.death_duration:
+                self.kill()
+            return
 
         if dist < chase_range:
             if dist == 0:
@@ -160,10 +198,31 @@ class Zombie(pygame.sprite.Sprite):
                 self.last_animation_time = time.time()
         else:
             self.image = self.idle_image # Show idle frame
+            if time.time() - self.last_animation_time > self.animation_speed:
+                self.animation_index += 1
+                self.last_animation_time = time.time()
+
+                if self.state == "walk":
+                    self.image = self.walk_images[self.animation_index % len(self.walk_images)]
+                elif self.state == "attack":
+                    if self.animation_index < len(self.attack_images):
+                        self.image = self.attack_images[self.animation_index]
+                    else:
+                        self.state = "walk"
+                        self.animation_index = 0
+                elif self.state == "die":
+                    if self.animation_index < len(self.die_images):
+                        self.image = self.die_images[self.animation_index]
+                    else:
+                        self.image = self.die_images[-1]  # Stay on last death frame
+                else:
+                    self.image = self.idle_image
 
     def attack_player(self):
         self.player.take_damage(self.attack_damage)
         self.last_attack_time = time.time()
+        self.state = "attack"
+        self.animation_index = 0
         print("Zombie attacks!")
 
     def take_damage(self, amount, attacker_pos=None):
@@ -181,9 +240,12 @@ class Zombie(pygame.sprite.Sprite):
                 self.rect.x += dx * knockback_distance
                 self.rect.y += dy * knockback_distance
 
-        if self.hp <= 0:
+        if self.hp <= 0 and not self.is_dead:
             print("Zombie died!")
-            self.kill()#attribute of sprite
+            self.state = "die"
+            self.animation_index = 0
+            self.is_dead = True
+            self.death_time = time.time()
 
     def draw_health_bar(self, surface):
         bar_width = 30
@@ -229,7 +291,7 @@ class Boss(pygame.sprite.Sprite):
         dist = math.hypot(dx, dy)
 
         # Check if we're still in attack animation lock
-        if current_time < self.attack_animation_end_time:
+        if current_time < self.attack_animation_end_time:#let the animation go more smooth
             self.state = "attacking"
         elif dist < 300:
             if dist == 0:
@@ -238,7 +300,7 @@ class Boss(pygame.sprite.Sprite):
             new_x = self.rect.x + dx * self.speed
             new_y = self.rect.y + dy * self.speed
 
-            if self.area_rect.collidepoint(new_x, new_y):
+            if self.area_rect.collidepoint(new_x, new_y):#check if the boss can go
                 self.rect.x = new_x
                 self.rect.y = new_y
 
@@ -249,7 +311,7 @@ class Boss(pygame.sprite.Sprite):
             self.state = "idle"
 
         # Animation update
-        if time.time() - self.last_animation_time > self.animation_speed:
+        if time.time() - self.last_animation_time > self.animation_speed:#check if enough time to pass to next frame
             if self.state == "walking":
                 self.animation_index = (self.animation_index + 1) % len(self.walk_images)
                 self.image = self.walk_images[self.animation_index]
