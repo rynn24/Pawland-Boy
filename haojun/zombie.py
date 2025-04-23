@@ -176,12 +176,73 @@ class Zombie(pygame.sprite.Sprite):
         pygame.draw.rect(surface, (255, 0, 0), (x, y, bar_width, bar_height))
         pygame.draw.rect(surface, (0, 255, 0), (x, y, fill, bar_height))
 
+class Boss(pygame.sprite.Sprite):
+    def __init__(self, x, y, player, area_rect):
+        super().__init__()
+        self.image = pygame.Surface((96, 96))
+        self.image.fill((255, 0, 255))  # Magenta for the boss
+        self.rect = self.image.get_rect(center=(x, y))
+        self.player = player
+        self.area_rect = area_rect  # pygame.Rect defining movement area
+        self.speed = 1
+        self.attack_range = 40
+        self.attack_damage = 20
+        self.last_attack_time = 0
+        self.attack_cooldown = 2
+        self.hp = 200
+        self.max_hp = 200
+
+    def update(self):
+        dx = self.player.rect.centerx - self.rect.centerx
+        dy = self.player.rect.centery - self.rect.centery
+        dist = math.hypot(dx, dy)
+
+        if dist < 300:  # Boss aggro range
+            if dist == 0:
+                dist = 1#avoid 0 division
+            dx, dy = dx / dist, dy / dist if dist != 0 else (0, 0)
+            new_x = self.rect.x + dx * self.speed
+            new_y = self.rect.y + dy * self.speed
+
+            # Restrict movement within the area
+            if self.area_rect.collidepoint(new_x, new_y):
+                self.rect.x = new_x
+                self.rect.y = new_y
+
+            if dist < self.attack_range and time.time() - self.last_attack_time >= self.attack_cooldown:
+                self.attack_player()
+
+    def attack_player(self):
+        self.player.take_damage(self.attack_damage)
+        self.last_attack_time = time.time()
+        print("Boss attacks!")
+
+    def take_damage(self, amount):
+        self.hp -= amount
+        print(f"Boss HP: {self.hp}")
+        if self.hp <= 0:
+            print("Boss defeated!")
+            self.kill()
+
+    def draw_health_bar(self, surface):
+        bar_width = 100
+        bar_height = 10
+        fill = (self.hp / self.max_hp) * bar_width
+        x = self.rect.centerx - bar_width // 2
+        y = self.rect.top - 15
+        pygame.draw.rect(surface, (255, 0, 0), (x, y, bar_width, bar_height))
+        pygame.draw.rect(surface, (0, 0, 255), (x, y, fill, bar_height))
+
+
 # Create player
 player = Player()
 
 # Sprite groups
 all_sprites = pygame.sprite.Group()
 zombie_group = pygame.sprite.Group()
+boss_area = pygame.Rect(0, 0, 400, 300)  # x, y, width, height
+boss = Boss(50, 50, player, boss_area)
+all_sprites.add(boss)
 all_sprites.add(player)
 
 # Function to spawn zombies (limit to 10)
@@ -213,6 +274,11 @@ while running:
                     zombie.take_damage(20, player.rect.center)
                     player.last_attack_time = time.time()
                     break  # Only hit one zombie at a time
+            else:
+                # If no zombie was hit, check the boss
+                if player.rect.colliderect(boss.rect):
+                    boss.take_damage(20)
+                    player.last_attack_time = time.time()
 
 
     current_time = time.time()
@@ -222,6 +288,9 @@ while running:
 
     player.update(keys)
     zombie_group.update()
+    boss.update()
+    boss.draw_health_bar(screen)
+    pygame.draw.rect(screen, (255, 0, 0), boss_area, 2)  # Red outline, 2 pixels thick
 
     all_sprites.draw(screen)
 
