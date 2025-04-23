@@ -133,7 +133,7 @@ class Zombie(pygame.sprite.Sprite):
                     length = math.hypot(*self.wander_direction)
                     if length != 0:
                         self.wander_direction[0] /= length
-                        self.wander_direction[1] /= length#repeat the code again to let the zombie change the direction
+                        self.wander_direction[1] /= length #repeat the code again to let the zombie change the direction
 
         if self.is_moving:
             if time.time() - self.last_animation_time > self.animation_speed:
