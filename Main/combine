@@ -20,7 +20,29 @@ camera = pygame.Rect(0, 0, camera_width, camera_height)
 zoom_surface = pygame.Surface((camera_width, camera_height))
 player_position = pygame.Vector2(320, 180)
 speed = 2
-restricted_zones = [] # Not yet set up
+restricted_zones = [
+        {
+        "type": "ellipse",
+        "center": (1554, 585),
+        "radius_x": 165,
+        "radius_y": 162
+    }
+        ] 
+
+def is_in_ellipse(point, center, radius_x, radius_y):
+    px, py = point
+    cx, cy = center
+    return ((px - cx) ** 2) / (radius_x ** 2) + ((py - cy) ** 2) / (radius_y ** 2) <= 1
+
+def is_in_restricted_zone(point, zones):
+    for zone in zones:
+        if zone["type"] == "ellipse":
+            if is_in_ellipse(point, zone["center"], zone["radius_x"], zone["radius_y"]):
+                return True
+        elif zone["type"] == "rect":
+            if zone["rect"].collidepoint(point):
+                return True
+    return False
 
 # Day-night cycle
 overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
@@ -222,7 +244,7 @@ while running:
     new_position.x = max(0, min(new_position.x, map_image.get_width()))
     new_position.y = max(0, min(new_position.y, map_image.get_height()))
     player_rect = pygame.Rect(new_position.x - 2, new_position.y - 2, 4, 4)
-    if not any(zone.colliderect(player_rect) for zone in restricted_zones):
+    if not is_in_restricted_zone(player_rect.center, restricted_zones):
         player_position = new_position
 
     camera.center = player_position
