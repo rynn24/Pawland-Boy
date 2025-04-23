@@ -2,27 +2,30 @@ import pygame
 import os
 import math
 import sys
+import random
 
+# Initialise
 pygame.init()
 screen = pygame.display.set_mode((620, 480))
 pygame.display.set_caption("Pawland Boy")
 clock = pygame.time.Clock()
 
-# Load assets
+font = pygame.font.SysFont(None, 24)
+
+# Load map 
 map_image = pygame.image.load(os.path.join("rynn/Map.png")).convert()
 
-# Game settings
 camera_width, camera_height = 320, 180
 camera = pygame.Rect(0, 0, camera_width, camera_height)
 zoom_surface = pygame.Surface((camera_width, camera_height))
 player_position = pygame.Vector2(320, 180)
 speed = 2
-restricted_zones = []
+restricted_zones = [] # Not yet set up
 
 # Day-night cycle
 overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
 time_counter = 0
-cycle_speed = (2 * math.pi) / 30  # 30-second cycle
+cycle_speed = (2 * math.pi) / 30
 
 # Minimap settings
 minimap_radius = 80
@@ -34,41 +37,96 @@ player_minimap_color = (255, 50, 50)
 minimap_mask = pygame.Surface((minimap_radius * 2, minimap_radius * 2), pygame.SRCALPHA)
 pygame.draw.circle(minimap_mask, (255, 255, 255), (minimap_radius, minimap_radius), minimap_radius)
 
-# Frame dimensions
+# Character setup
 FRAME_WIDTH, FRAME_HEIGHT = 200, 200
-
-# Load sprite sheets
 walk_sheet = pygame.image.load("minting/character.png").convert_alpha()
 attack_sheet = pygame.image.load("minting/attack.png").convert_alpha()
 
 def load_frames(sheet, frame_width, frame_height, row, num_frames):
-    frames = []
-    for i in range(num_frames):
-        rect = pygame.Rect(i * frame_width, row * frame_height, frame_width, frame_height)
-        frame = sheet.subsurface(rect)
-        frames.append(frame)
-    return frames
+    return [sheet.subsurface(pygame.Rect(i * frame_width, row * frame_height, frame_width, frame_height)) for i in range(num_frames)]
 
-# Walking animations
 walk_down = load_frames(walk_sheet, FRAME_WIDTH, FRAME_HEIGHT, 0, 3)
 walk_up = load_frames(walk_sheet, FRAME_WIDTH, FRAME_HEIGHT, 1, 4)
 walk_left = load_frames(walk_sheet, FRAME_WIDTH, FRAME_HEIGHT, 2, 4)
 walk_right = load_frames(walk_sheet, FRAME_WIDTH, FRAME_HEIGHT, 3, 4)
 
-# Attack animations
 attack_right = load_frames(attack_sheet, FRAME_WIDTH, FRAME_HEIGHT, 0, 4)
 attack_left = load_frames(attack_sheet, FRAME_WIDTH, FRAME_HEIGHT, 1, 4)
 
-# Animation state
 frame = 0
 attack_frame = 0
 direction = 'down'
 attacking = False
 
-# Main loop
+# Tree animation
+tree_sheet = pygame.image.load("rynn/tree-sprite.png").convert_alpha()
+TREE_FRAME_WIDTH, TREE_FRAME_HEIGHT = 100, 100
+tree_frames = load_frames(tree_sheet, TREE_FRAME_WIDTH, TREE_FRAME_HEIGHT, 0, 6)
+HOLD_FRAME_INDEX = 7  
+
+class Tree:
+    def __init__(self, position, frames):
+        self.position = pygame.Vector2(position)
+        self.frames = frames
+        self.index = 0
+        self.animating = False
+        self.animation_speed = 0.2  
+        self.last_update_time = 0
+        self.hold_duration = 10  # Hold the last frame before tree respawn
+        self.hold_start_time = 0
+        self.is_holding = False
+
+    def start_animation(self):
+        if not self.animating and not self.is_holding:
+            self.animating = True
+            self.index = 0
+            self.last_update_time = pygame.time.get_ticks() / 1000
+            self.is_holding = False
+
+    def update(self, current_time):
+        if self.animating:
+            if current_time - self.last_update_time > self.animation_speed:
+                self.index += 1
+                self.last_update_time = current_time
+                if self.index >= HOLD_FRAME_INDEX:
+                    self.index = HOLD_FRAME_INDEX
+                    self.animating = False
+                    self.is_holding = True
+                    self.hold_start_time = current_time
+        
+        elif self.is_holding:
+            if current_time - self.hold_start_time > self.hold_duration:
+                self.is_holding = False
+                self.index = 0  # Reset to first frame
+
+    def get_hitbox(self):
+        hitbox_height = 20
+        return pygame.Rect(
+            self.position.x + 20,  
+            self.position.y + TREE_FRAME_HEIGHT - hitbox_height,
+            TREE_FRAME_WIDTH - 40,
+            hitbox_height
+        )
+
+    def draw(self, surface, camera):
+        if self.index >= len(self.frames):
+            self.index = len(self.frames) - 1  # Ensure the index is within bounds
+
+        pos_on_surface = self.position - pygame.Vector2(camera.topleft)
+
+        surface.blit(self.frames[self.index], pos_on_surface)
+
+# Generate trees
+trees = []
+for _ in range(10):
+    x = random.randint(0, min(1920, map_image.get_width()) - TREE_FRAME_WIDTH)
+    y = random.randint(0, min(1440, map_image.get_height()) - TREE_FRAME_HEIGHT)
+    trees.append(Tree((x, y), tree_frames))
+
 running = True
 while running:
     dt = clock.tick(60) / 1000
+    current_time = pygame.time.get_ticks() / 1000
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -79,7 +137,6 @@ while running:
             elif event.key == pygame.K_MINUS:
                 minimap_zoom_factor = max(0.5, minimap_zoom_factor - 0.1)
 
-    # Movement
     new_position = player_position.copy()
     keys = pygame.key.get_pressed()
     move_distance = speed * dt * 60
@@ -88,6 +145,42 @@ while running:
     if not attacking and keys[pygame.K_SPACE]:
         attacking = True
         attack_frame = 0
+        # Create player attack hitbox
+        attack_range = 50
+        if direction == 'up':
+            attack_rect = pygame.Rect(
+                player_position.x - 20,
+                player_position.y - attack_range,
+                40,
+                attack_range
+            )
+        elif direction == 'down':
+            attack_rect = pygame.Rect(
+                player_position.x - 20,
+                player_position.y,
+                40,
+                attack_range
+            )
+        elif direction == 'left':
+            attack_rect = pygame.Rect(
+                player_position.x - attack_range,
+                player_position.y - 20,
+                attack_range,
+                40
+            )
+        elif direction == 'right':
+            attack_rect = pygame.Rect(
+                player_position.x,
+                player_position.y - 20,
+                attack_range,
+                40
+            )
+        
+        # Check for tree collisions with attack hitbox
+        for tree in trees:
+            tree_hitbox = tree.get_hitbox()
+            if attack_rect.colliderect(tree_hitbox):
+                tree.start_animation()
 
     if attacking:
         if direction == 'left':
@@ -124,34 +217,32 @@ while running:
         elif direction == 'right':
             current_sprite = walk_right[frame % len(walk_right)]
 
-        if moving:
-            frame += 1
-        else:
-            frame = 0
+        frame = (frame + 1) if moving else 0
 
-    # Bounds and restriction
     new_position.x = max(0, min(new_position.x, map_image.get_width()))
     new_position.y = max(0, min(new_position.y, map_image.get_height()))
     player_rect = pygame.Rect(new_position.x - 2, new_position.y - 2, 4, 4)
     if not any(zone.colliderect(player_rect) for zone in restricted_zones):
         player_position = new_position
 
-    # Camera update
     camera.center = player_position
     camera.clamp_ip(map_image.get_rect())
 
-    # Render world
     zoom_surface.fill((0, 0, 0))
     zoom_surface.blit(map_image, (0, 0), camera)
+
+    for tree in trees:
+        tree.update(current_time)
+        tree.draw(zoom_surface, camera)
+
     zoomed_view = pygame.transform.scale(zoom_surface, screen.get_size())
     screen.blit(zoomed_view, (0, 0))
 
-    # Draw character (centered)
     sprite_x = screen.get_width() // 2 - FRAME_WIDTH // 2
     sprite_y = screen.get_height() // 2 - FRAME_HEIGHT // 2
     screen.blit(current_sprite, (sprite_x, sprite_y))
 
-    # Minimap
+    # Minimap and other UI elements
     minimap_surface = pygame.Surface((minimap_radius * 2, minimap_radius * 2), pygame.SRCALPHA)
     mini_camera_size = minimap_radius * 2 / minimap_zoom_factor
     mini_camera = pygame.Rect(0, 0, mini_camera_size, mini_camera_size)
@@ -166,11 +257,14 @@ while running:
     pygame.draw.circle(masked_minimap, minimap_border_color, (minimap_radius, minimap_radius), minimap_radius, minimap_border_width)
     screen.blit(masked_minimap, (minimap_pos[0] - minimap_radius, minimap_pos[1] - minimap_radius))
 
-    # Day-night overlay
     time_counter += dt
     alpha = int((math.sin(time_counter * cycle_speed) + 1) / 2 * 150)
     overlay.fill((0, 0, 0, alpha))
     screen.blit(overlay, (0, 0))
+
+    pos_text = f"X: {int(player_position.x)}  Y: {int(player_position.y)}"
+    text_surface = font.render(pos_text, True, (255, 255, 255))
+    screen.blit(text_surface, (10, screen.get_height() - 30))
 
     pygame.display.flip()
 
