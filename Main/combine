@@ -62,7 +62,7 @@ attacking = False
 tree_sheet = pygame.image.load("rynn/tree-sprite.png").convert_alpha()
 TREE_FRAME_WIDTH, TREE_FRAME_HEIGHT = 100, 100
 tree_frames = load_frames(tree_sheet, TREE_FRAME_WIDTH, TREE_FRAME_HEIGHT, 0, 6)
-HOLD_FRAME_INDEX = 7  
+HOLD_FRAME_INDEX = 6  
 
 class Tree:
     def __init__(self, position, frames):
