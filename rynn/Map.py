@@ -4,12 +4,12 @@ import math
 
 # Initialize Pygame
 pygame.init()
-screen = pygame.display.set_mode((1280, 720))
+screen = pygame.display.set_mode((620, 480))
 pygame.display.set_caption("Pawland Boy")
 clock = pygame.time.Clock()
 
 # Load assets
-map_image = pygame.image.load(os.path.join("Map.png")).convert()
+map_image = pygame.image.load(os.path.join("rynn/Map.png")).convert()
 
 # Game settings
 camera_width, camera_height = 320, 180  
@@ -26,8 +26,8 @@ cycle_speed = (2 * math.pi) / 30  # 30 second cycle
 
 # Minimap settings
 minimap_radius = 80
-minimap_pos = (minimap_radius + 10, minimap_radius + 10)
 minimap_zoom_factor = 0.5  # Zoom in minimap
+minimap_pos = (minimap_radius + 10, minimap_radius + 10)
 minimap_border_color = (0, 0, 0)
 minimap_border_width = 2
 minimap_viewport_color = (255, 100, 100, 180)
