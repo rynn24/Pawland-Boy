@@ -61,7 +61,6 @@ player_minimap_color = (255, 50, 50)
 minimap_mask = pygame.Surface((minimap_radius * 2, minimap_radius * 2), pygame.SRCALPHA)
 pygame.draw.circle(minimap_mask, (255, 255, 255), (minimap_radius, minimap_radius), minimap_radius)
 
-
 FRAME_WIDTH, FRAME_HEIGHT = 200, 200
 
 def load_frames(sheet, frame_width, frame_height, row, num_frames):
@@ -248,8 +247,8 @@ class Tree:
 # Generate trees
 trees = []
 for _ in range(20):
-    x = random.randint(0, min(1920, map_image.get_width()) - TREE_FRAME_WIDTH)
-    y = random.randint(0, min(1440, map_image.get_height()) - TREE_FRAME_HEIGHT)
+    x = random.randint(0, min(1720, map_image.get_width()) - TREE_FRAME_WIDTH)
+    y = random.randint(0, min(800, map_image.get_height()) - TREE_FRAME_HEIGHT)
     trees.append(Tree((x, y), tree_frames))
 
 running = True
