@@ -12,9 +12,10 @@ clock = pygame.time.Clock()
 
 font = pygame.font.SysFont(None, 24)
 
-# Load map 
+# Load map image
 map_image = pygame.image.load(os.path.join("rynn/Map.png")).convert()
 
+# Camera and player position 
 camera_width, camera_height = 320, 180
 camera = pygame.Rect(0, 0, camera_width, camera_height)
 zoom_surface = pygame.Surface((camera_width, camera_height))
@@ -32,15 +33,16 @@ restricted_zones = [
 def is_in_ellipse(point, center, radius_x, radius_y):
     px, py = point
     cx, cy = center
-    return ((px - cx) ** 2) / (radius_x ** 2) + ((py - cy) ** 2) / (radius_y ** 2) <= 1
+    dx = (px - cx) ** 2 / (radius_x ** 2)
+    dy = (py - cy) ** 2 / (radius_y ** 2)
+    result = dx + dy <= 1
+    print(f"Point: {point}, Ellipse Center: {center}, dx: {dx:.2f}, dy: {dy:.2f}, inside: {result}")
+    return result
 
 def is_in_restricted_zone(point, zones):
     for zone in zones:
         if zone["type"] == "ellipse":
             if is_in_ellipse(point, zone["center"], zone["radius_x"], zone["radius_y"]):
-                return True
-        elif zone["type"] == "rect":
-            if zone["rect"].collidepoint(point):
                 return True
     return False
 
@@ -51,7 +53,7 @@ cycle_speed = (2 * math.pi) / 30
 
 # Minimap settings
 minimap_radius = 80
-minimap_zoom_factor = 0.5
+minimap_zoom_factor = 0.8
 minimap_pos = (minimap_radius + 10, minimap_radius + 10)
 minimap_border_color = (0, 0, 0)
 minimap_border_width = 2
@@ -188,9 +190,9 @@ speed = 1
 player_instance = Player(pygame.Vector2(320, 180), speed)
 
 # Tree animation
-tree_sheet = pygame.image.load("rynn/tree-sprite.png").convert_alpha()
+tree_sheet = pygame.image.load("rynn/tree-new.png").convert_alpha()
 TREE_FRAME_WIDTH, TREE_FRAME_HEIGHT = 100, 100
-tree_frames = load_frames(tree_sheet, TREE_FRAME_WIDTH, TREE_FRAME_HEIGHT, 0, 6)
+tree_frames = load_frames(tree_sheet, TREE_FRAME_WIDTH, TREE_FRAME_HEIGHT, 0, 7)
 HOLD_FRAME_INDEX = 6  
 
 class Tree:
@@ -238,16 +240,14 @@ class Tree:
         )
 
     def draw(self, surface, camera):
-        if self.index >= len(self.frames):
-            self.index = len(self.frames) - 1  
-
+        if self.index > len(self.frames):
+            self.index = len(self.frames) -1 
         pos_on_surface = self.position - pygame.Vector2(camera.topleft)
-
         surface.blit(self.frames[self.index], pos_on_surface)
 
 # Generate trees
 trees = []
-for _ in range(10):
+for _ in range(20):
     x = random.randint(0, min(1920, map_image.get_width()) - TREE_FRAME_WIDTH)
     y = random.randint(0, min(1440, map_image.get_height()) - TREE_FRAME_HEIGHT)
     trees.append(Tree((x, y), tree_frames))
