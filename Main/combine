@@ -27,7 +27,7 @@ restricted_zones = [
         "radius_x": 165,
         "radius_y": 162
     }
-        ] 
+        ] # Fix this! Not working
 
 def is_in_ellipse(point, center, radius_x, radius_y):
     px, py = point
@@ -280,9 +280,10 @@ while running:
     new_position.x = max(0, min(new_position.x, map_image.get_width()))
     new_position.y = max(0, min(new_position.y, map_image.get_height()))
     # Update player_rect for collision checking
-    player_rect = pygame.Rect(new_position.x - 2, new_position.y - 2, 4, 4)
+    player_rect = pygame.Rect(new_position.x - 20, new_position.y - 20, 40, 40)
     if not is_in_restricted_zone(player_rect.center, restricted_zones):
         player_position = new_position
+
 
     camera.center = player_position
     camera.clamp_ip(map_image.get_rect())
