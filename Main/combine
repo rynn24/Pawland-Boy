@@ -52,7 +52,7 @@ time_counter = 0
 cycle_speed = (2 * math.pi) / 30
 
 # Minimap settings
-minimap_radius = 80
+minimap_radius = 60
 minimap_zoom_factor = 0.8
 minimap_pos = (minimap_radius + 10, minimap_radius + 10)
 minimap_border_color = (0, 0, 0)
@@ -100,7 +100,7 @@ class Player:
             return new_position, self.get_attack_sprite()  # Prevent movement while attacking
 
         if keys[pygame.K_w]:
-            self.position.y -= move_distance
+            new_position.y -= move_distance
             self.direction = 'up'
             moving = True
         if keys[pygame.K_s]:
@@ -115,7 +115,6 @@ class Player:
             self.position.x += move_distance
             self.direction = 'right'
             moving = True
-        
         if moving:
             current_time = pygame.time.get_ticks()
             if current_time - self.last_frame_time > self.frame_speed * 1000:
@@ -126,7 +125,7 @@ class Player:
         else:
             current_sprite = self.walk_down[0]  # Default idle sprite (down)
 
-        return self.position, current_sprite
+        return new_position, current_sprite
     
     def attack(self, trees):
         if not self.attacking:
@@ -281,7 +280,9 @@ while running:
     # Update player_rect for collision checking
     player_rect = pygame.Rect(new_position.x - 20, new_position.y - 20, 40, 40)
     if not is_in_restricted_zone(player_rect.center, restricted_zones):
+        player_instance.position = new_position
         player_position = new_position
+
 
 
     camera.center = player_position
