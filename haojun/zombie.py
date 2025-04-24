@@ -129,7 +129,6 @@ class Zombie(pygame.sprite.Sprite):
         dist = math.hypot(dx, dy)#hypothenuse
 
         chase_range = 200
-        # Right at the start of update() in Zombie class
         if self.state == "attack" and time.time() - self.last_attack_time < len(self.attack_images) * self.animation_speed:
             # During attack animation, don't move or switch states
             self.is_moving = False
@@ -210,13 +209,7 @@ class Zombie(pygame.sprite.Sprite):
                     else:
                         self.state = "walk"
                         self.animation_index = 0
-                elif self.state == "die":
-                    if self.animation_index < len(self.die_images):
-                        self.image = self.die_images[self.animation_index]
-                    else:
-                        self.image = self.die_images[-1]  # Stay on last death frame
-                else:
-                    self.image = self.idle_image
+
 
     def attack_player(self):
         self.player.take_damage(self.attack_damage)
@@ -274,7 +267,6 @@ class Boss(pygame.sprite.Sprite):
         self.max_hp = 200
         self.attack_duration = 0.5  # seconds to show attack animation
         self.attack_animation_end_time = 0  # when the attack animation should stop
-
         self.state = "idle"  # or "walking", "attacking"
         self.animation_index = 0
         self.last_animation_time = time.time()
