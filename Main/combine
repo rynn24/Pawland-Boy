@@ -20,7 +20,29 @@ camera = pygame.Rect(0, 0, camera_width, camera_height)
 zoom_surface = pygame.Surface((camera_width, camera_height))
 player_position = pygame.Vector2(320, 180)
 speed = 2
-restricted_zones = [] # Not yet set up
+restricted_zones = [
+        {
+        "type": "ellipse",
+        "center": (1554, 585),
+        "radius_x": 165,
+        "radius_y": 162
+    }
+        ] 
+
+def is_in_ellipse(point, center, radius_x, radius_y):
+    px, py = point
+    cx, cy = center
+    return ((px - cx) ** 2) / (radius_x ** 2) + ((py - cy) ** 2) / (radius_y ** 2) <= 1
+
+def is_in_restricted_zone(point, zones):
+    for zone in zones:
+        if zone["type"] == "ellipse":
+            if is_in_ellipse(point, zone["center"], zone["radius_x"], zone["radius_y"]):
+                return True
+        elif zone["type"] == "rect":
+            if zone["rect"].collidepoint(point):
+                return True
+    return False
 
 # Day-night cycle
 overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
@@ -55,19 +77,38 @@ class Player:
         self.frame_speed = 0.1
         self.attack_frame_delay = 3  # Delay between attack frames
         self.attack_frame_counter = 0
+        self.weapons = ['hand', 'axe', 'sword']
+        self.current_weapon = 'hand'
 
         # Load player sprite sheets
         self.walk_sheet = pygame.image.load("minting/character.png").convert_alpha()
-        self.attack_sheet = pygame.image.load("minting/attack.png").convert_alpha()
-
+        
         self.walk_down = load_frames(self.walk_sheet, FRAME_WIDTH, FRAME_HEIGHT, 0, 3)
         self.walk_up = load_frames(self.walk_sheet, FRAME_WIDTH, FRAME_HEIGHT, 1, 4)
         self.walk_left = load_frames(self.walk_sheet, FRAME_WIDTH, FRAME_HEIGHT, 2, 4)
         self.walk_right = load_frames(self.walk_sheet, FRAME_WIDTH, FRAME_HEIGHT, 3, 4)
-
-        self.attack_right = load_frames(self.attack_sheet, FRAME_WIDTH, FRAME_HEIGHT, 0, 4)
-        self.attack_left = load_frames(self.attack_sheet, FRAME_WIDTH, FRAME_HEIGHT, 1, 4)
-
+       
+        self.attack_sheets = {
+                'hand': pygame.image.load("minting/hand_attack.png").convert_alpha(),
+                'axe': pygame.image.load("minting/axe_attack.png").convert_alpha(),
+                'sword': pygame.image.load("minting/sword_attack.png").convert_alpha()
+            }
+        
+        self.attack_frames = {
+            'hand': {
+                'right': load_frames(self.attack_sheets['hand'], FRAME_WIDTH, FRAME_HEIGHT, 0, 2),
+                'left': load_frames(self.attack_sheets['hand'], FRAME_WIDTH, FRAME_HEIGHT, 1, 2)
+            },
+                'axe': {
+                'right': load_frames(self.attack_sheets['axe'], FRAME_WIDTH, FRAME_HEIGHT, 0, 2),
+                'left': load_frames(self.attack_sheets['axe'], FRAME_WIDTH, FRAME_HEIGHT, 1, 2)
+            },
+            'sword': {
+                'right': load_frames(self.attack_sheets['sword'], FRAME_WIDTH, FRAME_HEIGHT, 0, 4),
+                'left': load_frames(self.attack_sheets['sword'], FRAME_WIDTH, FRAME_HEIGHT, 1, 4)
+            }
+        }
+        
     def move(self, keys, dt):
         move_distance = self.speed * dt * 60
         moving = False
@@ -105,6 +146,12 @@ class Player:
 
         return self.position, current_sprite
     
+    def switch_weapon(self, key):
+        if key == pygame.K_TAB:
+            current_index = self.weapons.index(self.current_weapon)
+            next_index = (current_index + 1) % len(self.weapons)
+            self.current_weapon = self.weapons[next_index]
+
     def attack(self, trees):
         if not self.attacking:
             return None
@@ -119,28 +166,44 @@ class Player:
         sprite = self.get_attack_sprite()
 
         # Once we've shown the last frame, end the attack
-        if self.attack_frame // 2 >= len(self.attack_right):
+        current_attack_frames = self.attack_frames[self.current_weapon]
+
+        if self.direction == 'left':
+            max_frames = len(current_attack_frames['left'])
+        else:
+            max_frames = len(current_attack_frames['right'])
+
+        if self.attack_frame // 2 >= max_frames:
             self.attacking = False
             self.attack_frame = 0
 
-        # Hit detection (unchanged)
+        # Hit detection  
         attack_rect = self.get_attack_rect(50)
-        for tree in trees:
-            if attack_rect.colliderect(tree.get_hitbox()):
-                tree.start_animation()
 
-        return sprite
+        if self.current_weapon == 'axe':
+            for tree in trees:
+                if attack_rect.colliderect(tree.get_hitbox()):
+                    tree.start_animation()
+        
+        elif self.current_weapon == 'sword':
+            # Here you can add "hit enemy" logic later
+            pass
+        
+        elif self.current_weapon == 'hand':
+            # Maybe do nothing, or small punch effect
+            pass
         
     def get_attack_sprite(self):
         # Calculate raw index
         idx = self.attack_frame // 2
         # Clamp it to the last valid frame
-        max_idx = len(self.attack_right) - 1
+        max_idx = len(self.attack_frames[self.current_weapon]['right']) - 1
         idx = min(idx, max_idx)
+        
         if self.direction == 'left':
-            return self.attack_left[idx]
+            return self.attack_frames[self.current_weapon]['left'][idx]
         else:
-            return self.attack_right[idx]
+            return self.attack_frames[self.current_weapon]['right'][idx]
     
     def get_attack_rect(self, range):
         if self.direction == 'up':
@@ -243,7 +306,9 @@ while running:
                 minimap_zoom_factor = min(4.0, minimap_zoom_factor + 0.1)
             elif event.key == pygame.K_MINUS:
                 minimap_zoom_factor = max(0.5, minimap_zoom_factor - 0.1)
-
+            elif event.key == pygame.K_TAB:
+                player_instance.switch_weapon(event.key)
+        
     new_position = player_position.copy()
     keys = pygame.key.get_pressed()
     move_distance = speed * dt * 60
@@ -259,7 +324,7 @@ while running:
     new_position.y = max(0, min(new_position.y, map_image.get_height()))
     # Update player_rect for collision checking
     player_rect = pygame.Rect(new_position.x - 2, new_position.y - 2, 4, 4)
-    if not any(zone.colliderect(player_rect) for zone in restricted_zones):
+    if not is_in_restricted_zone(player_rect.center, restricted_zones):
         player_position = new_position
 
     camera.center = player_position
@@ -306,6 +371,9 @@ while running:
     pos_text = f"X: {int(player_position.x)}  Y: {int(player_position.y)}"
     text_surface = font.render(pos_text, True, (255, 255, 255))
     screen.blit(text_surface, (10, screen.get_height() - 30))
+
+    if event.type == pygame.KEYDOWN:
+        player_instance.switch_weapon(event.key)
 
     pygame.display.flip()
 
