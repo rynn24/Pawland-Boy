@@ -22,13 +22,13 @@ zoom_surface = pygame.Surface((camera_width, camera_height))
 player_position = pygame.Vector2(320, 180)
 speed = 2
 restricted_zones = [
-        {
+    {
         "type": "ellipse",
         "center": (1554, 585),
         "radius_x": 165,
         "radius_y": 162
     }
-        ] # Fix this! Not working
+]
 
 def is_in_ellipse(point, center, radius_x, radius_y):
     px, py = point
@@ -36,7 +36,6 @@ def is_in_ellipse(point, center, radius_x, radius_y):
     dx = (px - cx) ** 2 / (radius_x ** 2)
     dy = (py - cy) ** 2 / (radius_y ** 2)
     result = dx + dy <= 1
-    print(f"Point: {point}, Ellipse Center: {center}, dx: {dx:.2f}, dy: {dy:.2f}, inside: {result}")
     return result
 
 def is_in_restricted_zone(point, zones):
@@ -76,10 +75,9 @@ class Player:
         self.attack_frame = 0
         self.last_frame_time = 0
         self.frame_speed = 0.1
-        self.attack_frame_delay = 3  # Delay between attack frames
+        self.attack_frame_delay = 3
         self.attack_frame_counter = 0
 
-        # Load player sprite sheets
         self.walk_sheet = pygame.image.load("minting/character.png").convert_alpha()
         self.attack_sheet = pygame.image.load("minting/attack.png").convert_alpha()
 
@@ -92,46 +90,26 @@ class Player:
         self.attack_left = load_frames(self.attack_sheet, FRAME_WIDTH, FRAME_HEIGHT, 1, 4)
 
     def move(self, keys, dt):
-        move_distance = self.speed * dt * 60
-        moving = False
-        new_position = self.position.copy()
-
-        if self.attacking:
-            return new_position, self.get_attack_sprite()  # Prevent movement while attacking
-
-        if keys[pygame.K_w]:
-            new_position.y -= move_distance
-            self.direction = 'up'
-            moving = True
-        if keys[pygame.K_s]:
-            self.position.y += move_distance
-            self.direction = 'down'
-            moving = True
-        if keys[pygame.K_a]:
-            self.position.x -= move_distance
-            self.direction = 'left'
-            moving = True
-        if keys[pygame.K_d]:
-            self.position.x += move_distance
-            self.direction = 'right'
-            moving = True
-        if moving:
+        moving = keys[pygame.K_w] or keys[pygame.K_s] or keys[pygame.K_a] or keys[pygame.K_d]
+        if moving and not self.attacking:
             current_time = pygame.time.get_ticks()
             if current_time - self.last_frame_time > self.frame_speed * 1000:
                 self.frame += 1
                 self.last_frame_time = current_time
 
-            current_sprite = self.get_current_sprite()
-        else:
-            current_sprite = self.walk_down[0]  # Default idle sprite (down)
+        if self.direction == 'down':
+            return self.walk_down[self.frame % len(self.walk_down)]
+        elif self.direction == 'up':
+            return self.walk_up[self.frame % len(self.walk_up)]
+        elif self.direction == 'left':
+            return self.walk_left[self.frame % len(self.walk_left)]
+        elif self.direction == 'right':
+            return self.walk_right[self.frame % len(self.walk_right)]
 
-        return new_position, current_sprite
-    
     def attack(self, trees):
         if not self.attacking:
             return None
 
-        # Advance the attack_frame at your chosen delay
         if self.attack_frame_counter >= self.attack_frame_delay:
             self.attack_frame += 1
             self.attack_frame_counter = 0
@@ -140,30 +118,26 @@ class Player:
 
         sprite = self.get_attack_sprite()
 
-        # Once we've shown the last frame, end the attack
         if self.attack_frame // 2 >= len(self.attack_right):
             self.attacking = False
             self.attack_frame = 0
 
-        # Hit detection (unchanged)
         attack_rect = self.get_attack_rect(50)
         for tree in trees:
             if attack_rect.colliderect(tree.get_hitbox()):
                 tree.start_animation()
 
         return sprite
-        
+
     def get_attack_sprite(self):
-        # Calculate raw index
         idx = self.attack_frame // 2
-        # Clamp it to the last valid frame
         max_idx = len(self.attack_right) - 1
         idx = min(idx, max_idx)
         if self.direction == 'left':
             return self.attack_left[idx]
         else:
             return self.attack_right[idx]
-    
+
     def get_attack_rect(self, range):
         if self.direction == 'up':
             return pygame.Rect(self.position.x - 20, self.position.y - range, 40, range)
@@ -173,25 +147,6 @@ class Player:
             return pygame.Rect(self.position.x - range, self.position.y - 20, range, 40)
         elif self.direction == 'right':
             return pygame.Rect(self.position.x, self.position.y - 20, range, 40)
-        
-    def get_current_sprite(self):
-        if self.direction == 'down':
-            return self.walk_down[self.frame % len(self.walk_down)]
-        elif self.direction == 'up':
-            return self.walk_up[self.frame % len(self.walk_up)]
-        elif self.direction == 'left':
-            return self.walk_left[self.frame % len(self.walk_left)]
-        elif self.direction == 'right':
-            return self.walk_right[self.frame % len(self.walk_right)]
-# Character setup
-speed = 1
-player_instance = Player(pygame.Vector2(320, 180), speed)
-
-# Tree animation
-tree_sheet = pygame.image.load("rynn/tree-new.png").convert_alpha()
-TREE_FRAME_WIDTH, TREE_FRAME_HEIGHT = 100, 100
-tree_frames = load_frames(tree_sheet, TREE_FRAME_WIDTH, TREE_FRAME_HEIGHT, 0, 7)
-HOLD_FRAME_INDEX = 6  
 
 class Tree:
     def __init__(self, position, frames):
@@ -199,9 +154,9 @@ class Tree:
         self.frames = frames
         self.index = 0
         self.animating = False
-        self.animation_speed = 0.2  
+        self.animation_speed = 0.2
         self.last_update_time = 0
-        self.hold_duration = 10  # Hold the last frame before tree respawn
+        self.hold_duration = 10
         self.hold_start_time = 0
         self.is_holding = False
 
@@ -210,45 +165,44 @@ class Tree:
             self.animating = True
             self.index = 0
             self.last_update_time = pygame.time.get_ticks() / 1000
-            self.is_holding = False
 
     def update(self, current_time):
         if self.animating:
             if current_time - self.last_update_time > self.animation_speed:
                 self.index += 1
                 self.last_update_time = current_time
-                if self.index >= HOLD_FRAME_INDEX:
-                    self.index = HOLD_FRAME_INDEX
+                if self.index >= 6:
+                    self.index = 6
                     self.animating = False
                     self.is_holding = True
                     self.hold_start_time = current_time
-        
         elif self.is_holding:
             if current_time - self.hold_start_time > self.hold_duration:
                 self.is_holding = False
-                self.index = 0  # Reset to first frame
+                self.index = 0
 
     def get_hitbox(self):
         hitbox_height = 20
         return pygame.Rect(
-            self.position.x + 20,  
-            self.position.y + TREE_FRAME_HEIGHT - hitbox_height,
-            TREE_FRAME_WIDTH - 40,
+            self.position.x + 20,
+            self.position.y + 100 - hitbox_height,
+            100 - 40,
             hitbox_height
         )
 
     def draw(self, surface, camera):
-        if self.index > len(self.frames):
-            self.index = len(self.frames) -1 
         pos_on_surface = self.position - pygame.Vector2(camera.topleft)
         surface.blit(self.frames[self.index], pos_on_surface)
 
-# Generate trees
+tree_sheet = pygame.image.load("rynn/tree-new.png").convert_alpha()
+tree_frames = load_frames(tree_sheet, 100, 100, 0, 7)
 trees = []
 for _ in range(20):
-    x = random.randint(0, min(1720, map_image.get_width()) - TREE_FRAME_WIDTH)
-    y = random.randint(0, min(800, map_image.get_height()) - TREE_FRAME_HEIGHT)
+    x = random.randint(0, min(1720, map_image.get_width()) - 100)
+    y = random.randint(0, min(800, map_image.get_height()) - 100)
     trees.append(Tree((x, y), tree_frames))
+
+player_instance = Player(player_position, speed)
 
 running = True
 while running:
@@ -264,26 +218,52 @@ while running:
             elif event.key == pygame.K_MINUS:
                 minimap_zoom_factor = max(0.5, minimap_zoom_factor - 0.1)
 
-    new_position = player_position.copy()
     keys = pygame.key.get_pressed()
     move_distance = speed * dt * 60
-    moving = False 
+
+    # --- NEW Restriction check per direction ---
+    proposed_position = player_instance.position.copy()
+
+    if keys[pygame.K_w]:  # Up
+        test_pos = proposed_position.copy()
+        test_pos.y -= move_distance
+        test_rect = pygame.Rect(test_pos.x - 20, test_pos.y - 20, 40, 40)
+        if not is_in_restricted_zone(test_rect.center, restricted_zones):
+            proposed_position.y -= move_distance
+            player_instance.direction = 'up'
+    if keys[pygame.K_s]:  # Down
+        test_pos = proposed_position.copy()
+        test_pos.y += move_distance
+        test_rect = pygame.Rect(test_pos.x - 20, test_pos.y - 20, 40, 40)
+        if not is_in_restricted_zone(test_rect.center, restricted_zones):
+            proposed_position.y += move_distance
+            player_instance.direction = 'down'
+    if keys[pygame.K_a]:  # Left
+        test_pos = proposed_position.copy()
+        test_pos.x -= move_distance
+        test_rect = pygame.Rect(test_pos.x - 20, test_pos.y - 20, 40, 40)
+        if not is_in_restricted_zone(test_rect.center, restricted_zones):
+            proposed_position.x -= move_distance
+            player_instance.direction = 'left'
+    if keys[pygame.K_d]:  # Right
+        test_pos = proposed_position.copy()
+        test_pos.x += move_distance
+        test_rect = pygame.Rect(test_pos.x - 20, test_pos.y - 20, 40, 40)
+        if not is_in_restricted_zone(test_rect.center, restricted_zones):
+            proposed_position.x += move_distance
+            player_instance.direction = 'right'
+
+    proposed_position.x = max(0, min(proposed_position.x, map_image.get_width()))
+    proposed_position.y = max(0, min(proposed_position.y, map_image.get_height()))
+
+    player_instance.position = proposed_position
+    player_position = proposed_position
+
     current_sprite = player_instance.move(keys, dt)
     attack_sprite = player_instance.attack(trees)
-    new_position, current_sprite = player_instance.move(keys, dt)
 
     if keys[pygame.K_SPACE] and not player_instance.attacking:
         player_instance.attacking = True
-
-    new_position.x = max(0, min(new_position.x, map_image.get_width()))
-    new_position.y = max(0, min(new_position.y, map_image.get_height()))
-    # Update player_rect for collision checking
-    player_rect = pygame.Rect(new_position.x - 20, new_position.y - 20, 40, 40)
-    if not is_in_restricted_zone(player_rect.center, restricted_zones):
-        player_instance.position = new_position
-        player_position = new_position
-
-
 
     camera.center = player_position
     camera.clamp_ip(map_image.get_rect())
@@ -306,7 +286,6 @@ while running:
     else:
         screen.blit(current_sprite, (sprite_x, sprite_y))
 
-    # Minimap and other UI elements
     minimap_surface = pygame.Surface((minimap_radius * 2, minimap_radius * 2), pygame.SRCALPHA)
     mini_camera_size = minimap_radius * 2 / minimap_zoom_factor
     mini_camera = pygame.Rect(0, 0, mini_camera_size, mini_camera_size)
