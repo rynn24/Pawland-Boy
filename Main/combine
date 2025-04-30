@@ -99,6 +99,11 @@ class Player:
         self.current_weapon = 'hand'
         self.last_update = pygame.time.get_ticks()
         self.animation_cooldown = 100  # milliseconds between frames
+        self.weapon_icons = {
+            "sword": pygame.image.load("minting/sword.png").convert_alpha(),
+            "axe": pygame.image.load("minting/axe.png").convert_alpha(),
+            "hand": pygame.image.load("minting/hand.png").convert_alpha()
+        }
 
         self.walk_sheet = pygame.image.load("minting/character.png").convert_alpha()
         
@@ -127,7 +132,7 @@ class Player:
                 'left': load_frames(self.attack_sheets['sword'], FRAME_WIDTH, FRAME_HEIGHT, 1, 4)
             }
         }
-        
+
     def move(self, keys, dt):
         move_distance = self.speed * dt 
         moving = False
@@ -237,6 +242,8 @@ class Player:
 
         self.frame %= len(sprite_list)
         return sprite_list[self.frame]
+    
+
 
 class Tree:
     def __init__(self, position, frames):
@@ -427,6 +434,15 @@ while running:
     pos_text = f"X: {int(player_position.x)}  Y: {int(player_position.y)}"
     text_surface = font.render(pos_text, True, (255, 255, 255))
     screen.blit(text_surface, (10, screen.get_height() - 30))
+
+    icon = player_instance.weapon_icons[player_instance.current_weapon]
+    icon_scaled = pygame.transform.scale(icon, (60, 60))
+
+    # Draw a box (bottom-left for example)
+    weapon_box = pygame.Rect(screen.get_width() - 100, screen.get_height() - 100, 80, 80)
+    pygame.draw.rect(screen, (30, 30, 30), weapon_box)  # Dark box
+    pygame.draw.rect(screen, (255, 255, 255), weapon_box, 2)  # White border
+    screen.blit(icon_scaled, (weapon_box.x + 10, weapon_box.y + 10))
  
     pygame.display.update()
     pygame.display.flip()
