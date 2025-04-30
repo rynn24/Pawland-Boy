@@ -3,6 +3,7 @@ import os
 import math
 import sys
 import random
+import time
 
 # Initialise
 pygame.init()
@@ -65,10 +66,35 @@ FRAME_WIDTH, FRAME_HEIGHT = 200, 200
 def load_frames(sheet, frame_width, frame_height, row, num_frames):
     return [sheet.subsurface(pygame.Rect(i * frame_width, row * frame_height, frame_width, frame_height)) for i in range(num_frames)]
 
+def load_frames_from_sheet(sheet_path, frame_width, frame_height, rows, columns, resize_to=None):
+    sheet = pygame.image.load(sheet_path).convert_alpha()
+    frames = []
+
+    for row in range(rows):
+        row_frames = []
+        for col in range(columns):
+            x = col * frame_width
+            y = row * frame_height
+            frame = sheet.subsurface(pygame.Rect(x, y, frame_width, frame_height))
+            if resize_to:
+                frame = pygame.transform.scale(frame, resize_to)  # resize only if needed
+            row_frames.append(frame)
+        frames.append(row_frames)
+    
+    return frames  # e.g., frames[0] = walk, frames[1] = attack
+
+zombie_img = pygame.image.load("haojun/image/zombie.png").convert_alpha()  # <--- STEP 1
+zombie_img = pygame.transform.scale(zombie_img, (64, 64))
+zombie_attack_images = load_frames_from_sheet("haojun/image/zombie attack.png", 64, 64,1, 4)[0]
+zombie_die_images = load_frames_from_sheet("haojun/image/zombie get attack.png", 64, 64,1, 4)[0]
+zombie_walk_images =load_frames_from_sheet("haojun/image/zombie walk.png", 64, 64, 1, 5)[0]
+
 class Player:
     def __init__(self, position, speed):
         self.position = position
         self.speed = speed
+        self.image = pygame.image.load("minting/character.png").convert_alpha()
+        self.rect = self.image.get_rect(center=(400, 300))#detect the collision, help pygame to allocate where is the player
         self.direction = 'down'
         self.attacking = False
         self.frame = 0
@@ -193,6 +219,193 @@ class Tree:
     def draw(self, surface, camera):
         pos_on_surface = self.position - pygame.Vector2(camera.topleft)
         surface.blit(self.frames[self.index], pos_on_surface)
+class Zombie(pygame.sprite.Sprite):
+    def __init__(self, x, y, player):
+        super().__init__()
+        self.image = zombie_img.copy()  # <--- STEP 2
+        self.idle_image = zombie_img.copy()  # This is the original image as idle frame
+        self.image = self.idle_image
+        self.rect = self.image.get_rect(center=(x, y))#handle collision detection and positioning.
+        self.player = player#build a link between player and the zombie, the zombie can get the info of the player(coordinate of the player)
+        self.speed = 1.5
+        self.attack_range = 32
+        self.attack_damage = 10
+        self.last_attack_time = 0
+        self.attack_cooldown = 1
+        self.hp = 50
+        self.max_hp = 50
+        self.is_moving = False  # Track if zombie is actually moving
+        self.facing_left= False
+        self.walk_images = zombie_walk_images
+        self.image = self.walk_images[0]#set the zombie to the 1st walking frame
+        self.rect = self.image.get_rect(center=(x, y))
+        self.animation_index = 0
+        self.last_animation_time = time.time()
+        self.animation_speed = 0.5  # Seconds between frames
+        
+
+        # Wandering
+        self.is_wandering = True#need more explaination
+        self.wander_direction = [random.uniform(-1, 1), random.uniform(-1, 1)]#the zombie can moving left right or up and down
+        self.last_wander_time = time.time()#how long since last wander
+        self.wander_interval = 2#how long should zombie wander
+        self.pause_duration = 2#stop 2s after wandering
+
+        self.attack_images = zombie_attack_images
+        self.die_images = zombie_die_images
+
+        self.state = "idle"  # could be "idle", "walk", "attack", "die"
+        self.animation_index = 0
+        self.last_animation_time = time.time()
+        self.animation_speed = 0.2
+        self.is_dead = False
+        self.death_time = 0
+        self.death_duration = 1  # 1 second to play die animation
+
+    def update_facing_direction(self):
+        if self.facing_left:
+            self.image = pygame.transform.flip(self.image, True, False)
+
+    def update(self):
+        current_time = time.time()
+        dx = self.player.rect.x - self.rect.x
+        if dx < 0:
+            self.facing_left = True
+        else:
+            self.facing_left = False
+        dy = self.player.rect.y - self.rect.y
+        dist = math.hypot(dx, dy)#hypothenuse
+        
+
+        chase_range = 200
+        if self.state == "attack" and time.time() - self.last_attack_time < len(self.attack_images) * self.animation_speed:
+            # During attack animation, don't move or switch states
+            self.is_moving = False
+            if time.time() - self.last_animation_time > self.animation_speed:
+                self.animation_index += 1
+                if self.animation_index < len(self.attack_images):
+                    self.image = self.attack_images[self.animation_index]
+                    self.update_facing_direction()
+                else:
+                    self.state = "walk"
+                    self.animation_index = 0
+                self.last_animation_time = time.time()
+            return  # <--- Don't do anything else while attacking
+
+        if self.is_dead:
+            if time.time() - self.last_animation_time > self.animation_speed:
+                self.animation_index += 1
+                if self.animation_index < len(self.die_images):
+                    self.image = self.die_images[self.animation_index]
+                    self.update_facing_direction()
+                else:
+                    self.image = self.die_images[-1]
+                self.last_animation_time = time.time()
+
+            if time.time() - self.death_time > self.death_duration:
+                self.kill()
+            return
+
+        if dist < chase_range:
+            if dist == 0:
+                dist = 1#avoid 0 division
+            dx, dy = dx / dist, dy / dist#let the zombie have consistent speed
+
+            if current_time - self.last_attack_time >= self.attack_cooldown:
+                self.rect.x += dx * self.speed
+                self.rect.y += dy * self.speed
+                self.is_moving = True
+            else:
+                self.is_moving = False
+
+            if dist < self.attack_range and current_time - self.last_attack_time >= self.attack_cooldown:
+                self.attack_player()
+        else:
+            if self.is_wandering:
+                self.rect.x += self.wander_direction[0] * self.speed * 0.5#this is for x
+                self.rect.y += self.wander_direction[1] * self.speed * 0.5#this is for y
+                self.is_moving = True
+
+
+                if current_time - self.last_wander_time > self.wander_interval:#if the zombie have wander for 2s then stop
+                    self.is_wandering = False
+                    self.last_wander_time = current_time
+            else:
+                self.is_moving = False
+                if current_time - self.last_wander_time > self.pause_duration:
+                    self.is_wandering = True
+                    self.last_wander_time = current_time
+                    self.wander_direction = [random.uniform(-1, 1), random.uniform(-1, 1)]
+                    length = math.hypot(*self.wander_direction)
+                    if length != 0:
+                        self.wander_direction[0] /= length
+                        self.wander_direction[1] /= length#repeat the code again to let the zombie change the direction
+
+        if self.is_moving:
+            if time.time() - self.last_animation_time > self.animation_speed:
+                self.animation_index = (self.animation_index + 1) % len(self.walk_images)
+                self.image = self.walk_images[self.animation_index]
+                self.update_facing_direction()
+                self.last_animation_time = time.time()
+
+        else:
+            if self.state == "idle":
+                self.image = self.idle_image  # Only set to idle image if actually idle
+            elif self.state == "walk":
+                if time.time() - self.last_animation_time > self.animation_speed:
+                    self.animation_index = (self.animation_index + 1) % len(self.walk_images)
+                    self.image = self.walk_images[self.animation_index]
+                    self.update_facing_direction()
+                    self.last_animation_time = time.time()
+            elif self.state == "attack":
+                if time.time() - self.last_animation_time > self.animation_speed:
+                    self.animation_index += 1
+                    if self.animation_index < len(self.attack_images):
+                        self.image = self.attack_images[self.animation_index]
+                        self.update_facing_direction()
+                    else:
+                        self.state = "walk"
+                        self.animation_index = 0
+                    self.last_animation_time = time.time()
+
+
+    def attack_player(self):
+        self.player.take_damage(self.attack_damage)
+        self.last_attack_time = time.time()
+        self.state = "attack"
+        self.animation_index = 0
+        print("Zombie attacks!")
+
+    def take_damage(self, amount, attacker_pos=None):
+        self.hp -= amount
+        print(f"Zombie HP: {self.hp}")
+
+        if attacker_pos is not None:#check the attacker position
+            dx = self.rect.centerx - attacker_pos[0]
+            dy = self.rect.centery - attacker_pos[1]
+            dist = math.hypot(dx, dy)
+            if dist != 0:
+                dx /= dist
+                dy /= dist
+                knockback_distance = 20
+                self.rect.x += dx * knockback_distance
+                self.rect.y += dy * knockback_distance
+
+        if self.hp <= 0 and not self.is_dead:
+            print("Zombie died!")
+            self.state = "die"
+            self.animation_index = 0
+            self.is_dead = True
+            self.death_time = time.time()
+
+    def draw_health_bar(self, surface):
+        bar_width = 30
+        bar_height = 5
+        fill = (self.hp / self.max_hp) * bar_width
+        x = self.rect.centerx - bar_width // 2
+        y = self.rect.top - 10
+        pygame.draw.rect(surface, (255, 0, 0), (x, y, bar_width, bar_height))
+        pygame.draw.rect(surface, (0, 255, 0), (x, y, fill, bar_height))
 
 tree_sheet = pygame.image.load("rynn/tree-new.png").convert_alpha()
 tree_frames = load_frames(tree_sheet, 100, 100, 0, 7)
@@ -203,6 +416,37 @@ for _ in range(20):
     trees.append(Tree((x, y), tree_frames))
 
 player_instance = Player(player_position, speed)
+
+# Sprite groups
+all_sprites = pygame.sprite.Group()
+zombie_group = pygame.sprite.Group()
+
+spawn_delay = 3
+last_spawn_time = time.time()
+
+# Function to spawn zombies (limit to 10)
+def spawn_zombie():
+    if len(zombie_group) < 10:
+        # Get a random spawn position from defined zones
+        x, y = get_random_spawn_position_from_zones(zombie_spawn_zones)
+        
+        # Create the zombie at that position
+        zombie = Zombie(x, y, player_instance)
+        
+        # Add the zombie to the groups
+        zombie_group.add(zombie)
+        all_sprites.add(zombie)
+        print(f"Spawned zombie at ({x}, {y})")
+
+def get_random_spawn_position_from_zones(zones):
+    zone = random.choice(zones)  # Pick a random zone
+    x = random.randint(zone.left, zone.right)
+    y = random.randint(zone.top, zone.bottom)
+    return (x, y)
+
+zombie_spawn_zones = [
+    pygame.Rect(121, 1221, 1235, 133),  # zone 1
+]
 
 running = True
 while running:
@@ -220,6 +464,13 @@ while running:
 
     keys = pygame.key.get_pressed()
     move_distance = speed * dt * 60
+
+    current_time = time.time()
+    if current_time - last_spawn_time >= spawn_delay and len(zombie_group) < 10:
+        spawn_zombie()
+        last_spawn_time = current_time
+    
+    zombie_group.update()
 
     # --- NEW Restriction check per direction ---
     proposed_position = player_instance.position.copy()
@@ -265,6 +516,7 @@ while running:
     if keys[pygame.K_SPACE] and not player_instance.attacking:
         player_instance.attacking = True
 
+
     camera.center = player_position
     camera.clamp_ip(map_image.get_rect())
 
@@ -274,6 +526,9 @@ while running:
     for tree in trees:
         tree.update(current_time)
         tree.draw(zoom_surface, camera)
+
+    for zombie in zombie_group:
+        zoom_surface.blit(zombie.image, zombie.rect.move(-camera.x, -camera.y))
 
     zoomed_view = pygame.transform.scale(zoom_surface, screen.get_size())
     screen.blit(zoomed_view, (0, 0))
