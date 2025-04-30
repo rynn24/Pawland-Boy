@@ -472,7 +472,7 @@ class Zombie(pygame.sprite.Sprite):
                     self.animation_index = (self.animation_index + 1) % len(self.walk_images)
                     self.image = self.walk_images[self.animation_index]
                     self.update_facing_direction()
-                    self.last_animation_time = current_time()
+                    self.last_animation_time = current_time
 
     def start_attack(self):
         self.state = "attack"
