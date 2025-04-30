@@ -4,11 +4,17 @@ import math
 import sys
 import random
 
-# Initialise
+# Initialize
 pygame.init()
-screen = pygame.display.set_mode((620, 480))
+window_size = (620, 480)
+is_fullscreen = False
+screen = pygame.display.set_mode(window_size)
 pygame.display.set_caption("Pawland Boy")
 clock = pygame.time.Clock()
+
+# Scaling variables
+character_scale = 1.0  # Normal size
+fullscreen_scale = 2.0  # Scale factor when in fullscreen
 
 font = pygame.font.SysFont(None, 24)
 
@@ -22,13 +28,21 @@ zoom_surface = pygame.Surface((camera_width, camera_height))
 player_position = pygame.Vector2(320, 180)
 speed = 2
 restricted_zones = [
-        {
+    # Pond area
+    {
         "type": "ellipse",
         "center": (1554, 585),
         "radius_x": 165,
         "radius_y": 162
-        }
-    ] 
+    }  
+] 
+
+def scale_sprite(sprite, scale):
+    if scale == 1.0:
+        return sprite  # No scaling needed
+    original_size = sprite.get_size()
+    new_size = (int(original_size[0] * scale), int(original_size[1] * scale))
+    return pygame.transform.scale(sprite, new_size)
 
 def is_in_ellipse(point, center, radius_x, radius_y):
     px, py = point
@@ -42,6 +56,10 @@ def is_in_restricted_zone(point, zones):
     for zone in zones:
         if zone["type"] == "ellipse":
             if is_in_ellipse(point, zone["center"], zone["radius_x"], zone["radius_y"]):
+                return True
+        elif zone["type"] == "rect":
+            rect = pygame.Rect(*zone["rect"])
+            if rect.collidepoint(point):
                 return True
     return False
 
@@ -62,7 +80,7 @@ pygame.draw.circle(minimap_mask, (255, 255, 255), (minimap_radius, minimap_radiu
 
 FRAME_WIDTH, FRAME_HEIGHT = 200, 200
 
-def load_frames(sheet, frame_width, frame_height, row, num_frames):
+def load_frames(sheet, frame_width, frame_height, row, num_frames, spacing=0):
     return [sheet.subsurface(pygame.Rect(i * frame_width, row * frame_height, frame_width, frame_height)) for i in range(num_frames)]
 
 class Player:
@@ -82,7 +100,6 @@ class Player:
         self.last_update = pygame.time.get_ticks()
         self.animation_cooldown = 100  # milliseconds between frames
 
-
         self.walk_sheet = pygame.image.load("minting/character.png").convert_alpha()
         
         self.walk_down = load_frames(self.walk_sheet, FRAME_WIDTH, FRAME_HEIGHT, 0, 3)
@@ -91,17 +108,17 @@ class Player:
         self.walk_right = load_frames(self.walk_sheet, FRAME_WIDTH, FRAME_HEIGHT, 3, 4)
        
         self.attack_sheets = {
-                'hand': pygame.image.load("minting/hand_attack.png").convert_alpha(),
-                'axe': pygame.image.load("minting/axe_attack.png").convert_alpha(),
-                'sword': pygame.image.load("minting/sword_attack.png").convert_alpha()
-            }
+            'hand': pygame.image.load("minting/hand_attack.png").convert_alpha(),
+            'axe': pygame.image.load("minting/axe_attack.png").convert_alpha(),
+            'sword': pygame.image.load("minting/sword_attack.png").convert_alpha()
+        }
         
         self.attack_frames = {
             'hand': {
                 'right': load_frames(self.attack_sheets['hand'], FRAME_WIDTH, FRAME_HEIGHT, 0, 2),
                 'left': load_frames(self.attack_sheets['hand'], FRAME_WIDTH, FRAME_HEIGHT, 1, 2)
             },
-                'axe': {
+            'axe': {
                 'right': load_frames(self.attack_sheets['axe'], FRAME_WIDTH, FRAME_HEIGHT, 0, 2),
                 'left': load_frames(self.attack_sheets['axe'], FRAME_WIDTH, FRAME_HEIGHT, 1, 2)
             },
@@ -116,10 +133,8 @@ class Player:
         moving = False
         direction_vector = pygame.math.Vector2(0, 0)
 
-        
-
         if self.attacking:
-            return new_position, self.get_attack_sprite()  # Prevent movement while attacking
+            return self.position, self.get_attack_sprite()  # Prevent movement while attacking
 
         if keys[pygame.K_w]:
             self.position.y -= move_distance
@@ -138,11 +153,6 @@ class Player:
             self.direction = 'right'
             moving = True
         
-            # Normalize to prevent diagonal speed-up
-        if direction_vector.length() != 0:
-            direction_vector = direction_vector.normalize()
-            self.position += direction_vector * move_distance
-            
         if moving:
             current_time = pygame.time.get_ticks()
             if current_time - self.last_frame_time > self.frame_speed * 1000:
@@ -173,7 +183,6 @@ class Player:
 
         sprite = self.get_attack_sprite()
 
-        # Once we've shown the last frame, end the attack
         current_attack_frames = self.attack_frames[self.current_weapon]
 
         if self.direction == 'left':
@@ -189,21 +198,14 @@ class Player:
         attack_rect = self.get_attack_rect(50)
 
         if self.current_weapon == 'axe':
-            for tree in trees:
+            for tree in trees + trees_2:
                 if attack_rect.colliderect(tree.get_hitbox()):
                     tree.start_animation()
         
-        elif self.current_weapon == 'sword':
-            # Here  can add "hit enemy" logic later
-            pass
-        
-        elif self.current_weapon == 'hand':
-            # Maybe do nothing
-            pass
-        
+        return sprite
+    
     def get_attack_sprite(self):
         idx = self.attack_frame // 2
-        # Clamp it to the last valid frame
         max_idx = len(self.attack_frames[self.current_weapon]['right']) - 1
         idx = min(idx, max_idx)
         
@@ -213,14 +215,17 @@ class Player:
             return self.attack_frames[self.current_weapon]['right'][idx]
     
     def get_attack_rect(self, range):
+        range = int(range * character_scale)  # Scale attack range
+        size = int(40 * character_scale)     # Scale hitbox size
+        
         if self.direction == 'up':
-            return pygame.Rect(self.position.x - 20, self.position.y - range, 40, range)
+            return pygame.Rect(self.position.x - size//2, self.position.y - range, size, range)
         elif self.direction == 'down':
-            return pygame.Rect(self.position.x - 20, self.position.y, 40, range)
+            return pygame.Rect(self.position.x - size//2, self.position.y, size, range)
         elif self.direction == 'left':
-            return pygame.Rect(self.position.x - range, self.position.y - 20, range, 40)
+            return pygame.Rect(self.position.x - range, self.position.y - size//2, range, size)
         elif self.direction == 'right':
-            return pygame.Rect(self.position.x, self.position.y - 20, range, 40)
+            return pygame.Rect(self.position.x, self.position.y - size//2, range, size)
 
     def get_current_sprite(self):
         sprite_list = {
@@ -230,7 +235,6 @@ class Player:
             'right': self.walk_right
         }[self.direction]
 
-        # Prevent index out of range
         self.frame %= len(sprite_list)
         return sprite_list[self.frame]
 
@@ -245,7 +249,9 @@ class Tree:
         self.hold_duration = 10
         self.hold_start_time = 0
         self.is_holding = False
-
+        self.frame_width = 100
+        self.frame_height = 100
+        
     def start_animation(self):
         if not self.animating and not self.is_holding:
             self.animating = True
@@ -279,17 +285,28 @@ class Tree:
     def draw(self, surface, camera):
         pos_on_surface = self.position - pygame.Vector2(camera.topleft)
         surface.blit(self.frames[self.index], pos_on_surface)
-
+        
+# Tree - wood only
 tree_sheet = pygame.image.load("rynn/tree-new.png").convert_alpha()
-tree_frames = load_frames(tree_sheet, 100, 100, 0, 7)
+tree_frames = load_frames(tree_sheet, 100, 100, 0, 7, spacing=5)
 trees = []
 for _ in range(20):
     x = random.randint(0, min(1720, map_image.get_width()) - 100)
     y = random.randint(0, min(800, map_image.get_height()) - 100)
     trees.append(Tree((x, y), tree_frames))
 
+# Tree - wood & fruit   
+tree_sheet_2 = pygame.image.load("rynn/tree-fruit.png").convert_alpha()
+tree_frames_2 = load_frames(tree_sheet_2, 100, 100, 0, 7, spacing=5)
+trees_2 = []
+for _ in range(20):
+    x = random.randint(0, min(1720, map_image.get_width()) - 100)
+    y = random.randint(0, min(800, map_image.get_height()) - 100)
+    trees_2.append(Tree((x, y), tree_frames_2))
+
 player_instance = Player(player_position, speed)
 
+# Main loop
 running = True
 while running:
     dt = clock.tick(60) / 1000
@@ -305,13 +322,24 @@ while running:
                 minimap_zoom_factor = max(0.5, minimap_zoom_factor - 0.1)
             elif event.key == pygame.K_TAB:
                 player_instance.switch_weapon(event.key)
-
+            elif event.key == pygame.K_f:  # F key to toggle fullscreen
+                is_fullscreen = not is_fullscreen
+                if is_fullscreen:
+                    screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+                    character_scale = fullscreen_scale  # Increase size
+                else:
+                    screen = pygame.display.set_mode(window_size)
+                    character_scale = 1.0  # Normal size
+                overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
+        elif event.type == pygame.KEYUP:
+            if event.key == pygame.K_SPACE:
+                player_instance.attacking = True
+    
     keys = pygame.key.get_pressed()    
     new_position, current_sprite = player_instance.move(keys, dt)
     
     move_distance = speed * dt * 60
 
-    # --- NEW Restriction check per direction ---
     proposed_position = player_instance.position.copy()
 
     if keys[pygame.K_w]:  # Up
@@ -349,18 +377,7 @@ while running:
     player_instance.position = proposed_position
     player_position = proposed_position
 
-    new_position, current_sprite = player_instance.move(keys, dt)
     attack_sprite = player_instance.attack(trees)
-
-    if keys[pygame.K_SPACE] and not player_instance.attacking:
-        player_instance.attacking = True
-
-    new_position.x = max(0, min(new_position.x, map_image.get_width()))
-    new_position.y = max(0, min(new_position.y, map_image.get_height()))
-    # Update player_rect for collision checking
-    player_rect = pygame.Rect(new_position.x - 2, new_position.y - 2, 4, 4)
-    if not is_in_restricted_zone(player_rect.center, restricted_zones):
-        player_position = new_position
 
     camera.center = player_position
     camera.clamp_ip(map_image.get_rect())
@@ -372,16 +389,19 @@ while running:
         tree.update(current_time)
         tree.draw(zoom_surface, camera)
 
+    for tree in trees_2:
+        tree.update(current_time)
+        tree.draw(zoom_surface, camera)
+
     zoomed_view = pygame.transform.scale(zoom_surface, screen.get_size())
     screen.blit(zoomed_view, (0, 0))
 
-    sprite_x = screen.get_width() // 2 - FRAME_WIDTH // 2
-    sprite_y = screen.get_height() // 2 - FRAME_HEIGHT // 2
-
-    if attack_sprite:
-        screen.blit(attack_sprite, (sprite_x, sprite_y))
-    else:
-        screen.blit(current_sprite, (sprite_x, sprite_y))
+    # Draw scaled character
+    sprite_to_draw = attack_sprite if attack_sprite else current_sprite
+    scaled_sprite = scale_sprite(sprite_to_draw, character_scale)
+    sprite_x = screen.get_width() // 2 - scaled_sprite.get_width() // 2
+    sprite_y = screen.get_height() // 2 - scaled_sprite.get_height() // 2
+    screen.blit(scaled_sprite, (sprite_x, sprite_y))
 
     minimap_surface = pygame.Surface((minimap_radius * 2, minimap_radius * 2), pygame.SRCALPHA)
     mini_camera_size = minimap_radius * 2 / minimap_zoom_factor
@@ -396,16 +416,19 @@ while running:
     pygame.draw.circle(masked_minimap, player_minimap_color, (minimap_radius, minimap_radius), 3)
     pygame.draw.circle(masked_minimap, minimap_border_color, (minimap_radius, minimap_radius), minimap_radius, minimap_border_width)
     screen.blit(masked_minimap, (minimap_pos[0] - minimap_radius, minimap_pos[1] - minimap_radius))
-
-    time_counter += dt
-    alpha = int((math.sin(time_counter * cycle_speed) + 1) / 2 * 150)
-    overlay.fill((0, 0, 0, alpha))
+    relative_x = (player_position.x - mini_camera.left) / mini_camera.width * (minimap_radius * 2)
+    relative_y = (player_position.y - mini_camera.top) / mini_camera.height * (minimap_radius * 2)
+        
+    time_counter += cycle_speed * dt
+    alpha = int((math.sin(time_counter) + 1) / 2 * 180)
+    overlay.fill((0, 0, 50, alpha))
     screen.blit(overlay, (0, 0))
 
     pos_text = f"X: {int(player_position.x)}  Y: {int(player_position.y)}"
     text_surface = font.render(pos_text, True, (255, 255, 255))
     screen.blit(text_surface, (10, screen.get_height() - 30))
  
+    pygame.display.update()
     pygame.display.flip()
 
 pygame.quit()
