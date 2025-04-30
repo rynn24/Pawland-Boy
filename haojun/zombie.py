@@ -31,13 +31,13 @@ def load_frames_from_sheet(sheet_path, frame_width, frame_height, rows, columns,
     
     return frames  # e.g., frames[0] = walk, frames[1] = attack
 
-zombie_walk_images =load_frames_from_sheet("haojun/image/zombie walk.png", 64, 64, 1, 5)[0]
 boss_attack_frames = load_frames_from_sheet("haojun/image/boss attack.png", 96, 96, 1, 5)[0]
+boss_walk_frames = load_frames_from_sheet("haojun/image/boss walk.png", 96, 96, 1, 3)[0]
+boss_die_frames = load_frames_from_sheet("haojun/image/boss die.png", 96, 96, 1, 4)[0]
+boss_ult_frames = load_frames_from_sheet("haojun/image/boss ult.png", 96, 96, 1, 6)[0]
 zombie_attack_images = load_frames_from_sheet("haojun/image/zombie attack.png", 64, 64,1, 4)[0]
 zombie_die_images = load_frames_from_sheet("haojun/image/zombie get attack.png", 64, 64,1, 4)[0]
-boss_walk_frames = load_frames_from_sheet("haojun/image/boss walk.png", 96, 96, 1, 3)[0]
-boss_die_frames = load_frames_from_sheet("haojun/image/boss die.png", 96, 96, 1, 3)[0]
-boss_ult_frames = load_frames_from_sheet("haojun/image/boss ult.png", 96, 96, 1, 6)[0]
+zombie_walk_images =load_frames_from_sheet("haojun/image/zombie walk.png", 64, 64, 1, 5)[0]
 
 # Player class
 class Player(pygame.sprite.Sprite):
@@ -296,44 +296,47 @@ class Boss(pygame.sprite.Sprite):
         self.is_using_ult = False
         self.ult_frame_index = 0
         self.ult_timer = 0
+        self.death_images = boss_die_frames
+        self.is_dead = False
+        self.death_index = 0
+        self.death_animation_done = False
 
     def update(self):
-        self.facing_left = False
-        current_time = time.time()
-        dx = self.player.rect.centerx - self.rect.centerx
-        dy = self.player.rect.centery - self.rect.centery
-        dist = math.hypot(dx, dy)
-
-        # Check if we're still in attack animation lock
-        if self.player.rect.centerx < self.rect.centerx:
-            self.facing_left = True
+        if self.is_dead:
+            self.state = "dying"
         else:
-            self.facing_left = False   
-        if self.is_using_ult:
-            self.state = "ult"
-            if current_time > self.ult_end_time:
-                self.is_using_ult = False
-                self.state = "idle"
-        elif current_time < self.attack_animation_end_time:#let the animation go more smooth
-            self.state = "attacking"
-        elif dist < 300:
-            if dist == 0:
-                dist = 1
-            dx, dy = dx / dist, dy / dist
-            new_x = self.rect.x + dx * self.speed
-            new_y = self.rect.y + dy * self.speed
+            # calculate dx, dy, dist as normal
+            dx = self.player.rect.centerx - self.rect.centerx
+            dy = self.player.rect.centery - self.rect.centery
+            dist = math.hypot(dx, dy)
 
-            if self.area_rect.collidepoint(new_x, new_y):#check if the boss can go
-                self.rect.x = new_x
-                self.rect.y = new_y
+            if self.player.rect.centerx < self.rect.centerx:
+                self.facing_left = True
+            else:
+                self.facing_left = False   
 
-            if dist < self.attack_range and current_time - self.last_attack_time >= self.attack_cooldown:
-                self.attack_player()
-            self.state = "walking"
-        else:
-            self.state = "idle"
-        if self.state == "ult":
-            if time.time() > self.ult_end_time:
+            if self.is_using_ult:
+                self.state = "ult"
+                if time.time() > self.ult_end_time:
+                    self.is_using_ult = False
+                    self.state = "idle"
+            elif time.time() < self.attack_animation_end_time:
+                self.state = "attacking"
+            elif dist < 300:
+                if dist == 0:
+                    dist = 1
+                dx, dy = dx / dist, dy / dist
+                new_x = self.rect.x + dx * self.speed
+                new_y = self.rect.y + dy * self.speed
+
+                if self.area_rect.collidepoint(new_x, new_y):
+                    self.rect.x = new_x
+                    self.rect.y = new_y
+
+                if dist < self.attack_range and time.time() - self.last_attack_time >= self.attack_cooldown:
+                    self.attack_player()
+                self.state = "walking"
+            else:
                 self.state = "idle"
 
         # Animation update
@@ -364,8 +367,21 @@ class Boss(pygame.sprite.Sprite):
                 if time.time() > self.ult_end_time:
                     self.state = "idle"
                     self.is_using_ult = False
+            elif self.state == "dying":
+                if time.time() - self.last_animation_time > self.animation_speed:
+                    if self.death_index < len(self.death_images):
+                        self.image = self.death_images[self.death_index]
+                        if self.facing_left:
+                            self.image = pygame.transform.flip(self.image, True, False)
+                        self.rect = self.image.get_rect(center=self.rect.center)
+                        self.death_index += 1
+                        self.last_animation_time = time.time()
+                    else:
+                        self.kill()  # remove the boss from the game after animation ends
             else:
                 self.image = self.walk_images[0]
+
+            
             self.last_animation_time = time.time()
 
 
@@ -383,11 +399,18 @@ class Boss(pygame.sprite.Sprite):
             self.trigger_ultimate()
 
     def take_damage(self, amount):
+        if self.is_dead:
+            return  # Already in death animation
+
         self.hp -= amount
         print(f"Boss HP: {self.hp}")
+        
         if self.hp <= 0:
             print("Boss defeated!")
-            self.kill()
+            self.state = "dying"
+            self.is_dead = True
+            self.death_index = 0
+            self.last_animation_time = time.time()
 
     def draw_health_bar(self, surface):
         bar_width = 100
