@@ -221,17 +221,7 @@ class Player:
             return pygame.Rect(self.position.x - range, self.position.y - 20, range, 40)
         elif self.direction == 'right':
             return pygame.Rect(self.position.x, self.position.y - 20, range, 40)
-   
-    #def get_current_sprite(self):
-        #if self.direction == 'down':
-           # return self.walk_down[self.frame]
-       # elif self.direction == 'up':
-          #  return self.walk_up[self.frame]
-      #  elif self.direction == 'left':
-      #      return self.walk_left[self.frame]
-       ##    return self.walk_right[self.frame]
-        #else:
-         #   return self.walk_down[0]  # Default to 'down' if the direction is undefined
+
     def get_current_sprite(self):
         sprite_list = {
             'up': self.walk_up,
