@@ -3,6 +3,7 @@ import os
 import math
 import sys
 import random
+import time
 
 # Initialize
 pygame.init()
@@ -83,10 +84,35 @@ FRAME_WIDTH, FRAME_HEIGHT = 200, 200
 def load_frames(sheet, frame_width, frame_height, row, num_frames, spacing=0):
     return [sheet.subsurface(pygame.Rect(i * frame_width, row * frame_height, frame_width, frame_height)) for i in range(num_frames)]
 
+def load_frames_from_sheet(sheet_path, frame_width, frame_height, rows, columns, resize_to=None):
+    sheet = pygame.image.load(sheet_path).convert_alpha()
+    frames = []
+
+    for row in range(rows):
+        row_frames = []
+        for col in range(columns):
+            x = col * frame_width
+            y = row * frame_height
+            frame = sheet.subsurface(pygame.Rect(x, y, frame_width, frame_height))
+            if resize_to:
+                frame = pygame.transform.scale(frame, resize_to)  # resize only if needed
+            row_frames.append(frame)
+        frames.append(row_frames)
+    
+    return frames  # e.g., frames[0] = walk, frames[1] = attack
+
+zombie_img = pygame.image.load("haojun/image/zombie.png").convert_alpha()  # <--- STEP 1
+zombie_img = pygame.transform.scale(zombie_img, (64, 64))
+zombie_attack_images = load_frames_from_sheet("haojun/image/zombie attack.png", 64, 64,1, 4)[0]
+zombie_die_images = load_frames_from_sheet("haojun/image/zombie get attack.png", 64, 64,1, 4)[0]
+zombie_walk_images =load_frames_from_sheet("haojun/image/zombie walk.png", 64, 64, 1, 5)[0]
+
 class Player:
     def __init__(self, position, speed):
         self.position = position
         self.speed = speed
+        self.image = pygame.image.load("minting/character.png").convert_alpha()
+        self.rect = self.image.get_rect(center=(400, 300))#detect the collision, help pygame to allocate where is the player
         self.direction = 'down'
         self.attacking = False
         self.frame = 0
@@ -99,6 +125,8 @@ class Player:
         self.current_weapon = 'hand'
         self.last_update = pygame.time.get_ticks()
         self.animation_cooldown = 100  # milliseconds between frames
+        self.health = 100
+
         self.weapon_icons = {
             "sword": pygame.image.load("minting/sword.png").convert_alpha(),
             "axe": pygame.image.load("minting/axe.png").convert_alpha(),
@@ -139,6 +167,7 @@ class Player:
         direction_vector = pygame.math.Vector2(0, 0)
 
         if self.attacking:
+            self.rect.center = (self.position.x, self.position.y)
             return self.position, self.get_attack_sprite()  # Prevent movement while attacking
 
         if keys[pygame.K_w]:
@@ -167,7 +196,7 @@ class Player:
             current_sprite = self.get_current_sprite()
         else:
             current_sprite = self.walk_down[0]  # Default idle sprite (down)
-
+        self.rect.center = (self.position.x, self.position.y)  # <-- Sync sprite with position
         return self.position, current_sprite
     
     def switch_weapon(self, key):
@@ -242,6 +271,21 @@ class Player:
 
         self.frame %= len(sprite_list)
         return sprite_list[self.frame]
+    def take_damage(self, amount):
+        self.health -= amount
+        if self.health < 0:
+            self.health = 0
+        print(f"Player health: {self.health}")
+
+    def draw_health_bar(self, surface):
+        bar_width = 200
+        bar_height = 20
+        fill = (self.health / 100) * bar_width
+        x = (surface.get_width() - bar_width) // 2
+        y = 570  # Bottom of screen
+        pygame.draw.rect(surface, (255, 0, 0), (x, y, bar_width, bar_height))  # Red background
+        pygame.draw.rect(surface, (0, 255, 0), (x, y, fill, bar_height))       # Green fill
+        pygame.draw.rect(surface, (255, 255, 255), (x, y, bar_width, bar_height), 2)  # White border
     
 
 
@@ -292,6 +336,190 @@ class Tree:
     def draw(self, surface, camera):
         pos_on_surface = self.position - pygame.Vector2(camera.topleft)
         surface.blit(self.frames[self.index], pos_on_surface)
+
+class Zombie(pygame.sprite.Sprite):
+    def __init__(self, x, y, player):
+        super().__init__()
+        self.image = zombie_img.copy()
+        self.idle_image = zombie_img.copy()
+        self.image = self.idle_image
+        self.rect = self.image.get_rect(center=(x, y))
+        self.position = pygame.Vector2(x, y)  # Add Vector2 position tracking
+        self.player = player
+        self.speed = 1.5
+        self.attack_range = 32
+        self.attack_damage = 10
+        self.last_attack_time = 0
+        self.attack_cooldown = 1
+        self.attack_windup_time = 0.3
+        self.windup_start_time = None
+        self.hp = 50
+        self.max_hp = 50
+        self.is_moving = False
+        self.facing_left = False
+
+        self.walk_images = zombie_walk_images
+        self.attack_images = zombie_attack_images
+        self.die_images = zombie_die_images
+
+        self.animation_index = 0
+        self.last_animation_time = time.time()
+        self.animation_speed = 0.2
+
+        self.is_wandering = True
+        self.wander_direction = pygame.Vector2(random.uniform(-1, 1), random.uniform(-1, 1)).normalize()
+        self.last_wander_time = time.time()
+        self.wander_interval = 2
+        self.pause_duration = 2
+
+        self.state = "idle"
+        self.is_dead = False
+        self.death_time = 0
+        self.death_duration = 1
+        self.chase_range = 200
+
+    def update_facing_direction(self):
+        self.image = pygame.transform.flip(self.image, self.facing_left, False)
+
+    def update(self):
+        current_time = time.time()
+
+        if self.is_dead:
+            if current_time - self.last_animation_time > self.animation_speed:
+                self.animation_index += 1
+                if self.animation_index < len(self.die_images):
+                    self.image = self.die_images[self.animation_index]
+                    self.update_facing_direction()
+                else:
+                    self.image = self.die_images[-1]
+                self.last_animation_time = current_time
+
+            if current_time - self.death_time > self.death_duration:
+                self.kill()
+            return
+
+        # Get player position (works with both Vector2 and rect)
+        player_pos = getattr(self.player, 'position', pygame.Vector2(self.player.rect.center))
+        
+        # Calculate direction vector
+        direction = player_pos - self.position
+        distance = direction.length()
+        
+        # Update facing direction
+        self.facing_left = direction.x < 0
+
+        # Attack state handling
+        if self.state == "attack":
+            if self.windup_start_time:
+                if current_time - self.windup_start_time >= self.attack_windup_time:
+                    self.apply_attack_damage()
+                    self.windup_start_time = None
+
+            if current_time - self.last_animation_time > self.animation_speed:
+                self.animation_index += 1
+                if self.animation_index < len(self.attack_images):
+                    self.image = self.attack_images[self.animation_index]
+                    self.update_facing_direction()
+                else:
+                    self.state = "walk"
+                    self.animation_index = 0
+                self.last_animation_time = current_time
+            return
+
+        # Movement logic
+        if distance < self.chase_range:
+            if distance > self.attack_range:
+                # Chase player
+                if distance > 0:
+                    direction = direction.normalize()
+                self.position += direction * self.speed
+                self.is_moving = True
+            elif current_time - self.last_attack_time >= self.attack_cooldown:
+                self.start_attack()
+        else:
+            # Wandering behavior
+            if self.is_wandering:
+                self.position += self.wander_direction * self.speed * 0.5
+                self.is_moving = True
+
+                if current_time - self.last_wander_time > self.wander_interval:
+                    self.is_wandering = False
+                    self.last_wander_time = current_time
+            else:
+                self.is_moving = False
+                if current_time - self.last_wander_time > self.pause_duration:
+                    self.is_wandering = True
+                    self.last_wander_time = current_time
+                    self.wander_direction = pygame.Vector2(random.uniform(-1, 1), random.uniform(-1, 1))
+                    if self.wander_direction.length() > 0:
+                        self.wander_direction = self.wander_direction.normalize()
+
+        # Update rect position to match Vector2 position
+        self.rect.center = (round(self.position.x), round(self.position.y))
+
+        # Animation updates
+        if self.is_moving:
+            if current_time - self.last_animation_time > self.animation_speed:
+                self.animation_index = (self.animation_index + 1) % len(self.walk_images)
+                self.image = self.walk_images[self.animation_index]
+                self.update_facing_direction()
+                self.last_animation_time = current_time
+        else:
+            if self.state == "idle":
+                self.image = self.idle_image
+            elif self.state == "walk":
+                if current_time - self.last_animation_time > self.animation_speed:
+                    self.animation_index = (self.animation_index + 1) % len(self.walk_images)
+                    self.image = self.walk_images[self.animation_index]
+                    self.update_facing_direction()
+                    self.last_animation_time = current_time
+
+    def start_attack(self):
+        self.state = "attack"
+        self.animation_index = 0
+        self.windup_start_time = time.time()
+        self.last_attack_time = time.time()
+        print("Zombie starts wind-up...")
+
+    def apply_attack_damage(self):
+        # Recheck distance before applying damage
+        player_pos = getattr(self.player, 'position', pygame.Vector2(self.player.rect.center))
+        distance = (player_pos - self.position).length()
+
+        if distance <= self.attack_range:
+            print("Zombie attacks!")
+            self.player.take_damage(self.attack_damage)
+        else:
+            print("Attack missed — player moved out of range.")
+
+    def take_damage(self, amount, attacker_pos=None):
+        self.hp -= amount
+        print(f"Zombie HP: {self.hp}")
+
+        if attacker_pos is not None:
+            direction = self.position - pygame.Vector2(attacker_pos)
+            if direction.length() > 0:
+                direction = direction.normalize()
+                knockback_distance = 20
+                self.position += direction * knockback_distance
+                self.rect.center = (round(self.position.x), round(self.position.y))
+
+        if self.hp <= 0 and not self.is_dead:
+            print("Zombie died!")
+            self.state = "die"
+            self.animation_index = 0
+            self.is_dead = True
+            self.death_time = time.time()
+
+    def draw_health_bar(self, surface):
+        bar_width = 30
+        bar_height = 5
+        fill = (self.hp / self.max_hp) * bar_width
+        x = self.rect.centerx - bar_width // 2
+        y = self.rect.top - 10
+        pygame.draw.rect(surface, (255, 0, 0), (x, y, bar_width, bar_height))
+        pygame.draw.rect(surface, (0, 255, 0), (x, y, fill, bar_height))
+
         
 # Tree - wood only
 tree_sheet = pygame.image.load("rynn/tree-new.png").convert_alpha()
@@ -312,6 +540,37 @@ for _ in range(20):
     trees_2.append(Tree((x, y), tree_frames_2))
 
 player_instance = Player(player_position, speed)
+
+# Sprite groups
+all_sprites = pygame.sprite.Group()
+zombie_group = pygame.sprite.Group()
+
+spawn_delay = 3
+last_spawn_time = time.time()
+
+# Function to spawn zombies (limit to 10)
+def spawn_zombie():
+    if len(zombie_group) < 10:
+        # Get a random spawn position from defined zones
+        x, y = get_random_spawn_position_from_zones(zombie_spawn_zones)
+        
+        # Create the zombie at that position
+        zombie = Zombie(x, y, player_instance)
+        
+        # Add the zombie to the groups
+        zombie_group.add(zombie)
+        all_sprites.add(zombie)
+        print(f"Spawned zombie at ({x}, {y})")
+
+def get_random_spawn_position_from_zones(zones):
+    zone = random.choice(zones)  # Pick a random zone
+    x = random.randint(zone.left, zone.right)
+    y = random.randint(zone.top, zone.bottom)
+    return (x, y)
+
+zombie_spawn_zones = [
+    pygame.Rect(121, 1221, 1235, 133),  # zone 1
+]
 
 # Main loop
 running = True
@@ -347,6 +606,14 @@ while running:
     
     move_distance = speed * dt * 60
 
+    current_time = time.time()
+    if current_time - last_spawn_time >= spawn_delay and len(zombie_group) < 10:
+        spawn_zombie()
+        last_spawn_time = current_time
+    
+    zombie_group.update()
+
+    # --- NEW Restriction check per direction ---
     proposed_position = player_instance.position.copy()
 
     if keys[pygame.K_w]:  # Up
@@ -396,6 +663,8 @@ while running:
         tree.update(current_time)
         tree.draw(zoom_surface, camera)
 
+    for zombie in zombie_group:
+        zoom_surface.blit(zombie.image, zombie.rect.move(-camera.x, -camera.y))
     for tree in trees_2:
         tree.update(current_time)
         tree.draw(zoom_surface, camera)
