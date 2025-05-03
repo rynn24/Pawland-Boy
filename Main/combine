@@ -4,6 +4,7 @@ import math
 import sys
 import random
 import time
+import json
 
 # Initialize
 pygame.init()
@@ -37,6 +38,36 @@ restricted_zones = [
         "radius_y": 162
     }  
 ] 
+
+def  login_menu() :
+    user_system = UserSystem()
+
+    while True:
+        print("=== Welcome to Pawland Boy ===")
+        print("1. Register")
+        print("2. Login")
+        print("3. Quit")
+        choice = input("Choose an option: ")
+
+        if choice == "1":
+            username = input("New Username: ")
+            password = input("New Password: ")
+            if user_system.register(username, password):
+                print("Registration successful!")
+            else:
+                print("Username already exists.")
+        elif choice == "2":
+            username = input("Username: ")
+            password = input("Password: ")
+            if user_system.login(username, password):
+                print(f"Welcome back, {username}!")
+                return username  # Return to game loop
+            else:
+                print("Invalid login.")
+        elif choice == "3":
+            quit()
+        else:
+            print("Invalid choice.") 
 
 def scale_sprite(sprite, scale):
     if scale == 1.0:
@@ -110,6 +141,38 @@ boss_attack_frames = load_frames_from_sheet("haojun/image/boss attack.png", 76, 
 boss_walk_frames = load_frames_from_sheet("haojun/image/boss walk.png", 76, 76, 1, 3)[0]
 boss_die_frames = load_frames_from_sheet("haojun/image/boss die.png", 76, 76, 1, 4)[0]
 boss_ult_frames = load_frames_from_sheet("haojun/image/boss ult.png", 76, 76, 1, 6)[0]
+
+class UserSystem:
+    def __init__(self, filename="users.json"):
+        self.filename = filename
+        self.users = self.load_users()
+        self.current_user = None
+
+    def load_users(self):
+        if not os.path.exists(self.filename):
+            return {}
+        with open(self.filename, "r") as f:
+            return json.load(f)
+
+    def save_users(self):
+        with open(self.filename, "w") as f:
+            json.dump(self.users, f)
+
+    def register(self, username, password):
+        if username in self.users:
+            return False  # Username taken
+        self.users[username] = {"password": password}
+        self.save_users()
+        return True
+
+    def login(self, username, password):
+        if username in self.users and self.users[username]["password"] == password:
+            self.current_user = username
+            return True
+        return False
+
+    def logout(self):
+        self.current_user = None
 
 class Player:
     def __init__(self, position, speed):
@@ -286,6 +349,8 @@ class Player:
                 boss.take_damage(damage)
                 print(f"Hit boss for {damage} damage!")
                 self.current_attack_targets.append(boss)  # Add boss to hit targets
+        # Hit detection  d
+        attack_rect = self.get_attack_rect(50)
 
         return sprite
     
@@ -850,6 +915,7 @@ zombie_spawn_zones = [
     pygame.Rect(121, 1221, 1235, 133),  # zone 1
 ]
 
+current_user = login_menu()
 # Main loop
 running = True
 while running:
