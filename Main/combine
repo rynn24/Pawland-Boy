@@ -29,6 +29,8 @@ camera = pygame.Rect(0, 0, camera_width, camera_height)
 zoom_surface = pygame.Surface((camera_width, camera_height))
 player_position = pygame.Vector2(320, 180)
 speed = 2
+
+# Player restricted area
 restricted_zones = [
     # Pond area
     {
@@ -38,6 +40,22 @@ restricted_zones = [
         "radius_y": 162
     }  
 ] 
+
+# Trees restricted area
+tree_restricted_zones = [
+    # Pond area 
+    {
+        "type": "ellipse",
+        "center": (1554, 585),
+        "radius_x": 165,
+        "radius_y": 162
+    },
+    # Boss area 
+    {
+        "type": "rect",
+        "rect": pygame.Rect(240, 144, 342, 129)  # x, y, width, height
+    }
+]
 
 def  login_menu() :
     user_system = UserSystem()
@@ -94,6 +112,17 @@ def is_in_restricted_zone(point, zones):
             if rect.collidepoint(point):
                 return True
     return False
+
+# For trees restricted zone
+def is_valid_tree_position(pos, restricted_zones):
+    for zone in restricted_zones:
+        if zone["type"] == "ellipse":
+            if is_in_ellipse(pos, zone["center"], zone["radius_x"], zone["radius_y"]):
+                return False  # Tree cannot grow here
+        elif zone["type"] == "rect":
+            if zone["rect"].collidepoint(pos):
+                return False  # Tree cannot grow here
+    return True  
 
 # Day-night cycle
 overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
@@ -858,26 +887,38 @@ class Boss(pygame.sprite.Sprite):
             y = self.rect.top - 15
         pygame.draw.rect(surface, (255, 0, 0), (x, y, bar_width, bar_height))
         pygame.draw.rect(surface, (0, 255, 0), (x, y, fill, bar_height))
-
-
         
-# Tree - wood only
+# Regular trees (wood only)
 tree_sheet = pygame.image.load("rynn/tree-new.png").convert_alpha()
 tree_frames = load_frames(tree_sheet, 100, 100, 0, 7, spacing=5)
 trees = []
 for _ in range(20):
-    x = random.randint(0, min(1720, map_image.get_width()) - 100)
-    y = random.randint(0, min(800, map_image.get_height()) - 100)
-    trees.append(Tree((x, y), tree_frames))
+    valid_position = False
+    attempts = 0
+    while not valid_position and attempts < 100:  # Try 100 times max
+        x = random.randint(0, map_image.get_width() - 100)
+        y = random.randint(0, map_image.get_height() - 100)
+        tree_center = (x + 50, y + 50)  # Check the tree's center point
+        if is_valid_tree_position(tree_center, tree_restricted_zones):
+            trees.append(Tree((x, y), tree_frames))
+            valid_position = True
+        attempts += 1
 
-# Tree - wood & fruit   
+# Fruit trees (wood + fruit)
 tree_sheet_2 = pygame.image.load("rynn/tree-fruit.png").convert_alpha()
 tree_frames_2 = load_frames(tree_sheet_2, 100, 100, 0, 7, spacing=5)
 trees_2 = []
 for _ in range(20):
-    x = random.randint(0, min(1720, map_image.get_width()) - 100)
-    y = random.randint(0, min(800, map_image.get_height()) - 100)
-    trees_2.append(Tree((x, y), tree_frames_2))
+    valid_position = False
+    attempts = 0
+    while not valid_position and attempts < 100:
+        x = random.randint(0, map_image.get_width() - 100)
+        y = random.randint(0, map_image.get_height() - 100)
+        tree_center = (x + 50, y + 50)
+        if is_valid_tree_position(tree_center, tree_restricted_zones):
+            trees_2.append(Tree((x, y), tree_frames_2))
+            valid_position = True
+        attempts += 1
 
 player_instance = Player(player_position, speed)
 
