@@ -27,7 +27,7 @@ map_image = pygame.image.load(os.path.join("rynn/Map.png")).convert()
 camera_width, camera_height = 320, 180
 camera = pygame.Rect(0, 0, camera_width, camera_height)
 zoom_surface = pygame.Surface((camera_width, camera_height))
-player_position = pygame.Vector2(320, 180)
+player_position = pygame.Vector2(1500, 125)
 speed = 2
 
 # Player restricted area
