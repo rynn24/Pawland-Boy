@@ -723,7 +723,7 @@ class Boss(pygame.sprite.Sprite):
 
         elif distance <= self.attack_range and time.time() - self.last_attack_time >= self.attack_cooldown:
             self.attack_player()
-        elif distance <= 400:
+        elif distance <= 200:
             self.move_toward_player(direction, distance)
         else:
             self.state = "idle"
@@ -884,8 +884,8 @@ player_instance = Player(player_position, speed)
 # Sprite groups
 all_sprites = pygame.sprite.Group()
 zombie_group = pygame.sprite.Group()
-boss_area = pygame.Rect(0, 0, 1000, 800)  # x, y, width, height
-boss = Boss(399, 112, player_instance, boss_area)
+boss_area = pygame.Rect(240, 144, 342, 129)  # x, y, width, height
+boss = Boss(399, 145, player_instance, boss_area)
 all_sprites.add(boss)
 
 spawn_delay = 3
