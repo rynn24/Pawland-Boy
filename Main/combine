@@ -425,20 +425,25 @@ class Player:
             self.health = 0
 
     def draw_health_bar(self, surface):
+        bar_width = 200
+        bar_height = 20
+        x = (surface.get_width() - bar_width) // 2
+        y = surface.get_height() - bar_height - 10  # Bottom of screen
+
         # Round to nearest 10
         hp_level = max(0, min(100, int(round(self.health / 10) * 10)))
         current_frame = self.hp_frames.get(hp_level, self.hp_frames[0])
 
         # No need to scale unless needed
         # If too small visually, you can still scale like this:
-        scale_factor = 1
+        scale_factor = 2
         scaled_frame = pygame.transform.scale(current_frame, (
             current_frame.get_width() * scale_factor,
             current_frame.get_height() * scale_factor
         ))
 
         x = (surface.get_width() - scaled_frame.get_width()) // 2
-        y = surface.get_height() - scaled_frame.get_height() - 10
+        y = surface.get_height() - scaled_frame.get_height() + 60
         surface.blit(scaled_frame, (x, y))
 
         # HP number
@@ -465,14 +470,6 @@ class PondArea:
         )
 
         # Load sprite sheet
-        self.spritesheet = pygame.image.load(spritesheet_path).convert_alpha()
-        self.rows = rows
-        self.cols = cols
-        self.frames = self.load_frames()
-        self.current_frame = 0
-        self.frame_delay = 100  # milliseconds
-        self.last_update = pygame.time.get_ticks()
-        self.show_animation = False
 
     def load_frames(self):
         frame_width = self.spritesheet.get_width() // self.cols
