@@ -208,7 +208,7 @@ class Player:
         self.position = position
         self.speed = speed
         self.image = pygame.image.load("minting/character.png").convert_alpha()
-        self.rect = self.image.get_rect(center=(400, 300))#detect the collision, help pygame to allocate where is the player
+        self.rect = self.image.get_rect(center=(400, 300))
         self.direction = 'down'
         self.attacking = False
         self.frame = 0
@@ -220,9 +220,9 @@ class Player:
         self.weapons = ['hand', 'axe', 'sword']
         self.current_weapon = 'hand'
         self.last_update = pygame.time.get_ticks()
-        self.animation_cooldown = 100  # milliseconds between frames
+        self.animation_cooldown = 100
         self.health = 100
-        self.current_attack_targets = []  # Track all zombies hit during current attack
+        self.current_attack_targets = []
 
         self.weapon_icons = {
             "sword": pygame.image.load("minting/sword.png").convert_alpha(),
@@ -230,21 +230,35 @@ class Player:
             "hand": pygame.image.load("minting/hand.png").convert_alpha()
         }
 
-        # Add weapon damage values
         self.weapon_damage = {
             'hand': 5,
             'axe': 15,
             'sword': 10
         }
         
-        # Add weapon attack ranges
         self.weapon_range = {
             'hand': 30,
             'axe': 40,
             'sword': 50
         }
+
+        # Fixed HP Bar Loading (330x30 sprite sheet with 5 frames)
+
+        self.hp_frames = {
+            100:pygame.image.load("haojun/image/hp.100.png").convert_alpha(),
+            90: pygame.image.load("haojun/image/hp.90.png").convert_alpha(),
+            80: pygame.image.load("haojun/image/hp.80.png").convert_alpha(),
+            70: pygame.image.load("haojun/image/hp.70.png").convert_alpha(),
+            60: pygame.image.load("haojun/image/hp.60.png").convert_alpha(),
+            50: pygame.image.load("haojun/image/hp.50.png").convert_alpha(),
+            40: pygame.image.load("haojun/image/hp.40.png").convert_alpha(),
+            30: pygame.image.load("haojun/image/hp.30.png").convert_alpha(),
+            20: pygame.image.load("haojun/image/hp.20.png").convert_alpha(),
+            10: pygame.image.load("haojun/image/hp.10.png").convert_alpha(),
+            0 : pygame.image.load("haojun/image/hp.0.png").convert_alpha(),
+        }
+
         self.walk_sheet = pygame.image.load("minting/character.png").convert_alpha()
-        
         self.walk_down = load_frames(self.walk_sheet, FRAME_WIDTH, FRAME_HEIGHT, 0, 3)
         self.walk_up = load_frames(self.walk_sheet, FRAME_WIDTH, FRAME_HEIGHT, 1, 4)
         self.walk_left = load_frames(self.walk_sheet, FRAME_WIDTH, FRAME_HEIGHT, 2, 4)
@@ -278,7 +292,7 @@ class Player:
 
         if self.attacking:
             self.rect.center = (self.position.x, self.position.y)
-            return self.position, self.get_attack_sprite()  # Prevent movement while attacking
+            return self.position, self.get_attack_sprite()
 
         if keys[pygame.K_w]:
             self.position.y -= move_distance
@@ -305,8 +319,8 @@ class Player:
             
             current_sprite = self.get_current_sprite()
         else:
-            current_sprite = self.walk_down[0]  # Default idle sprite (down)
-        self.rect.center = (self.position.x, self.position.y)  # <-- Sync sprite with position
+            current_sprite = self.walk_down[0]
+        self.rect.center = (self.position.x, self.position.y)
         return self.position, current_sprite
     
     def switch_weapon(self, key):
@@ -317,7 +331,7 @@ class Player:
 
     def attack(self, trees, zombies):
         if not self.attacking:
-            self.current_attack_targets.clear()  # Reset targets when not attacking
+            self.current_attack_targets.clear()
             return None
 
         if self.attack_frame_counter >= self.attack_frame_delay:
@@ -338,48 +352,36 @@ class Player:
         if self.attack_frame // 2 >= max_frames:
             self.attacking = False
             self.attack_frame = 0
-            self.current_attack_targets.clear()  # Clear targets when attack ends
+            self.current_attack_targets.clear()
             return None
 
-        # Only check for hits at specific frames (e.g., when weapon is extended)
-        if self.attack_frame // 2 == 1:  # Or whichever frame makes sense for your animation
+        if self.attack_frame // 2 == 1:
             attack_rect = self.get_attack_rect(50)
 
-            # Process weapon-specific logic
             if self.current_weapon == 'axe':
-                # Check collision with trees
                 for tree in trees + trees_2:
                     if attack_rect.colliderect(tree.get_hitbox()):
                         tree.start_animation()
             
-            # Weapon-specific attack logic
             if self.current_weapon == 'sword':
-                # Sword can hit multiple zombies
                 for zombie in zombies:
                     if attack_rect.colliderect(zombie.rect) and zombie not in self.current_attack_targets:
                         damage = self.weapon_damage[self.current_weapon]
                         zombie.take_damage(damage, self.position)
-                        print(f"Hit zombie with sword for {damage} damage!")
                         self.current_attack_targets.append(zombie)
             else:
-                # Other weapons (hand/axe) can only hit one target
                 if not self.current_attack_targets:
                     for zombie in zombies:
                         if attack_rect.colliderect(zombie.rect):
                             damage = self.weapon_damage[self.current_weapon]
                             zombie.take_damage(damage, self.position)
-                            print(f"Hit zombie with {self.current_weapon} for {damage} damage!")
                             self.current_attack_targets.append(zombie)
-                            break  # Only hit one zombie
+                            break
 
-            # Check if attack hits the boss - only once per attack
             if attack_rect.colliderect(boss.rect) and boss not in self.current_attack_targets:
                 damage = self.weapon_damage[self.current_weapon]
                 boss.take_damage(damage)
-                print(f"Hit boss for {damage} damage!")
-                self.current_attack_targets.append(boss)  # Add boss to hit targets
-        # Hit detection  d
-        attack_rect = self.get_attack_rect(50)
+                self.current_attack_targets.append(boss)
 
         return sprite
     
@@ -394,8 +396,8 @@ class Player:
             return self.attack_frames[self.current_weapon]['right'][idx]
     
     def get_attack_rect(self, range):
-        range = int(range * character_scale)  # Scale attack range
-        size = int(40 * character_scale)     # Scale hitbox size
+        range = int(range * character_scale)
+        size = int(40 * character_scale)
         
         if self.direction == 'up':
             return pygame.Rect(self.position.x - size//2, self.position.y - range, size, range)
@@ -416,27 +418,35 @@ class Player:
 
         self.frame %= len(sprite_list)
         return sprite_list[self.frame]
+
     def take_damage(self, amount):
         self.health -= amount
         if self.health < 0:
             self.health = 0
-        print(f"Player health: {self.health}")
 
     def draw_health_bar(self, surface):
-        bar_width = 200
-        bar_height = 20
-        x = (surface.get_width() - bar_width) // 2
-        y = surface.get_height() - bar_height - 10  # Bottom of screen
+        # Round to nearest 10
+        hp_level = max(0, min(100, int(round(self.health / 10) * 10)))
+        current_frame = self.hp_frames.get(hp_level, self.hp_frames[0])
 
-        # Clamp health value between 0 and 100
-        current_health = max(0, min(self.health, 100))
-        fill = (current_health / 100) * bar_width
+        # No need to scale unless needed
+        # If too small visually, you can still scale like this:
+        scale_factor = 1
+        scaled_frame = pygame.transform.scale(current_frame, (
+            current_frame.get_width() * scale_factor,
+            current_frame.get_height() * scale_factor
+        ))
 
-        # Draw health bar with rounded corners and border
-        pygame.draw.rect(surface, (255, 0, 0), (x, y, bar_width, bar_height), border_radius=10)  # Background
-        pygame.draw.rect(surface, (0, 255, 0), (x, y, fill, bar_height), border_radius=10)       # Fill
-        pygame.draw.rect(surface, (0, 0, 0), (x, y, bar_width, bar_height), 2, border_radius=10) # Border
-    
+        x = (surface.get_width() - scaled_frame.get_width()) // 2
+        y = surface.get_height() - scaled_frame.get_height() - 10
+        surface.blit(scaled_frame, (x, y))
+
+        # HP number
+        health_text = font.render(f"{int(self.health)}/100", True, (255, 255, 255))
+        text_x = x + scaled_frame.get_width() + 10
+        text_y = y + (scaled_frame.get_height() - health_text.get_height()) // 2
+        surface.blit(health_text, (text_x, text_y))
+        
 
 
 class Tree:
@@ -497,14 +507,14 @@ class Zombie(pygame.sprite.Sprite):
         self.position = pygame.Vector2(x, y)  # Add Vector2 position tracking
         self.player = player
         self.speed = 1.5
-        self.attack_range = 32
+        self.attack_range = 30
         self.attack_damage = 10
         self.last_attack_time = 0
         self.attack_cooldown = 1
         self.attack_windup_time = 0.3
         self.windup_start_time = None
-        self.hp = 200
-        self.max_hp = 200
+        self.hp = 100
+        self.max_hp = 100
         self.is_moving = False
         self.facing_left = False
 
@@ -526,7 +536,7 @@ class Zombie(pygame.sprite.Sprite):
         self.is_dead = False
         self.death_time = 0
         self.death_duration = 1
-        self.chase_range = 100
+        self.chase_range = 90
 
     def update_facing_direction(self):
         self.image = pygame.transform.flip(self.image, self.facing_left, False)
