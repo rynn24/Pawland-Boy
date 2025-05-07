@@ -431,14 +431,14 @@ class Player:
 
         # No need to scale unless needed
         # If too small visually, you can still scale like this:
-        scale_factor = 1
+        scale_factor = 2
         scaled_frame = pygame.transform.scale(current_frame, (
             current_frame.get_width() * scale_factor,
             current_frame.get_height() * scale_factor
         ))
 
         x = (surface.get_width() - scaled_frame.get_width()) // 2
-        y = surface.get_height() - scaled_frame.get_height() - 10
+        y = surface.get_height() - scaled_frame.get_height() + 60
         surface.blit(scaled_frame, (x, y))
 
         # HP number
