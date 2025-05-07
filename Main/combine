@@ -6,68 +6,6 @@ import random
 import time
 import json
 
-
-class PondArea:
-    def __init__(self, center, radius_x, radius_y, spritesheet_path, rows, cols, detection_scale=1.5):
-        self.center = center
-        self.visual_radius_x = radius_x
-        self.visual_radius_y = radius_y
-        self.detection_radius_x = radius_x * detection_scale
-        self.detection_radius_y = radius_y * detection_scale
-
-        self.rect = pygame.Rect(
-            center[0] - self.visual_radius_x,
-            center[1] - self.visual_radius_y,
-            self.visual_radius_x * 2,
-            self.visual_radius_y * 2
-        )
-
-        self.spritesheet = pygame.image.load(spritesheet_path).convert_alpha()
-        self.rows = rows
-        self.cols = cols
-        self.frames = self.load_frames()
-        self.current_frame = 0
-        self.frame_delay = 100  # milliseconds
-        self.last_update = pygame.time.get_ticks()
-        self.show_animation = False
-
-    def load_frames(self):
-        frame_width = self.spritesheet.get_width() // self.cols
-        frame_height = self.spritesheet.get_height() // self.rows
-        frames = []
-        for row in range(self.rows):
-            for col in range(self.cols):
-                frame = self.spritesheet.subsurface(
-                    pygame.Rect(col * frame_width, row * frame_height, frame_width, frame_height)
-                )
-                frames.append(frame)
-        return frames
-
-    def is_player_inside(self, player_pos):
-        dx = (player_pos[0] - self.center[0]) / self.detection_radius_x
-        dy = (player_pos[1] - self.center[1]) / self.detection_radius_y
-        return dx * dx + dy * dy <= 1
-
-    def update(self, player_pos, keys):
-        if self.is_player_inside(player_pos) and keys[pygame.K_j]:
-            self.show_animation = True
-            self.current_frame = 0
-
-        if self.show_animation:
-            now = pygame.time.get_ticks()
-            if now - self.last_update > self.frame_delay:
-                self.current_frame += 1
-                self.last_update = now
-                if self.current_frame >= len(self.frames):
-                    self.current_frame = 0
-                    self.show_animation = False
-
-    def draw(self, screen):
-        if self.show_animation:
-            frame = self.frames[self.current_frame]
-            scaled_frame = pygame.transform.scale(frame, screen.get_size())
-            screen.blit(scaled_frame, (0, 0))
-
 # Initialize
 pygame.init()
 window_size = (620, 480)
@@ -91,16 +29,6 @@ camera = pygame.Rect(0, 0, camera_width, camera_height)
 zoom_surface = pygame.Surface((camera_width, camera_height))
 player_position = pygame.Vector2(1500, 125)
 speed = 2
-
-pond = PondArea(
-    center=(1554, 585),
-    radius_x=165,
-    radius_y=162,
-    spritesheet_path="rynn/fishing-sprite.png",  
-    rows=1,  
-    cols=13,
-    detection_scale=1.5  
-)
 
 # Player restricted area
 restricted_zones = [
@@ -564,20 +492,6 @@ class Player:
             scaled_frame = pygame.transform.scale(frame, screen.get_size())
             screen.blit(scaled_frame, (0, 0))
 
-class PondArea:
-    def __init__(self, center, radius_x, radius_y, spritesheet_path, rows, cols, detection_scale=1.5):
-        self.center = center
-        self.visual_radius_x = radius_x
-        self.visual_radius_y = radius_y
-        self.detection_radius_x = radius_x * detection_scale
-        self.detection_radius_y = radius_y * detection_scale
-
-        self.rect = pygame.Rect(
-            center[0] - self.visual_radius_x,
-            center[1] - self.visual_radius_y,
-            self.visual_radius_x * 2,
-            self.visual_radius_y * 2
-        )
 class Tree:
     def __init__(self, position, frames):
         self.position = pygame.Vector2(position)
@@ -626,6 +540,39 @@ class Tree:
         pos_on_surface = self.position - pygame.Vector2(camera.topleft)
         surface.blit(self.frames[self.index], pos_on_surface)
 
+# Regular trees (wood only)
+tree_sheet = pygame.image.load("rynn/tree-new.png").convert_alpha()
+tree_frames = load_frames(tree_sheet, 100, 100, 0, 7, spacing=5)
+trees = []
+for _ in range(20):
+    valid_position = False
+    attempts = 0
+    while not valid_position and attempts < 100:  # Try 100 times max
+        x = random.randint(0, map_image.get_width() - 100)
+        y = random.randint(0, map_image.get_height() - 100)
+        tree_center = (x + 50, y + 50)  # Check the tree's center point
+        if is_valid_tree_position(tree_center, tree_restricted_zones):
+            trees.append(Tree((x, y), tree_frames))
+            valid_position = True
+        attempts += 1
+
+# Fruit trees (wood + fruit)
+tree_sheet_2 = pygame.image.load("rynn/tree-fruit.png").convert_alpha()
+tree_frames_2 = load_frames(tree_sheet_2, 100, 100, 0, 7, spacing=5)
+trees_2 = []
+for _ in range(20):
+    valid_position = False
+    attempts = 0
+    while not valid_position and attempts < 100:
+        x = random.randint(0, map_image.get_width() - 100)
+        y = random.randint(0, map_image.get_height() - 100)
+        tree_center = (x + 50, y + 50)
+        if is_valid_tree_position(tree_center, tree_restricted_zones):
+            trees_2.append(Tree((x, y), tree_frames_2))
+            valid_position = True
+        attempts += 1
+
+player_instance = Player(player_position, speed)
 class Zombie(pygame.sprite.Sprite):
     def __init__(self, x, y, player):
         super().__init__()
@@ -1026,40 +973,77 @@ class Boss(pygame.sprite.Sprite):
             y = self.rect.top - 15
         pygame.draw.rect(surface, (255, 0, 0), (x, y, bar_width, bar_height))
         pygame.draw.rect(surface, (0, 255, 0), (x, y, fill, bar_height))
-        
-# Regular trees (wood only)
-tree_sheet = pygame.image.load("rynn/tree-new.png").convert_alpha()
-tree_frames = load_frames(tree_sheet, 100, 100, 0, 7, spacing=5)
-trees = []
-for _ in range(20):
-    valid_position = False
-    attempts = 0
-    while not valid_position and attempts < 100:  # Try 100 times max
-        x = random.randint(0, map_image.get_width() - 100)
-        y = random.randint(0, map_image.get_height() - 100)
-        tree_center = (x + 50, y + 50)  # Check the tree's center point
-        if is_valid_tree_position(tree_center, tree_restricted_zones):
-            trees.append(Tree((x, y), tree_frames))
-            valid_position = True
-        attempts += 1
 
-# Fruit trees (wood + fruit)
-tree_sheet_2 = pygame.image.load("rynn/tree-fruit.png").convert_alpha()
-tree_frames_2 = load_frames(tree_sheet_2, 100, 100, 0, 7, spacing=5)
-trees_2 = []
-for _ in range(20):
-    valid_position = False
-    attempts = 0
-    while not valid_position and attempts < 100:
-        x = random.randint(0, map_image.get_width() - 100)
-        y = random.randint(0, map_image.get_height() - 100)
-        tree_center = (x + 50, y + 50)
-        if is_valid_tree_position(tree_center, tree_restricted_zones):
-            trees_2.append(Tree((x, y), tree_frames_2))
-            valid_position = True
-        attempts += 1
+class PondArea:
+    def __init__(self, center, radius_x, radius_y, spritesheet_path, rows, cols, detection_scale=1.5):
+        self.center = center
+        self.visual_radius_x = radius_x
+        self.visual_radius_y = radius_y
+        self.detection_radius_x = radius_x * detection_scale
+        self.detection_radius_y = radius_y * detection_scale
 
-player_instance = Player(player_position, speed)
+        self.rect = pygame.Rect(
+            center[0] - self.visual_radius_x,
+            center[1] - self.visual_radius_y,
+            self.visual_radius_x * 2,
+            self.visual_radius_y * 2
+        )
+
+        self.spritesheet = pygame.image.load(spritesheet_path).convert_alpha()
+        self.rows = rows
+        self.cols = cols
+        self.frames = self.load_frames()
+        self.current_frame = 0
+        self.frame_delay = 100  # milliseconds
+        self.last_update = pygame.time.get_ticks()
+        self.show_animation = False
+
+    def load_frames(self):
+        frame_width = self.spritesheet.get_width() // self.cols
+        frame_height = self.spritesheet.get_height() // self.rows
+        frames = []
+        for row in range(self.rows):
+            for col in range(self.cols):
+                frame = self.spritesheet.subsurface(
+                    pygame.Rect(col * frame_width, row * frame_height, frame_width, frame_height)
+                )
+                frames.append(frame)
+        return frames
+
+    def is_player_inside(self, player_pos):
+        dx = (player_pos[0] - self.center[0]) / self.detection_radius_x
+        dy = (player_pos[1] - self.center[1]) / self.detection_radius_y
+        return dx * dx + dy * dy <= 1
+
+    def update(self, player_pos, keys):
+        if self.is_player_inside(player_pos) and keys[pygame.K_j]:
+            self.show_animation = True
+            self.current_frame = 0
+
+        if self.show_animation:
+            now = pygame.time.get_ticks()
+            if now - self.last_update > self.frame_delay:
+                self.current_frame += 1
+                self.last_update = now
+                if self.current_frame >= len(self.frames):
+                    self.current_frame = 0
+                    self.show_animation = False
+
+    def draw(self, screen):
+        if self.show_animation:
+            frame = self.frames[self.current_frame]
+            scaled_frame = pygame.transform.scale(frame, screen.get_size())
+            screen.blit(scaled_frame, (0, 0))
+            
+pond = PondArea(
+    center=(1554, 585),
+    radius_x=165,
+    radius_y=162,
+    spritesheet_path="rynn/fishing-sprite.png",  
+    rows=1,  
+    cols=13,
+    detection_scale=1.5  
+)        
 
 # Sprite groups
 all_sprites = pygame.sprite.Group()
