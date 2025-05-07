@@ -502,14 +502,6 @@ class Player:
         x = (surface.get_width() - bar_width) // 2
         y = surface.get_height() - bar_height - 10  # Bottom of screen
 
-        # Clamp health value between 0 and 100
-        current_health = max(0, min(self.health, 100))
-        fill = (current_health / 100) * bar_width
-
-        # Draw health bar with rounded corners and border
-        pygame.draw.rect(surface, (255, 0, 0), (x, y, bar_width, bar_height), border_radius=10)  # Background
-        pygame.draw.rect(surface, (0, 255, 0), (x, y, fill, bar_height), border_radius=10)       # Fill
-        pygame.draw.rect(surface, (0, 0, 0), (x, y, bar_width, bar_height), 2, border_radius=10) # Border
 
         # Round to nearest 10
         hp_level = max(0, min(100, int(round(self.health / 10) * 10)))
@@ -534,14 +526,6 @@ class Player:
         surface.blit(health_text, (text_x, text_y))
 
         # Load sprite sheet
-        self.spritesheet = pygame.image.load(spritesheet_path).convert_alpha()
-        self.rows = rows
-        self.cols = cols
-        self.frames = self.load_frames()
-        self.current_frame = 0
-        self.frame_delay = 100  # milliseconds
-        self.last_update = pygame.time.get_ticks()
-        self.show_animation = False
 
     def load_frames(self):
         frame_width = self.spritesheet.get_width() // self.cols
