@@ -634,7 +634,6 @@ for _ in range(20):
             valid_position = True
         attempts += 1
 
-player_instance = Player(player_position, speed)
 class Zombie(pygame.sprite.Sprite):
     def __init__(self, x, y, player):
         super().__init__()
