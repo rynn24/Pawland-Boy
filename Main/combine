@@ -547,7 +547,6 @@ class Player:
             scaled_frame = pygame.transform.scale(frame, screen.get_size())
             screen.blit(scaled_frame, (0, 0))
 user_system = UserSystem()  # Create UserSystem instance
-current_user = user_system.current_user 
 current_user = login_menu()  # Get current user (should return a string)
 player_position = (400, 300)  # Or wherever your player starts
 speed = 5  # Adjust as needed
