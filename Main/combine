@@ -507,14 +507,14 @@ class Zombie(pygame.sprite.Sprite):
         self.position = pygame.Vector2(x, y)  # Add Vector2 position tracking
         self.player = player
         self.speed = 1.5
-        self.attack_range = 32
+        self.attack_range = 30
         self.attack_damage = 10
         self.last_attack_time = 0
         self.attack_cooldown = 1
         self.attack_windup_time = 0.3
         self.windup_start_time = None
-        self.hp = 200
-        self.max_hp = 200
+        self.hp = 100
+        self.max_hp = 100
         self.is_moving = False
         self.facing_left = False
 
@@ -536,7 +536,7 @@ class Zombie(pygame.sprite.Sprite):
         self.is_dead = False
         self.death_time = 0
         self.death_duration = 1
-        self.chase_range = 100
+        self.chase_range = 90
 
     def update_facing_direction(self):
         self.image = pygame.transform.flip(self.image, self.facing_left, False)
