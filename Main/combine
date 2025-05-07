@@ -50,10 +50,10 @@ tree_restricted_zones = [
         "radius_x": 165,
         "radius_y": 162
     },
-    # Boss area 
+    # Boss & top water area 
     {
         "type": "rect",
-        "rect": pygame.Rect(240, 144, 342, 129)  # x, y, width, height
+        "rect": pygame.Rect(0, 0, 1500, 340)  # x, y, width, height
     }
 ]
 
