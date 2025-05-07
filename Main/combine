@@ -87,6 +87,33 @@ def  login_menu() :
         else:
             print("Invalid choice.") 
 
+        def register_user(self, username, password):
+            if username in self.users:
+                return False, "Username already exists."
+            self.users[username] = {
+                "password": password,
+                "progress": {
+                    "position": [100, 100],
+                    "health": 100,
+                    "inventory": [],
+                    "level": 1,
+                    "zombies_defeated": 0
+                }
+            }
+            self.save_users()
+            return True, "Registration successful."
+
+        def save_progress(self, username, progress_data):
+            if username in self.users:
+                self.users[username]["progress"] = progress_data
+                self.save_users()
+
+        def load_progress(self, username):
+            if username in self.users:
+                return self.users[username].get("progress", {})
+            return {}
+
+
 def scale_sprite(sprite, scale):
     if scale == 1.0:
         return sprite  # No scaling needed
@@ -190,7 +217,12 @@ class UserSystem:
     def register(self, username, password):
         if username in self.users:
             return False  # Username taken
-        self.users[username] = {"password": password}
+        # Store initial player data
+        self.users[username] = {
+            "password": password,
+            "health": 100,  # Initial health
+            "position": [400, 300]  # Initial position (center of screen)
+        }
         self.save_users()
         return True
 
@@ -203,12 +235,34 @@ class UserSystem:
     def logout(self):
         self.current_user = None
 
+    def get_player_data(self, username):
+        # Return stored player data (health, position), or default values if not found
+        user_data = self.users.get(username, {})
+        health = user_data.get("health", 100)  # Default to 100 if no health data found
+        position = user_data.get("position", [400, 300])  # Default to [400, 300] if no position found
+        return health, position
+    
+    def save_progress(self, username, health, position):
+        if username in self.users:
+            self.users[username]["health"] = health
+            self.users[username]["position"] = position
+            self.save_users() 
+
 class Player:
-    def __init__(self, position, speed):
-        self.position = position
-        self.speed = speed
+    def __init__(self, position, speed ,username):
+        self.username = username
+        self.user_system = UserSystem()
+        self.health, self.position = self.user_system.get_player_data(self.username)
+        
+        if self.position is None:
+            self.position = [400, 300]  # Default to starting position if None
+        
+        self.position = pygame.Vector2(self.position[0], self.position[1])
+        self.speed = 5
+        
         self.image = pygame.image.load("minting/character.png").convert_alpha()
-        self.rect = self.image.get_rect(center=(400, 300))
+        self.rect = self.image.get_rect(center=(self.position.x, self.position.y))
+        
         self.direction = 'down'
         self.attacking = False
         self.frame = 0
@@ -221,7 +275,7 @@ class Player:
         self.current_weapon = 'hand'
         self.last_update = pygame.time.get_ticks()
         self.animation_cooldown = 100
-        self.health = 100
+        
         self.current_attack_targets = []
 
         self.weapon_icons = {
@@ -452,6 +506,7 @@ class Player:
         text_x = x + scaled_frame.get_width() + 10
         text_y = y + (scaled_frame.get_height() - health_text.get_height()) // 2
         surface.blit(health_text, (text_x, text_y))
+        
 
         # Load sprite sheet
 
@@ -491,6 +546,13 @@ class Player:
             frame = self.frames[self.current_frame]
             scaled_frame = pygame.transform.scale(frame, screen.get_size())
             screen.blit(scaled_frame, (0, 0))
+user_system = UserSystem()  # Create UserSystem instance
+current_user = login_menu()  # Get current user (should return a string)
+player_position = (400, 300)  # Or wherever your player starts
+speed = 5  # Adjust as needed
+
+player_instance = Player(player_position, speed, current_user)  # Create Player instance
+
 
 class Tree:
     def __init__(self, position, frames):
@@ -1079,7 +1141,6 @@ zombie_spawn_zones = [
     pygame.Rect(121, 1221, 1235, 133),  # zone 1
 ]
 
-current_user = login_menu()
 
 # Main loop
 running = True
@@ -1089,6 +1150,12 @@ while running:
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
+            # Save progress before exiting
+            progress_data = {
+                "position": [player_instance.position.x, player_instance.position.y],
+                "health": player_instance.health,
+            }
+            user_system.save_progress(user_system.current_user, progress_data["health"], progress_data["position"])
             running = False
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_EQUALS:
@@ -1246,5 +1313,10 @@ while running:
     pygame.display.update()
     pygame.display.flip()
 
+    user_system.save_progress(
+    player_instance.username,
+    player_instance.health,
+    [player_instance.position.x, player_instance.position.y]
+    )
 pygame.quit()
 sys.exit()
