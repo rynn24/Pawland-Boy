@@ -96,10 +96,10 @@ pond = PondArea(
     center=(1554, 585),
     radius_x=165,
     radius_y=162,
-    spritesheet_path="rynn/fishing-sprite.png",  # Use your real path
-    rows=4,  # Set based on your sprite sheet
-    cols=4,
-    detection_scale=1.5  # You can adjust this
+    spritesheet_path="rynn/fishing-sprite.png",  
+    rows=1,  
+    cols=13,
+    detection_scale=1.5  
 )
 
 # Player restricted area
