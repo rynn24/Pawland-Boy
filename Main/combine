@@ -38,6 +38,10 @@ restricted_zones = [
         "center": (1554, 585),
         "radius_x": 165,
         "radius_y": 162
+    },
+        {
+        "type": "rect",
+        "rect": pygame.Rect(753, 0, 440, 275)  # x, y, width, height
     }  
 ] 
 
