@@ -221,7 +221,7 @@ class UserSystem:
         self.users[username] = {
             "password": password,
             "health": 100,  # Initial health
-            "position": [400, 300]  # Initial position (center of screen)
+            "position": [1500,125]  # Initial position (center of screen)
         }
         self.save_users()
         return True
@@ -239,7 +239,7 @@ class UserSystem:
         # Return stored player data (health, position), or default values if not found
         user_data = self.users.get(username, {})
         health = user_data.get("health", 100)  # Default to 100 if no health data found
-        position = user_data.get("position", [400, 300])  # Default to [400, 300] if no position found
+        position = user_data.get("position", [1500,125])  # Default to [400, 300] if no position found
         return health, position
     
     def save_progress(self, username, health, position):
@@ -255,7 +255,7 @@ class Player:
         self.health, self.position = self.user_system.get_player_data(self.username)
         
         if self.position is None:
-            self.position = [400, 300]  # Default to starting position if None
+            self.position = [1500, 125]  # Default to starting position if None
         
         self.position = pygame.Vector2(self.position[0], self.position[1])
         self.speed = 5
@@ -548,9 +548,8 @@ class Player:
             screen.blit(scaled_frame, (0, 0))
 user_system = UserSystem()  # Create UserSystem instance
 current_user = login_menu()  # Get current user (should return a string)
-player_position = (400, 300)  # Or wherever your player starts
 speed = 2.5  # Adjust as needed
-
+player_position = pygame.Vector2(1500, 125)
 player_instance = Player(player_position, speed, current_user)  # Create Player instance
 
 
