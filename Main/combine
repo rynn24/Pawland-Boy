@@ -1246,7 +1246,6 @@ while running:
     keys = pygame.key.get_pressed()
     pond.update(player_instance.rect.center, keys)
    
-# === ADD THE BOSS DRAWING HERE ===
     boss_rect_on_screen = boss.rect.move(-camera.x, -camera.y)
     zoom_surface.blit(boss.image, boss_rect_on_screen)
     boss.draw_health_bar(zoom_surface, camera)  # Pass camera for correct positioning
