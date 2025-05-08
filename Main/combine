@@ -549,7 +549,7 @@ class Player:
 user_system = UserSystem()  # Create UserSystem instance
 current_user = login_menu()  # Get current user (should return a string)
 player_position = (400, 300)  # Or wherever your player starts
-speed = 5  # Adjust as needed
+speed = 2.5  # Adjust as needed
 
 player_instance = Player(player_position, speed, current_user)  # Create Player instance
 
