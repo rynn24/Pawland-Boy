@@ -66,22 +66,20 @@ def  login_menu() :
 
     while True:
         print("=== Welcome to Pawland Boy ===")
-        print("1. Register")
-        print("2. Login")
+        print("1. Open new profile")
+        print("2. Enter profile")
         print("3. Quit")
         choice = input("Choose an option: ")
 
         if choice == "1":
             username = input("New Username: ")
-            password = input("New Password: ")
-            if user_system.register(username, password):
-                print("Registration successful!")
+            if user_system.register(username):
+                print("Successfully create new profile!")
             else:
                 print("Username already exists.")
         elif choice == "2":
-            username = input("Username: ")
-            password = input("Password: ")
-            if user_system.login(username, password):
+            username = input("Enter username: ")
+            if user_system.login(username):
                 print(f"Welcome back, {username}!")
                 return username  # Return to game loop
             else:
@@ -95,7 +93,6 @@ def  login_menu() :
             if username in self.users:
                 return False, "Username already exists."
             self.users[username] = {
-                "password": password,
                 "progress": {
                     "position": [100, 100],
                     "health": 100,
@@ -203,7 +200,7 @@ boss_die_frames = load_frames_from_sheet("haojun/image/boss die.png", 76, 76, 1,
 boss_ult_frames = load_frames_from_sheet("haojun/image/boss ult.png", 76, 76, 1, 6)[0]
 
 class UserSystem:
-    def __init__(self, filename="users.json"):
+    def __init__(self, filename="profile.json"):
         self.filename = filename
         self.users = self.load_users()
         self.current_user = None
@@ -218,20 +215,19 @@ class UserSystem:
         with open(self.filename, "w") as f:
             json.dump(self.users, f)
 
-    def register(self, username, password):
+    def register(self, username):
         if username in self.users:
             return False  # Username taken
         # Store initial player data
         self.users[username] = {
-            "password": password,
             "health": 100,  # Initial health
             "position": [1500,125]  # Initial position (center of screen)
         }
         self.save_users()
         return True
 
-    def login(self, username, password):
-        if username in self.users and self.users[username]["password"] == password:
+    def login(self, username):
+        if username in self.users :
             self.current_user = username
             return True
         return False
