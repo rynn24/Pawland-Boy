@@ -1020,6 +1020,12 @@ class PondArea:
         return dx * dx + dy * dy <= 1
 
     def update(self, player_pos, keys):
+        self.player_nearby = self.is_player_inside(player_position)
+
+        if self.player_nearby and keys[pygame.K_j]:
+            self.show_animation = True
+            self.current_frame = 0
+
         if self.is_player_inside(player_pos) and keys[pygame.K_j]:
             self.show_animation = True
             self.current_frame = 0
@@ -1033,7 +1039,22 @@ class PondArea:
                     self.current_frame = 0
                     self.show_animation = False
 
-    def draw(self, screen):
+    def draw(self, screen, font, player_postion):
+        if self.show_animation:
+            frame = self.frames[self.current_frame]
+            scaled_frame = pygame.transform.scale(frame, screen.get_size())
+            screen.blit(scaled_frame, (0, 0))
+            
+        # Draw "Press J to fish" prompt
+        if getattr(self, 'player_nearby', False) and not self.show_animation:
+            text = font.render("Press J to fish", True, (255, 255, 255))
+            # Apply camera offset
+            screen_x = player_position[0] - camera_offset[0]
+            screen_y = player_position[1] - camera_offset[1] - 40  # Slightly above the player
+            text_rect = text.get_rect(center=(screen_x, screen_y))
+            screen.blit(text, text_rect)
+
+        
         if self.show_animation:
             frame = self.frames[self.current_frame]
             scaled_frame = pygame.transform.scale(frame, screen.get_size())
@@ -1245,7 +1266,9 @@ while running:
     screen.blit(icon_scaled, (weapon_box.x + 10, weapon_box.y + 10))
     
     #Draw pond
-    pond.draw(screen)
+    pond.update(player_position, keys)
+    camera_offset = (camera.x, camera.y)
+    pond.draw(screen, font, player_position)
 
     pygame.display.update()
     pygame.display.flip()
