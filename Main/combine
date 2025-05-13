@@ -11,6 +11,7 @@ pygame.init()
 window_size = (620, 480)
 is_fullscreen = False
 screen = pygame.display.set_mode(window_size)
+overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
 pygame.display.set_caption("Pawland Boy")
 clock = pygame.time.Clock()
 
@@ -156,9 +157,10 @@ def is_valid_tree_position(pos, restricted_zones):
     return True  
 
 # Day-night cycle
-overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
+cycle_duration = 60  # 60 seconds total for one full cycle
+day_duration = cycle_duration * 0.66  # 66% day → 39.6 seconds
+night_duration = cycle_duration * 0.34  # 34% night → 20.4 seconds
 time_counter = 0
-cycle_speed = (2 * math.pi) / 30
 
 # Minimap settings
 minimap_radius = 60
@@ -1093,19 +1095,25 @@ class PondArea:
                     self.current_frame = 0
                     self.show_animation = False
 
-    def draw(self, screen):
+    def draw(self, screen, player_position, font):
         if self.show_animation:
             frame = self.frames[self.current_frame]
             scaled_frame = pygame.transform.scale(frame, screen.get_size())
             screen.blit(scaled_frame, (0, 0))
-            
+        # Show "Press J to fish" if player is in detection radius
+        else:
+            if self.is_player_inside(player_position):
+                text_surface = font.render("Press J to fish", True, (255, 255, 255))  # White text
+                text_rect = text_surface.get_rect(center=(screen.get_width() // 2, screen.get_height() - 100))
+                screen.blit(text_surface, text_rect) 
+               
 pond = PondArea(
     center=(1554, 585),
     radius_x=165,
     radius_y=162,
-    spritesheet_path="rynn/fishing-sprite.png",  
+    spritesheet_path="rynn/new-fish-sprite.png",  
     rows=1,  
-    cols=13,
+    cols=17,
     detection_scale=1.1  
 )        
 
@@ -1290,9 +1298,21 @@ while running:
     screen.blit(masked_minimap, (minimap_pos[0] - minimap_radius, minimap_pos[1] - minimap_radius))
     relative_x = (player_position.x - mini_camera.left) / mini_camera.width * (minimap_radius * 2)
     relative_y = (player_position.y - mini_camera.top) / mini_camera.height * (minimap_radius * 2)
-        
-    time_counter += cycle_speed * dt
-    alpha = int((math.sin(time_counter) + 1) / 2 * 180)
+    
+    # Day-night cycle (NEW day 66% night 33%)    
+    cycle_duration = 60  # full cycle in seconds
+    day_duration = cycle_duration * 0.66  # ~39.6s
+    night_duration = cycle_duration * 0.34  # ~20.4s
+
+    time_counter += dt
+    cycle_time = time_counter % cycle_duration
+    if cycle_time < day_duration:
+        alpha = 0  # Full daylight
+    else:
+        # Night fade-in from 0 to 180 alpha over night_duration
+        night_progress = (cycle_time - day_duration) / night_duration
+        alpha = int(night_progress * 180)
+
     overlay.fill((0, 0, 50, alpha))
     screen.blit(overlay, (0, 0))
 
@@ -1310,7 +1330,7 @@ while running:
     screen.blit(icon_scaled, (weapon_box.x + 10, weapon_box.y + 10))
     
     #Draw pond
-    pond.draw(screen)
+    pond.draw(screen, player_position, font)
 
     pygame.display.update()
     pygame.display.flip()
