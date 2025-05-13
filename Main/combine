@@ -255,6 +255,8 @@ class UserSystem:
             self.users[username]["health"] = health
             self.users[username]["position"] = position
             self.save_users() 
+user_system = UserSystem()
+game_state = "login" 
 
 class TextInputBox:
     def __init__(self, x, y, w, h, font, placeholder=''):
@@ -1328,7 +1330,6 @@ while running:
             }
             user_system.save_progress(user_system.current_user, progress_data["health"], progress_data["position"])
             running = False
-        
         
         # Handle ESC key to toggle settings
         if event.type == pygame.KEYDOWN:
