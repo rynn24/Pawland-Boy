@@ -1193,7 +1193,18 @@ class PondArea:
         self.frame_delay = 100  # milliseconds
         self.last_update = pygame.time.get_ticks()
         self.show_animation = False
+        # rewards
+        self.result_display_time = 3000  # milliseconds to show result
+        self.result_start_time = 0
+        self.fishing_result = None  # None means nothing to show
 
+        self.rewards = [
+            {"message": "You got a fish!", "image": pygame.image.load("rynn/fish_1.png").convert_alpha(), "chance": 0.4},
+            {"message": "You got a fish!", "image": pygame.image.load("rynn/fish_2.png").convert_alpha(), "chance": 0.3},
+            {"message": "You got nothing...", "image": pygame.image.load("rynn/nothing.png").convert_alpha(), "chance": 0.25},
+            {"message": "Congratulations! You got a rare item!", "image": pygame.image.load("rynn/crystal.png").convert_alpha(), "chance": 0.05}
+        ]
+        
     def load_frames(self):
         frame_width = self.spritesheet.get_width() // self.cols
         frame_height = self.spritesheet.get_height() // self.rows
@@ -1224,7 +1235,15 @@ class PondArea:
                 if self.current_frame >= len(self.frames):
                     self.current_frame = 0
                     self.show_animation = False
+                    self.choose_fishing_result()
 
+    def choose_fishing_result(self):
+        weights = [r["chance"] for r in self.rewards]
+        result = random.choices(self.rewards, weights=weights, k=1)[0]
+        self.fishing_result = result
+        self.result_start_time = pygame.time.get_ticks()
+
+                    
     def draw(self, screen, player_position, font):
         if self.show_animation:
             frame = self.frames[self.current_frame]
@@ -1236,6 +1255,22 @@ class PondArea:
                 text_surface = font.render("Press J to fish", True, (255, 255, 255))  # White text
                 text_rect = text_surface.get_rect(center=(screen.get_width() // 2, screen.get_height() - 100))
                 screen.blit(text_surface, text_rect)
+         # Display fishing result if active
+        if self.fishing_result:
+            now = pygame.time.get_ticks()
+            if now - self.result_start_time < self.result_display_time:
+                # Draw the result image at the center
+                image = self.fishing_result["image"]
+                image_rect = image.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2 - 50))
+                screen.blit(image, image_rect)
+
+                # Draw the result message below the image
+                text_surface = font.render(self.fishing_result["message"], True, (255, 255, 255))
+                text_rect = text_surface.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2 + 100))
+                screen.blit(text_surface, text_rect)
+            else:
+                self.fishing_result = None  # Clear result after time is up
+                    
      # Update sprite sheet based on day or night
     def update_time_of_day(self, is_daytime):
         if is_daytime:
