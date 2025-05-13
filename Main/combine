@@ -11,6 +11,7 @@ pygame.init()
 window_size = (620, 480)
 is_fullscreen = False
 screen = pygame.display.set_mode(window_size)
+overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
 pygame.display.set_caption("Pawland Boy")
 clock = pygame.time.Clock()
 
@@ -160,9 +161,10 @@ def is_valid_tree_position(pos, restricted_zones):
     return True  
 
 # Day-night cycle
-overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
+cycle_duration = 60  # 60 seconds total for one full cycle
+day_duration = cycle_duration * 0.66  # 66% day → 39.6 seconds
+night_duration = cycle_duration * 0.34  # 34% night → 20.4 seconds
 time_counter = 0
-cycle_speed = (2 * math.pi) / 30
 
 # Minimap settings
 minimap_radius = 60
@@ -255,43 +257,7 @@ class UserSystem:
             self.users[username]["health"] = health
             self.users[username]["position"] = position
             self.save_users() 
-user_system = UserSystem()
-game_state = "login" 
 
-class TextInputBox:
-    def __init__(self, x, y, w, h, font, placeholder=''):
-        self.rect = pygame.Rect(x, y, w, h)
-        self.color_inactive = (180, 180, 180)
-        self.color_active = (255, 255, 255)
-        self.color = self.color_inactive
-        self.text = ''
-        self.font = font
-        self.placeholder = placeholder
-        self.active = False
-
-    def handle_event(self, event):
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            # Toggle active state
-            self.active = self.rect.collidepoint(event.pos)
-            self.color = self.color_active if self.active else self.color_inactive
-
-        if event.type == pygame.KEYDOWN:
-            if self.active:
-                if event.key == pygame.K_RETURN:
-                    pass
-                elif event.key == pygame.K_BACKSPACE:
-                    self.text = self.text[:-1]
-                else:
-                    self.text += event.unicode
-
-    def draw(self, screen):
-        txt_surface = self.font.render(self.text or self.placeholder, True, self.color)
-        screen.blit(txt_surface, (self.rect.x + 5, self.rect.y + 5))
-        pygame.draw.rect(screen, self.color, self.rect, 2)
-
-    def get_text(self):
-        return self.text
-    
 class SettingsMenu:
     def __init__(self):
         self.visible = False
@@ -714,6 +680,7 @@ current_user = login_menu()  # Get current user (should return a string)
 speed = 2.5  # Adjust as needed
 player_position = pygame.Vector2(1500, 125)
 player_instance = Player(player_position, speed, current_user)  # Create Player instance
+game_state="login"
 
 
 class Tree:
@@ -1197,8 +1164,9 @@ class Boss(pygame.sprite.Sprite):
         pygame.draw.rect(surface, (255, 0, 0), (x, y, bar_width, bar_height))
         pygame.draw.rect(surface, (0, 255, 0), (x, y, fill, bar_height))
 
+# Fishing
 class PondArea:
-    def __init__(self, center, radius_x, radius_y, spritesheet_path, rows, cols, detection_scale=1.5):
+    def __init__(self, center, radius_x, radius_y, day_spritesheet_path, night_spritesheet_path, rows, cols, detection_scale=1.5):
         self.center = center
         self.visual_radius_x = radius_x
         self.visual_radius_y = radius_y
@@ -1212,7 +1180,12 @@ class PondArea:
             self.visual_radius_y * 2
         )
 
-        self.spritesheet = pygame.image.load(spritesheet_path).convert_alpha()
+        # Load the day and night spritesheets
+        self.day_spritesheet = pygame.image.load(day_spritesheet_path).convert_alpha()
+        self.night_spritesheet = pygame.image.load(night_spritesheet_path).convert_alpha()
+
+        # Use the day sprite sheet by default
+        self.spritesheet = self.day_spritesheet
         self.rows = rows
         self.cols = cols
         self.frames = self.load_frames()
@@ -1252,19 +1225,32 @@ class PondArea:
                     self.current_frame = 0
                     self.show_animation = False
 
-    def draw(self, screen):
+    def draw(self, screen, player_position, font):
         if self.show_animation:
             frame = self.frames[self.current_frame]
             scaled_frame = pygame.transform.scale(frame, screen.get_size())
             screen.blit(scaled_frame, (0, 0))
-            
+        # Show "Press J to fish" if player is in detection radius
+        else:
+            if self.is_player_inside(player_position):
+                text_surface = font.render("Press J to fish", True, (255, 255, 255))  # White text
+                text_rect = text_surface.get_rect(center=(screen.get_width() // 2, screen.get_height() - 100))
+                screen.blit(text_surface, text_rect)
+     # Update sprite sheet based on day or night
+    def update_time_of_day(self, is_daytime):
+        if is_daytime:
+            self.spritesheet = self.day_spritesheet
+        else:
+            self.spritesheet = self.night_spritesheet
+        self.frames = self.load_frames()  # Reload frames for the new spritesheet           
 pond = PondArea(
     center=(1554, 585),
     radius_x=165,
     radius_y=162,
-    spritesheet_path="rynn/fishing-sprite.png",  
+    day_spritesheet_path="rynn/new-fish-sprite.png",
+    night_spritesheet_path="rynn/night-fish-sprite.png",
     rows=1,  
-    cols=13,
+    cols=17,
     detection_scale=1.1  
 )        
 
@@ -1330,7 +1316,6 @@ while running:
             }
             user_system.save_progress(user_system.current_user, progress_data["health"], progress_data["position"])
             running = False
-        
         # Handle ESC key to toggle settings
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
@@ -1340,9 +1325,9 @@ while running:
                 else:
                     game_state = "game"
                     settings_menu.visible = False
-            
-            # Other key handling...
-            elif event.key == pygame.K_EQUALS:
+                    
+        elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_EQUALS:
                 minimap_zoom_factor = min(4.0, minimap_zoom_factor + 0.1)
             elif event.key == pygame.K_MINUS:
                 minimap_zoom_factor = max(0.5, minimap_zoom_factor - 0.1)
@@ -1357,11 +1342,10 @@ while running:
                     screen = pygame.display.set_mode(window_size)
                     character_scale = 1.0  # Normal size
                 overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
-        
         elif event.type == pygame.KEYUP:
             if event.key == pygame.K_SPACE:
                 player_instance.attacking = True
-        
+
         # Pass events to settings menu when it's visible
         if game_state == "settings":
             result = settings_menu.handle_events(event)
@@ -1374,144 +1358,164 @@ while running:
     if game_state == "game":
         # Your existing game update code...
         keys = pygame.key.get_pressed()    
-        new_position, current_sprite = player_instance.move(keys, dt)
-        
-        move_distance = speed * dt * 60
-
-        current_time = time.time()
-        if current_time - last_spawn_time >= spawn_delay and len(zombie_group) < 10:
-            spawn_zombie()
-            last_spawn_time = current_time
-        
-        zombie_group.update()
-        boss.update()
-
-        # Restriction checks and position updates...
-        proposed_position = player_instance.position.copy()
-
-        if keys[pygame.K_w]:  # Up
-            test_pos = proposed_position.copy()
-            test_pos.y -= move_distance
-            test_rect = pygame.Rect(test_pos.x - 20, test_pos.y - 20, 40, 40)
-            if not is_in_restricted_zone(test_rect.center, restricted_zones):
-                proposed_position.y -= move_distance
-                player_instance.direction = 'up'
-        if keys[pygame.K_s]:  # Down
-            test_pos = proposed_position.copy()
-            test_pos.y += move_distance
-            test_rect = pygame.Rect(test_pos.x - 20, test_pos.y - 20, 40, 40)
-            if not is_in_restricted_zone(test_rect.center, restricted_zones):
-                proposed_position.y += move_distance
-                player_instance.direction = 'down'
-        if keys[pygame.K_a]:  # Left
-            test_pos = proposed_position.copy()
-            test_pos.x -= move_distance
-            test_rect = pygame.Rect(test_pos.x - 20, test_pos.y - 20, 40, 40)
-            if not is_in_restricted_zone(test_rect.center, restricted_zones):
-                proposed_position.x -= move_distance
-                player_instance.direction = 'left'
-        if keys[pygame.K_d]:  # Right
-            test_pos = proposed_position.copy()
-            test_pos.x += move_distance
-            test_rect = pygame.Rect(test_pos.x - 20, test_pos.y - 20, 40, 40)
-            if not is_in_restricted_zone(test_rect.center, restricted_zones):
-                proposed_position.x += move_distance
-                player_instance.direction = 'right'
-
-        proposed_position.x = max(0, min(proposed_position.x, map_image.get_width()))
-        proposed_position.y = max(0, min(proposed_position.y, map_image.get_height()))
-
-        player_instance.position = proposed_position
-        player_position = proposed_position
-
-        attack_sprite = player_instance.attack(trees,zombie_group)
-
-        camera.center = player_position
-        camera.clamp_ip(map_image.get_rect())
-
-        zoom_surface.fill((0, 0, 0))
-        zoom_surface.blit(map_image, (0, 0), camera)
-
-        for tree in trees:
-            tree.update(current_time)
-            tree.draw(zoom_surface, camera)
-
-        for zombie in zombie_group:
-            zoom_surface.blit(zombie.image, zombie.rect.move(-camera.x, -camera.y))
-            zombie.draw_health_bar(zoom_surface, camera)
-        
-        keys = pygame.key.get_pressed()
-        pond.update(player_instance.rect.center, keys)
+        new_position, current_sprite = player_instance.move(keys, dt)    
+    keys = pygame.key.get_pressed()    
+    new_position, current_sprite = player_instance.move(keys, dt)
     
+    move_distance = speed * dt * 60
+
+    current_time = time.time()
+    if current_time - last_spawn_time >= spawn_delay and len(zombie_group) < 10:
+        spawn_zombie()
+        last_spawn_time = current_time
+    
+    zombie_group.update()
+    boss.update()  # <-- Add this line to update the boss each frame
+
+    # --- NEW Restriction check per direction ---
+    proposed_position = player_instance.position.copy()
+
+    if keys[pygame.K_w]:  # Up
+        test_pos = proposed_position.copy()
+        test_pos.y -= move_distance
+        test_rect = pygame.Rect(test_pos.x - 20, test_pos.y - 20, 40, 40)
+        if not is_in_restricted_zone(test_rect.center, restricted_zones):
+            proposed_position.y -= move_distance
+            player_instance.direction = 'up'
+    if keys[pygame.K_s]:  # Down
+        test_pos = proposed_position.copy()
+        test_pos.y += move_distance
+        test_rect = pygame.Rect(test_pos.x - 20, test_pos.y - 20, 40, 40)
+        if not is_in_restricted_zone(test_rect.center, restricted_zones):
+            proposed_position.y += move_distance
+            player_instance.direction = 'down'
+    if keys[pygame.K_a]:  # Left
+        test_pos = proposed_position.copy()
+        test_pos.x -= move_distance
+        test_rect = pygame.Rect(test_pos.x - 20, test_pos.y - 20, 40, 40)
+        if not is_in_restricted_zone(test_rect.center, restricted_zones):
+            proposed_position.x -= move_distance
+            player_instance.direction = 'left'
+    if keys[pygame.K_d]:  # Right
+        test_pos = proposed_position.copy()
+        test_pos.x += move_distance
+        test_rect = pygame.Rect(test_pos.x - 20, test_pos.y - 20, 40, 40)
+        if not is_in_restricted_zone(test_rect.center, restricted_zones):
+            proposed_position.x += move_distance
+            player_instance.direction = 'right'
+
+    proposed_position.x = max(0, min(proposed_position.x, map_image.get_width()))
+    proposed_position.y = max(0, min(proposed_position.y, map_image.get_height()))
+
+    player_instance.position = proposed_position
+    player_position = proposed_position
+
+    attack_sprite = player_instance.attack(trees,zombie_group)
+
+    camera.center = player_position
+    camera.clamp_ip(map_image.get_rect())
+
+    zoom_surface.fill((0, 0, 0))
+    zoom_surface.blit(map_image, (0, 0), camera)
+
+    for tree in trees:
+        tree.update(current_time)
+        tree.draw(zoom_surface, camera)
+
+    for zombie in zombie_group:
+        zoom_surface.blit(zombie.image, zombie.rect.move(-camera.x, -camera.y))
+        zombie.draw_health_bar(zoom_surface, camera)
+
+    keys = pygame.key.get_pressed()
+    pond.update(player_instance.rect.center, keys)
+   
+    boss_rect_on_screen = boss.rect.move(-camera.x, -camera.y)
+    zoom_surface.blit(boss.image, boss_rect_on_screen)
+    boss.draw_health_bar(zoom_surface, camera)  # Pass camera for correct positioning
+    # In your main game loop's drawing section:
+    if not boss.is_dead or boss.death_index < len(boss.death_images):
         boss_rect_on_screen = boss.rect.move(-camera.x, -camera.y)
         zoom_surface.blit(boss.image, boss_rect_on_screen)
-        boss.draw_health_bar(zoom_surface, camera)
-        
-        if not boss.is_dead or boss.death_index < len(boss.death_images):
-            boss_rect_on_screen = boss.rect.move(-camera.x, -camera.y)
-            zoom_surface.blit(boss.image, boss_rect_on_screen)
-            if not boss.is_dead:
-                boss.draw_health_bar(zoom_surface, camera)
-        
-        for tree in trees_2:
-            tree.update(current_time)
-            tree.draw(zoom_surface, camera)
-
-        zoomed_view = pygame.transform.scale(zoom_surface, screen.get_size())
-        screen.blit(zoomed_view, (0, 0))
-
-        # Draw scaled character
-        sprite_to_draw = attack_sprite if attack_sprite else current_sprite
-        scaled_sprite = scale_sprite(sprite_to_draw, character_scale)
-        sprite_x = screen.get_width() // 2 - scaled_sprite.get_width() // 2
-        sprite_y = screen.get_height() // 2 - scaled_sprite.get_height() // 2
-        screen.blit(scaled_sprite, (sprite_x, sprite_y))
-        player_instance.draw_health_bar(screen)
-
-        minimap_surface = pygame.Surface((minimap_radius * 2, minimap_radius * 2), pygame.SRCALPHA)
-        mini_camera_size = minimap_radius * 2 / minimap_zoom_factor
-        mini_camera = pygame.Rect(0, 0, mini_camera_size, mini_camera_size)
-        mini_camera.center = player_position
-        mini_camera.clamp_ip(map_image.get_rect())
-        mini_view = map_image.subsurface(mini_camera).copy()
-        scaled_mini_view = pygame.transform.scale(mini_view, (minimap_radius * 2, minimap_radius * 2))
-        minimap_surface.blit(scaled_mini_view, (0, 0))
-        masked_minimap = minimap_surface.copy()
-        masked_minimap.blit(minimap_mask, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
-        pygame.draw.circle(masked_minimap, player_minimap_color, (minimap_radius, minimap_radius), 3)
-        pygame.draw.circle(masked_minimap, minimap_border_color, (minimap_radius, minimap_radius), minimap_radius, minimap_border_width)
-        screen.blit(masked_minimap, (minimap_pos[0] - minimap_radius, minimap_pos[1] - minimap_radius))
-        
-        time_counter += cycle_speed * dt
-        alpha = int((math.sin(time_counter) + 1) / 2 * 180)
-        overlay.fill((0, 0, 50, alpha))
-        screen.blit(overlay, (0, 0))
-
-        pos_text = f"X: {int(player_position.x)}  Y: {int(player_position.y)}"
-        text_surface = font.render(pos_text, True, (255, 255, 255))
-        screen.blit(text_surface, (10, screen.get_height() - 30))
-
-        icon = player_instance.weapon_icons[player_instance.current_weapon]
-        icon_scaled = pygame.transform.scale(icon, (60, 60))
-
-        weapon_box = pygame.Rect(screen.get_width() - 100, screen.get_height() - 100, 80, 80)
-        pygame.draw.rect(screen, (30, 30, 30), weapon_box)
-        pygame.draw.rect(screen, (255, 255, 255), weapon_box, 2)
-        screen.blit(icon_scaled, (weapon_box.x + 10, weapon_box.y + 10))
-        
-        pond.draw(screen)
+        if not boss.is_dead:  # Only draw health bar if not dead
+            boss.draw_health_bar(zoom_surface, camera)
     
+    for tree in trees_2:
+        tree.update(current_time)
+        tree.draw(zoom_surface, camera)
+
+    zoomed_view = pygame.transform.scale(zoom_surface, screen.get_size())
+    screen.blit(zoomed_view, (0, 0))
+
+    # Draw scaled character
+    sprite_to_draw = attack_sprite if attack_sprite else current_sprite
+    scaled_sprite = scale_sprite(sprite_to_draw, character_scale)
+    sprite_x = screen.get_width() // 2 - scaled_sprite.get_width() // 2
+    sprite_y = screen.get_height() // 2 - scaled_sprite.get_height() // 2
+    screen.blit(scaled_sprite, (sprite_x, sprite_y))
+    player_instance.draw_health_bar(screen)#player hp bar
+
+    minimap_surface = pygame.Surface((minimap_radius * 2, minimap_radius * 2), pygame.SRCALPHA)
+    mini_camera_size = minimap_radius * 2 / minimap_zoom_factor
+    mini_camera = pygame.Rect(0, 0, mini_camera_size, mini_camera_size)
+    mini_camera.center = player_position
+    mini_camera.clamp_ip(map_image.get_rect())
+    mini_view = map_image.subsurface(mini_camera).copy()
+    scaled_mini_view = pygame.transform.scale(mini_view, (minimap_radius * 2, minimap_radius * 2))
+    minimap_surface.blit(scaled_mini_view, (0, 0))
+    masked_minimap = minimap_surface.copy()
+    masked_minimap.blit(minimap_mask, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
+    pygame.draw.circle(masked_minimap, player_minimap_color, (minimap_radius, minimap_radius), 3)
+    pygame.draw.circle(masked_minimap, minimap_border_color, (minimap_radius, minimap_radius), minimap_radius, minimap_border_width)
+    screen.blit(masked_minimap, (minimap_pos[0] - minimap_radius, minimap_pos[1] - minimap_radius))
+    relative_x = (player_position.x - mini_camera.left) / mini_camera.width * (minimap_radius * 2)
+    relative_y = (player_position.y - mini_camera.top) / mini_camera.height * (minimap_radius * 2)
+    
+    # Day-night cycle (NEW day 66% night 33%)    
+    cycle_duration = 60  # full cycle in seconds
+    day_duration = cycle_duration * 0.66  # ~39.6s
+    night_duration = cycle_duration * 0.34  # ~20.4s
+
+    time_counter += dt
+    cycle_time = time_counter % cycle_duration
+    if cycle_time < day_duration:
+        alpha = 0  # Full daylight (no fade)
+        pond.update_time_of_day(is_daytime=True)  # Set to day for fishing sprite
+    else:
+        # Night fade-in (0 to 180 alpha) during night duration
+        night_progress = (cycle_time - day_duration) / night_duration
+        alpha = int(night_progress * 180)
+        pond.update_time_of_day(is_daytime=False)  # Set to night for fishing sprite
+
+    overlay.fill((0, 0, 50, alpha))
+    screen.blit(overlay, (0, 0))
+
+    pos_text = f"X: {int(player_position.x)}  Y: {int(player_position.y)}"
+    text_surface = font.render(pos_text, True, (255, 255, 255))
+    screen.blit(text_surface, (10, screen.get_height() - 30))
+
+    icon = player_instance.weapon_icons[player_instance.current_weapon]
+    icon_scaled = pygame.transform.scale(icon, (60, 60))
+
+    # Draw a box (bottom-left for example)
+    weapon_box = pygame.Rect(screen.get_width() - 100, screen.get_height() - 100, 80, 80)
+    pygame.draw.rect(screen, (30, 30, 30), weapon_box)  # Dark box
+    pygame.draw.rect(screen, (255, 255, 255), weapon_box, 2)  # White border
+    screen.blit(icon_scaled, (weapon_box.x + 10, weapon_box.y + 10))
+
     # Draw settings menu if visible
     if settings_menu.visible:
         settings_menu.draw(screen)
 
+    #Draw pond
+    pond.draw(screen, player_position, font)
+
+    pygame.display.update()
     pygame.display.flip()
 
     user_system.save_progress(
-        player_instance.username,
-        player_instance.health,
-        [player_instance.position.x, player_instance.position.y]
+    player_instance.username,
+    player_instance.health,
+    [player_instance.position.x, player_instance.position.y]
     )
-
 pygame.quit()
 sys.exit()
