@@ -255,6 +255,41 @@ class UserSystem:
             self.users[username]["health"] = health
             self.users[username]["position"] = position
             self.save_users() 
+
+class TextInputBox:
+    def __init__(self, x, y, w, h, font, placeholder=''):
+        self.rect = pygame.Rect(x, y, w, h)
+        self.color_inactive = (180, 180, 180)
+        self.color_active = (255, 255, 255)
+        self.color = self.color_inactive
+        self.text = ''
+        self.font = font
+        self.placeholder = placeholder
+        self.active = False
+
+    def handle_event(self, event):
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            # Toggle active state
+            self.active = self.rect.collidepoint(event.pos)
+            self.color = self.color_active if self.active else self.color_inactive
+
+        if event.type == pygame.KEYDOWN:
+            if self.active:
+                if event.key == pygame.K_RETURN:
+                    pass
+                elif event.key == pygame.K_BACKSPACE:
+                    self.text = self.text[:-1]
+                else:
+                    self.text += event.unicode
+
+    def draw(self, screen):
+        txt_surface = self.font.render(self.text or self.placeholder, True, self.color)
+        screen.blit(txt_surface, (self.rect.x + 5, self.rect.y + 5))
+        pygame.draw.rect(screen, self.color, self.rect, 2)
+
+    def get_text(self):
+        return self.text
+    
 class SettingsMenu:
     def __init__(self):
         self.visible = False
@@ -1293,6 +1328,7 @@ while running:
             }
             user_system.save_progress(user_system.current_user, progress_data["health"], progress_data["position"])
             running = False
+        
         
         # Handle ESC key to toggle settings
         if event.type == pygame.KEYDOWN:
