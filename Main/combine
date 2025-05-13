@@ -1040,8 +1040,9 @@ class Boss(pygame.sprite.Sprite):
         pygame.draw.rect(surface, (255, 0, 0), (x, y, bar_width, bar_height))
         pygame.draw.rect(surface, (0, 255, 0), (x, y, fill, bar_height))
 
+# Fishing
 class PondArea:
-    def __init__(self, center, radius_x, radius_y, spritesheet_path, rows, cols, detection_scale=1.5):
+    def __init__(self, center, radius_x, radius_y, day_spritesheet_path, night_spritesheet_path, rows, cols, detection_scale=1.5):
         self.center = center
         self.visual_radius_x = radius_x
         self.visual_radius_y = radius_y
@@ -1055,7 +1056,12 @@ class PondArea:
             self.visual_radius_y * 2
         )
 
-        self.spritesheet = pygame.image.load(spritesheet_path).convert_alpha()
+        # Load the day and night spritesheets
+        self.day_spritesheet = pygame.image.load(day_spritesheet_path).convert_alpha()
+        self.night_spritesheet = pygame.image.load(night_spritesheet_path).convert_alpha()
+
+        # Use the day sprite sheet by default
+        self.spritesheet = self.day_spritesheet
         self.rows = rows
         self.cols = cols
         self.frames = self.load_frames()
@@ -1105,13 +1111,20 @@ class PondArea:
             if self.is_player_inside(player_position):
                 text_surface = font.render("Press J to fish", True, (255, 255, 255))  # White text
                 text_rect = text_surface.get_rect(center=(screen.get_width() // 2, screen.get_height() - 100))
-                screen.blit(text_surface, text_rect) 
-               
+                screen.blit(text_surface, text_rect)
+     # Update sprite sheet based on day or night
+    def update_time_of_day(self, is_daytime):
+        if is_daytime:
+            self.spritesheet = self.day_spritesheet
+        else:
+            self.spritesheet = self.night_spritesheet
+        self.frames = self.load_frames()  # Reload frames for the new spritesheet           
 pond = PondArea(
     center=(1554, 585),
     radius_x=165,
     radius_y=162,
-    spritesheet_path="rynn/new-fish-sprite.png",  
+    day_spritesheet_path="rynn/new-fish-sprite.png",
+    night_spritesheet_path="rynn/night-fish-sprite.png",
     rows=1,  
     cols=17,
     detection_scale=1.1  
@@ -1307,11 +1320,13 @@ while running:
     time_counter += dt
     cycle_time = time_counter % cycle_duration
     if cycle_time < day_duration:
-        alpha = 0  # Full daylight
+        alpha = 0  # Full daylight (no fade)
+        pond.update_time_of_day(is_daytime=True)  # Set to day for fishing sprite
     else:
-        # Night fade-in from 0 to 180 alpha over night_duration
+        # Night fade-in (0 to 180 alpha) during night duration
         night_progress = (cycle_time - day_duration) / night_duration
         alpha = int(night_progress * 180)
+        pond.update_time_of_day(is_daytime=False)  # Set to night for fishing sprite
 
     overlay.fill((0, 0, 50, alpha))
     screen.blit(overlay, (0, 0))
