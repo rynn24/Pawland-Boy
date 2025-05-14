@@ -1077,11 +1077,36 @@ class PondArea:
         self.fishing_result = None  # None means nothing to show
 
         self.rewards = [
-            {"message": "You got a fish!", "image": pygame.image.load("rynn/fish_1.png").convert_alpha(), "chance": 0.4},
-            {"message": "You got a fish!", "image": pygame.image.load("rynn/fish_2.png").convert_alpha(), "chance": 0.3},
-            {"message": "You got nothing...", "image": pygame.image.load("rynn/nothing.png").convert_alpha(), "chance": 0.27},
-            {"message": "Congratulations! You got a rare item!", "image": pygame.image.load("rynn/crystal.png").convert_alpha(), "chance": 0.03}
-        ]
+    {
+        "id": "fish_1",
+        "name": "Fish",
+        "message": "You got a fish!",
+        "image": pygame.image.load("rynn/fish_1.png").convert_alpha(),
+        "chance": 0.4
+    },
+    {
+        "id": "fish_2",
+        "name": "Big Fish",
+        "message": "You got a fish!",
+        "image": pygame.image.load("rynn/fish_2.png").convert_alpha(),
+        "chance": 0.3
+    },
+    {
+        "id": "nothing",
+        "name": "Nothing",
+        "message": "You got nothing...",
+        "image": pygame.image.load("rynn/nothing.png").convert_alpha(),
+        "chance": 0.27
+    },
+    {
+        "id": "crystal",
+        "name": "Crystal",
+        "message": "Congratulations! You got a rare item!",
+        "image": pygame.image.load("rynn/crystal.png").convert_alpha(),
+        "chance": 0.03
+    }
+]
+
         
     def load_frames(self):
         frame_width = self.spritesheet.get_width() // self.cols
