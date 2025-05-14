@@ -215,10 +215,20 @@ boss_ult_frames = load_frames_from_sheet("haojun/image/boss ult.png", 76, 76, 1,
 
 class Inventory:
     def __init__(self, max_slots=20):
+        self.items = {}
         self.max_slots = max_slots
-        self.slots = [{'item': None, 'count': 0} for _ in range(self.max_slots)]
+        self.slots = [None] * max_slots  # Initial empty slots
         self.slot_rects = []
         self.font = pygame.font.SysFont("Arial", 20)
+        self.item_icons = {
+                "Wood": pygame.image.load("minting/Wood.png").convert_alpha(),
+                "Fruit": pygame.image.load("minting/Fruit.png").convert_alpha(),
+                "Fish": pygame.image.load("minting/fish_1.png").convert_alpha(),
+                "Big Fish": pygame.image.load("minting/Fish_2.png").convert_alpha(),
+                "Crystal": pygame.image.load("minting/Crystal.png").convert_alpha(),
+                "Boat": pygame.image.load("minting/Boat.png").convert_alpha(),
+                "Firefly": pygame.image.load("minting/Firefly.jpg").convert_alpha(),
+            }
         self.slot_size = 60
         self.slot_margin = 10
         self.is_inventory_open = False  # Track whether inventory is open
@@ -264,13 +274,13 @@ class Inventory:
         """Draw the inventory window and slots"""
         # Draw the visible 5 slots (always on screen)
         for i, rect in enumerate(self.visible_slots_rects):
-            pygame.draw.rect(surface, (200, 200, 200), rect)  # Draw slot box (gray)
+            pygame.draw.rect(surface, (200, 200, 200), rect)
+
             item = self.slots[i]
             if item:
                 name, count = item
-                text = self.font.render(f"{name} x{count}", True, (0, 0, 0))
-                text_rect = text.get_rect(center=rect.center)
-                surface.blit(text, text_rect)
+                self.draw_item_icon(surface, name, count, rect)  # 🎯 Draw icon + count
+
 
         # Draw the inventory window when it is open
         if self.is_inventory_open:
@@ -283,24 +293,58 @@ class Inventory:
                 item = self.slots[self.slot_rects.index(rect)]
                 if item:
                     name, count = item
-                    text = self.font.render(f"{name} x{count}", True, (0, 0, 0))
-                    text_rect = text.get_rect(center=rect.center)
-                    surface.blit(text, text_rect)
+                    self.draw_item_icon(surface, name, count, rect)
 
-    def add_item(self, item_name, count=1):
-        # Combine with existing
+    def add_item(self, name, count):
+        """Add or combine an item into the inventory"""
+
+        # 1. Try to find and combine with existing item of same name
+        for i in range(self.max_slots):
+            item = self.slots[i]
+            if item is not None and item[0] == name:
+                current_name, current_count = item
+                self.slots[i] = (current_name, current_count + count)
+                return True
+
+        # 2. If not found, find an empty slot to insert
+        for i in range(self.max_slots):
+            if self.slots[i] is None:
+                self.slots[i] = (name, count)
+                return True
+
+        # 3. Inventory full
+        return False
+
+    def draw_item_icon(self, surface, name, count, rect):
+        if name in self.item_icons:
+            icon = self.item_icons[name]
+            icon = pygame.transform.smoothscale(icon, (self.slot_size - 10, self.slot_size - 10))  # Auto resize
+            icon_rect = icon.get_rect(center=rect.center)
+            surface.blit(icon, icon_rect)
+
+            # Draw item count
+            count_text = self.font.render(f"x{count}", True, (0, 0, 0))
+            count_rect = count_text.get_rect(bottomright=(rect.right - 4, rect.bottom - 2))
+            surface.blit(count_text, count_rect)
+            
+    def get_inventory_dict(self):
+        """Return inventory as a dictionary for saving purposes."""
+        data = {}
         for slot in self.slots:
-            if slot and slot['item'] == item_name:
-                slot['count'] += count
-                return
+            if slot:
+                item_name, item_count = slot
+                data[item_name] = item_count  # Store just the name and count
+        return data
 
-        # Add to empty slot
-        for slot in self.slots:
-            if slot and slot['item'] is None:
-                slot['item'] = item_name
-                slot['count'] = count
-                return
-
+    
+    def set_items(self, items_dict):
+        """Load saved items into the inventory"""
+        self.slots = [None] * self.max_slots
+        index = 0
+        for name, count in items_dict.items():
+            if index < self.max_slots:
+                self.slots[index] = (name, count)
+                index += 1
 
 
 class UserSystem:
