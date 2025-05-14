@@ -19,7 +19,9 @@ clock = pygame.time.Clock()
 character_scale = 1.0  # Normal size
 fullscreen_scale = 2.0  # Scale factor when in fullscreen
 
+# fonts
 font = pygame.font.SysFont(None, 24)
+reward_font = pygame.font.Font(None, 45) # font for fishing reward
 
 # Load map image
 map_image = pygame.image.load(os.path.join("rynn/Map.png")).convert()
@@ -1301,8 +1303,8 @@ class PondArea:
         self.rewards = [
             {"message": "You got a fish!", "image": pygame.image.load("rynn/fish_1.png").convert_alpha(), "chance": 0.4},
             {"message": "You got a fish!", "image": pygame.image.load("rynn/fish_2.png").convert_alpha(), "chance": 0.3},
-            {"message": "You got nothing...", "image": pygame.image.load("rynn/nothing.png").convert_alpha(), "chance": 0.25},
-            {"message": "Congratulations! You got a rare item!", "image": pygame.image.load("rynn/crystal.png").convert_alpha(), "chance": 0.05}
+            {"message": "You got nothing...", "image": pygame.image.load("rynn/nothing.png").convert_alpha(), "chance": 0.27},
+            {"message": "Congratulations! You got a rare item!", "image": pygame.image.load("rynn/crystal.png").convert_alpha(), "chance": 0.03}
         ]
         
     def load_frames(self):
@@ -1345,7 +1347,7 @@ class PondArea:
         self.result_start_time = pygame.time.get_ticks()
 
                     
-    def draw(self, screen, player_position, font):
+    def draw(self, screen, player_position, font, reward_font):
         if self.show_animation:
             frame = self.frames[self.current_frame]
             scaled_frame = pygame.transform.scale(frame, screen.get_size())
@@ -1356,18 +1358,19 @@ class PondArea:
                 text_surface = font.render("Press J to fish", True, (255, 255, 255))  # White text
                 text_rect = text_surface.get_rect(center=(screen.get_width() // 2, screen.get_height() - 100))
                 screen.blit(text_surface, text_rect)
-         # Display fishing result if active
+        # Update spritesheet based on cycle 
         if self.fishing_result:
             now = pygame.time.get_ticks()
             if now - self.result_start_time < self.result_display_time:
-                # Draw the result image at the center
-                image = self.fishing_result["image"]
-                image_rect = image.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2 - 50))
-                screen.blit(image, image_rect)
+                if "image" in self.fishing_result:
+                    fishing_image = self.fishing_result["image"]
+                    image = pygame.transform.rotozoom(fishing_image, 0, 1.5)
+                    image_rect = image.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2 - 50))
+                    screen.blit(image, image_rect)
 
                 # Draw the result message below the image
-                text_surface = font.render(self.fishing_result["message"], True, (255, 255, 255))
-                text_rect = text_surface.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2 + 100))
+                text_surface = reward_font.render(self.fishing_result["message"], True, (255, 255, 255))
+                text_rect = text_surface.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2 + 70))
                 screen.blit(text_surface, text_rect)
             else:
                 self.fishing_result = None  # Clear result after time is up
@@ -1378,7 +1381,8 @@ class PondArea:
             self.spritesheet = self.day_spritesheet
         else:
             self.spritesheet = self.night_spritesheet
-        self.frames = self.load_frames()  # Reload frames for the new spritesheet           
+        self.frames = self.load_frames()  # Reload frames for the new spritesheet 
+                  
 pond = PondArea(
     center=(1554, 585),
     radius_x=165,
@@ -1387,7 +1391,7 @@ pond = PondArea(
     night_spritesheet_path="rynn/night-fish-sprite.png",
     rows=1,  
     cols=17,
-    detection_scale=1.1  
+    detection_scale=1.1
 )        
 
 # Sprite groups
