@@ -78,12 +78,17 @@ def  login_menu() :
             else:
                 print("Username already exists.")
         elif choice == "2":
+            print("Available profiles:")
+            for profile_name in user_system.users.keys():
+                print(f"- {profile_name}")
+
             username = input("Enter username: ")
-            if user_system.login(username):
-                print(f"Welcome back, {username}!")
-                return username  # Return to game loop
+            if username in user_system.users:
+                user_system.current_user = username
+                print(f"Profile '{username}' loaded.")
+                return username
             else:
-                print("Invalid login.")
+                print("Profile not found.")
         elif choice == "3":
             quit()
         else:
@@ -199,6 +204,96 @@ boss_walk_frames = load_frames_from_sheet("haojun/image/boss walk.png", 76, 76, 
 boss_die_frames = load_frames_from_sheet("haojun/image/boss die.png", 76, 76, 1, 4)[0]
 boss_ult_frames = load_frames_from_sheet("haojun/image/boss ult.png", 76, 76, 1, 6)[0]
 
+class Inventory:
+    def __init__(self, max_slots=20):
+        self.max_slots = max_slots
+        self.slots = [{'item': None, 'count': 0} for _ in range(self.max_slots)]
+        self.slot_rects = []
+        self.font = pygame.font.SysFont("Arial", 20)
+        self.slot_size = 60
+        self.slot_margin = 10
+        self.is_inventory_open = False  # Track whether inventory is open
+
+        # Increase the size of the inventory window for better spacing
+        self.window_width = 5.4 * (self.slot_size + self.slot_margin) + self.slot_margin  # 5 columns of slots + margin
+        self.window_height = 4.4 * (self.slot_size + self.slot_margin) + self.slot_margin  # 4 rows of slots + margin
+        self.window_rect = pygame.Rect(50, 100, self.window_width, self.window_height)  # Position and size of the window (stick to the left)
+        self.window_color = (139, 69, 19)  # Brown color for the window (wood-like)
+
+        # Define positions of the 5 visible slots (always on the screen)
+        self.visible_slots_rects = []
+        self.visible_slots_x = (800 - 5 * (self.slot_size + self.slot_margin)) // 2  # Centered on top
+        self.visible_slots_y = 50  # Start y position for visible slots
+        self.generate_slot_rects()
+
+    def generate_slot_rects(self):
+        """Generate the positions for all the inventory slots"""
+        self.slot_rects = []
+
+        # After the window is positioned on the left, calculate the positions for the slots
+        start_x = self.window_rect.x + 20  # Position slots inside window starting with a margin from the left
+        start_y = self.window_rect.y + 20  # Position slots inside window starting with a margin from the top
+
+        # Calculate the positions for each of the 20 slots (5 columns x 4 rows)
+        for i in range(self.max_slots):
+            x = start_x + (i % 5) * (self.slot_size + self.slot_margin)  # 5 slots per row
+            y = start_y + (i // 5) * (self.slot_size + self.slot_margin)  # Stack 4 rows
+            self.slot_rects.append(pygame.Rect(x, y, self.slot_size, self.slot_size))
+
+        # Define the visible slots (always on the screen)
+        self.visible_slots_rects = []
+        for i in range(5):  # Just 5 visible boxes at the top of the screen
+            x = self.visible_slots_x + (i % 5) * (self.slot_size + self.slot_margin)
+            y = self.visible_slots_y
+            self.visible_slots_rects.append(pygame.Rect(x, y, self.slot_size, self.slot_size))
+
+    def toggle_inventory(self):
+        """Toggle the inventory screen (open/close)"""
+        self.is_inventory_open = not self.is_inventory_open
+
+    def draw(self, surface):
+        """Draw the inventory window and slots"""
+        # Draw the visible 5 slots (always on screen)
+        for i, rect in enumerate(self.visible_slots_rects):
+            pygame.draw.rect(surface, (200, 200, 200), rect)  # Draw slot box (gray)
+            item = self.slots[i]
+            if item:
+                name, count = item
+                text = self.font.render(f"{name} x{count}", True, (0, 0, 0))
+                text_rect = text.get_rect(center=rect.center)
+                surface.blit(text, text_rect)
+
+        # Draw the inventory window when it is open
+        if self.is_inventory_open:
+            # Draw the window background (wooden texture/solid color)
+            pygame.draw.rect(surface, self.window_color, self.window_rect)
+
+            # Draw the slots inside the window
+            for rect in self.slot_rects:
+                pygame.draw.rect(surface, (200, 200, 200), rect)  # Draw slot box (gray)
+                item = self.slots[self.slot_rects.index(rect)]
+                if item:
+                    name, count = item
+                    text = self.font.render(f"{name} x{count}", True, (0, 0, 0))
+                    text_rect = text.get_rect(center=rect.center)
+                    surface.blit(text, text_rect)
+
+    def add_item(self, item_name, count=1):
+        # Combine with existing
+        for slot in self.slots:
+            if slot and slot['item'] == item_name:
+                slot['count'] += count
+                return
+
+        # Add to empty slot
+        for slot in self.slots:
+            if slot and slot['item'] is None:
+                slot['item'] = item_name
+                slot['count'] = count
+                return
+
+
+
 class UserSystem:
     def __init__(self, filename="profile.json"):
         self.filename = filename
@@ -240,6 +335,7 @@ class UserSystem:
         user_data = self.users.get(username, {})
         health = user_data.get("health", 100)  # Default to 100 if no health data found
         position = user_data.get("position", [1500,125])  # Default to [400, 300] if no position found
+        
         return health, position
     
     def save_progress(self, username, health, position):
@@ -295,6 +391,7 @@ class Player:
             'axe': 40,
             'sword': 50
         }
+
 
         # Fixed HP Bar Loading (330x30 sprite sheet with 5 frames)
 
@@ -416,6 +513,11 @@ class Player:
                 for tree in trees + trees_2:
                     if attack_rect.colliderect(tree.get_hitbox()):
                         tree.start_animation()
+                        # Add wood to inventory
+                        inventory.add_item("Wood", 1)
+                        # If it's from trees_2
+                        if tree in trees_2:
+                            inventory.add_item("Fruit", 1)
             
             if self.current_weapon == 'sword':
                 for zombie in zombies:
@@ -587,6 +689,7 @@ class Tree:
             if current_time - self.hold_start_time > self.hold_duration:
                 self.is_holding = False
                 self.index = 0
+
 
     def get_hitbox(self):
         hitbox_height = 20
@@ -1079,6 +1182,7 @@ class PondArea:
         if self.is_player_inside(player_pos) and keys[pygame.K_j]:
             self.show_animation = True
             self.current_frame = 0
+            inventory.add_item("fish", 1)
 
         if self.show_animation:
             now = pygame.time.get_ticks()
@@ -1099,7 +1203,7 @@ pond = PondArea(
     center=(1554, 585),
     radius_x=165,
     radius_y=162,
-    spritesheet_path="rynn/fishing-sprite.png",  
+    spritesheet_path="rynn/fishing-sprite.png", 
     rows=1,  
     cols=13,
     detection_scale=1.1  
@@ -1139,7 +1243,7 @@ zombie_spawn_zones = [
     pygame.Rect(121, 1221, 1235, 133),  # zone 1
 ]
 
-
+inventory = Inventory()
 # Main loop
 running = True
 while running:
@@ -1171,10 +1275,14 @@ while running:
                     screen = pygame.display.set_mode(window_size)
                     character_scale = 1.0  # Normal size
                 overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
+            elif event.key == pygame.K_b:
+                inventory.toggle_inventory()
+
         elif event.type == pygame.KEYUP:
             if event.key == pygame.K_SPACE:
                 player_instance.attacking = True
-    
+        
+
     keys = pygame.key.get_pressed()    
     new_position, current_sprite = player_instance.move(keys, dt)
     
@@ -1238,6 +1346,10 @@ while running:
         tree.update(current_time)
         tree.draw(zoom_surface, camera)
 
+    for tree in trees_2:
+        tree.update(current_time)
+        tree.draw(zoom_surface, camera)
+
     for zombie in zombie_group:
         zoom_surface.blit(zombie.image, zombie.rect.move(-camera.x, -camera.y))
         zombie.draw_health_bar(zoom_surface, camera)
@@ -1255,10 +1367,7 @@ while running:
         zoom_surface.blit(boss.image, boss_rect_on_screen)
         if not boss.is_dead:  # Only draw health bar if not dead
             boss.draw_health_bar(zoom_surface, camera)
-    
-    for tree in trees_2:
-        tree.update(current_time)
-        tree.draw(zoom_surface, camera)
+
 
     zoomed_view = pygame.transform.scale(zoom_surface, screen.get_size())
     screen.blit(zoomed_view, (0, 0))
@@ -1307,6 +1416,9 @@ while running:
     
     #Draw pond
     pond.draw(screen)
+
+    #Draw inventory
+    inventory.draw(screen)
 
     pygame.display.update()
     pygame.display.flip()
