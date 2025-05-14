@@ -11,6 +11,7 @@ pygame.init()
 window_size = (620, 480)
 is_fullscreen = False
 screen = pygame.display.set_mode(window_size)
+overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
 pygame.display.set_caption("Pawland Boy")
 clock = pygame.time.Clock()
 
@@ -18,7 +19,9 @@ clock = pygame.time.Clock()
 character_scale = 1.0  # Normal size
 fullscreen_scale = 2.0  # Scale factor when in fullscreen
 
+# fonts
 font = pygame.font.SysFont(None, 24)
+reward_font = pygame.font.Font(None, 45) # font for fishing reward
 
 # Load map image
 map_image = pygame.image.load(os.path.join("rynn/Map.png")).convert()
@@ -61,8 +64,7 @@ tree_restricted_zones = [
     }
 ]
 
-def  login_menu() :
-    user_system = UserSystem()
+def  login_menu(user_system) :
 
     while True:
         print("=== Welcome to Pawland Boy ===")
@@ -86,6 +88,7 @@ def  login_menu() :
             if username in user_system.users:
                 user_system.current_user = username
                 print(f"Profile '{username}' loaded.")
+                health, position, inventory = user_system.get_player_data(username)
                 return username
             else:
                 print("Profile not found.")
@@ -93,31 +96,6 @@ def  login_menu() :
             quit()
         else:
             print("Invalid choice.") 
-
-        def register_user(self, username, password):
-            if username in self.users:
-                return False, "Username already exists."
-            self.users[username] = {
-                "progress": {
-                    "position": [100, 100],
-                    "health": 100,
-                    "inventory": [],
-                    "level": 1,
-                    "zombies_defeated": 0
-                }
-            }
-            self.save_users()
-            return True, "Registration successful."
-
-        def save_progress(self, username, progress_data):
-            if username in self.users:
-                self.users[username]["progress"] = progress_data
-                self.save_users()
-
-        def load_progress(self, username):
-            if username in self.users:
-                return self.users[username].get("progress", {})
-            return {}
 
 
 def scale_sprite(sprite, scale):
@@ -158,9 +136,11 @@ def is_valid_tree_position(pos, restricted_zones):
     return True  
 
 # Day-night cycle
-overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
+cycle_duration = 60  # 60 seconds total for one full cycle
+day_duration = cycle_duration * 0.66  # 66% day → 39.6 seconds
+night_duration = cycle_duration * 0.34  # 34% night → 20.4 seconds
 time_counter = 0
-cycle_speed = (2 * math.pi) / 30
+
 
 # Minimap settings
 minimap_radius = 60
@@ -204,12 +184,23 @@ boss_walk_frames = load_frames_from_sheet("haojun/image/boss walk.png", 76, 76, 
 boss_die_frames = load_frames_from_sheet("haojun/image/boss die.png", 76, 76, 1, 4)[0]
 boss_ult_frames = load_frames_from_sheet("haojun/image/boss ult.png", 76, 76, 1, 6)[0]
 
+
 class Inventory:
     def __init__(self, max_slots=20):
+        self.items = {}
         self.max_slots = max_slots
-        self.slots = [{'item': None, 'count': 0} for _ in range(self.max_slots)]
+        self.slots = [None] * max_slots  # Initial empty slots
         self.slot_rects = []
         self.font = pygame.font.SysFont("Arial", 20)
+        self.item_icons = {
+                "Wood": pygame.image.load("minting/Wood.png").convert_alpha(),
+                "Fruit": pygame.image.load("minting/Fruit.png").convert_alpha(),
+                "Fish": pygame.image.load("minting/fish_1.png").convert_alpha(),
+                "Big Fish": pygame.image.load("minting/Fish_2.png").convert_alpha(),
+                "Crystal": pygame.image.load("minting/Crystal.png").convert_alpha(),
+                "Boat": pygame.image.load("minting/Boat.png").convert_alpha(),
+                "Firefly": pygame.image.load("minting/Firefly.jpg").convert_alpha(),
+            }
         self.slot_size = 60
         self.slot_margin = 10
         self.is_inventory_open = False  # Track whether inventory is open
@@ -255,13 +246,13 @@ class Inventory:
         """Draw the inventory window and slots"""
         # Draw the visible 5 slots (always on screen)
         for i, rect in enumerate(self.visible_slots_rects):
-            pygame.draw.rect(surface, (200, 200, 200), rect)  # Draw slot box (gray)
+            pygame.draw.rect(surface, (200, 200, 200), rect)
+
             item = self.slots[i]
             if item:
                 name, count = item
-                text = self.font.render(f"{name} x{count}", True, (0, 0, 0))
-                text_rect = text.get_rect(center=rect.center)
-                surface.blit(text, text_rect)
+                self.draw_item_icon(surface, name, count, rect)  # 🎯 Draw icon + count
+
 
         # Draw the inventory window when it is open
         if self.is_inventory_open:
@@ -274,49 +265,111 @@ class Inventory:
                 item = self.slots[self.slot_rects.index(rect)]
                 if item:
                     name, count = item
-                    text = self.font.render(f"{name} x{count}", True, (0, 0, 0))
-                    text_rect = text.get_rect(center=rect.center)
-                    surface.blit(text, text_rect)
+                    self.draw_item_icon(surface, name, count, rect)
 
-    def add_item(self, item_name, count=1):
-        # Combine with existing
+    def add_item(self, name, count):
+        """Add or combine an item into the inventory"""
+
+        # 1. Try to find and combine with existing item of same name
+        for i in range(self.max_slots):
+            item = self.slots[i]
+            if item is not None and item[0] == name:
+                current_name, current_count = item
+                self.slots[i] = (current_name, current_count + count)
+                return True
+
+        # 2. If not found, find an empty slot to insert
+        for i in range(self.max_slots):
+            if self.slots[i] is None:
+                self.slots[i] = (name, count)
+                return True
+
+        # 3. Inventory full
+        return False
+
+    def draw_item_icon(self, surface, name, count, rect):
+        if name in self.item_icons:
+            icon = self.item_icons[name]
+            icon = pygame.transform.smoothscale(icon, (self.slot_size - 10, self.slot_size - 10))  # Auto resize
+            icon_rect = icon.get_rect(center=rect.center)
+            surface.blit(icon, icon_rect)
+
+            # Draw item count
+            count_text = self.font.render(f"x{count}", True, (0, 0, 0))
+            count_rect = count_text.get_rect(bottomright=(rect.right - 4, rect.bottom - 2))
+            surface.blit(count_text, count_rect)
+            
+    def get_inventory_dict(self):
+        """Return inventory as a dictionary for saving purposes."""
+        data = {}
         for slot in self.slots:
-            if slot and slot['item'] == item_name:
-                slot['count'] += count
-                return
+            if slot:
+                item_name, item_count = slot
+                data[item_name] = item_count  # Store just the name and count
+        return data
 
-        # Add to empty slot
-        for slot in self.slots:
-            if slot and slot['item'] is None:
-                slot['item'] = item_name
-                slot['count'] = count
-                return
-
-
-
+    
+    def set_items(self, items_dict):
+        """Load saved items into the inventory"""
+        self.slots = [None] * self.max_slots
+        index = 0
+        for name, count in items_dict.items():
+            if index < self.max_slots:
+                self.slots[index] = (name, count)
+                index += 1
 class UserSystem:
     def __init__(self, filename="profile.json"):
         self.filename = filename
         self.users = self.load_users()
         self.current_user = None
 
+    def save_users(self):
+        try:
+            # Test if the data is serializable
+            json.dumps(self.users)  # This will raise TypeError if anything is unserializable
+            with open(self.filename, "w") as f:
+                json.dump(self.users, f)
+            print("✅ Users saved successfully.")
+        except TypeError as e:
+            print("❌ Serialization error! Non-serializable object found:")
+            print(e)
+
+            import pprint
+            pprint.pprint(self.users)  # Pretty print for easier debugging
+
+            # Optional: show exactly which part failed
+            self.inspect_for_unserializables(self.users)
+
+    def inspect_for_unserializables(self, data, path="root"):
+        if isinstance(data, dict):
+            for key, value in data.items():
+                self.inspect_for_unserializables(value, f"{path}['{key}']")
+        elif isinstance(data, list):
+            for index, item in enumerate(data):
+                self.inspect_for_unserializables(item, f"{path}[{index}]")
+        else:
+            try:
+                json.dumps(data)
+            except TypeError:
+                print(f"❗ Unserializable data at {path}: {type(data)} -> {repr(data)}")
+
+
     def load_users(self):
         if not os.path.exists(self.filename):
             return {}
         with open(self.filename, "r") as f:
             return json.load(f)
-
-    def save_users(self):
-        with open(self.filename, "w") as f:
-            json.dump(self.users, f)
-
+        
     def register(self, username):
         if username in self.users:
             return False  # Username taken
         # Store initial player data
         self.users[username] = {
             "health": 100,  # Initial health
-            "position": [1500,125]  # Initial position (center of screen)
+            "position": [1500,125],  # Initial position (center of screen)
+            "inventory": {
+                "sword": 1,  # Starting item
+            }
         }
         self.save_users()
         return True
@@ -331,31 +384,60 @@ class UserSystem:
         self.current_user = None
 
     def get_player_data(self, username):
-        # Return stored player data (health, position), or default values if not found
-        user_data = self.users.get(username, {})
-        health = user_data.get("health", 100)  # Default to 100 if no health data found
-        position = user_data.get("position", [1500,125])  # Default to [400, 300] if no position found
+        if username not in self.users:
+            print(f"Error: User '{username}' not found in users database!")  # More descriptive error
+            return 100, pygame.Vector2(1500, 125), {}  # Default values, but now you know the user is missing
         
-        return health, position
+        user_data = self.users.get(username, {})
+        health = user_data.get("health", 100)
+        position = user_data.get("position", [1500, 125])
+        inventory = user_data.get("inventory", {})
     
-    def save_progress(self, username, health, position):
+        if isinstance(position, dict):
+            position = [position.get("0", 1500), position.get("1", 125)]
+
+        return health, position, inventory
+
+    def get_inventory_dict(self, username):
+        inventory = self.users[username]["inventory"]
+        inventory_dict = {}
+
+        # Ensure we are iterating correctly based on the inventory structure
+        for item_name, item_data in inventory.items():
+            if isinstance(item_data, tuple) or isinstance(item_data, list):
+                # Handle if the item data is a tuple or list (e.g., item count might be the first element)
+                item_count = item_data[0]  # assuming the first element is the count
+                inventory_dict[item_name] = item_count
+            else:
+                # If it's just a simple count value
+                inventory_dict[item_name] = item_data
+
+        return inventory_dict
+
+    def save_progress(self, username, health, position, inventory_dict):
         if username in self.users:
+            # Ensure position is serializable (convert pygame.Vector2 to list)
+            if isinstance(position, pygame.Vector2):
+                position = [position.x, position.y]  # Convert to list
+            
             self.users[username]["health"] = health
-            self.users[username]["position"] = position
-            self.save_users() 
+            self.users[username]["position"] = position  # Store position as a list
+            self.users[username]["inventory"] = inventory_dict
+            print(f"Updated inventory for {username}: {self.users[username]['inventory']}")  # Debugging line
+            self.save_users()
+
+
 
 class Player:
-    def __init__(self, position, speed ,username):
+    def __init__(self, position, speed, username):
         self.username = username
         self.user_system = UserSystem()
-        self.health, self.position = self.user_system.get_player_data(self.username)
-        
-        if self.position is None:
-            self.position = [1500, 125]  # Default to starting position if None
-        
+        self.health, self.position, self.inventory = self.user_system.get_player_data(self.username)
         self.position = pygame.Vector2(self.position[0], self.position[1])
-        self.speed = 5
-        
+        self.speed = speed 
+        if isinstance(self.position, list) or isinstance(self.position, tuple):
+            self.position = pygame.Vector2(self.position[0], self.position[1])
+
         self.image = pygame.image.load("minting/character.png").convert_alpha()
         self.rect = self.image.get_rect(center=(self.position.x, self.position.y))
         
@@ -511,14 +593,18 @@ class Player:
 
             if self.current_weapon == 'axe':
                 for tree in trees + trees_2:
-                    if attack_rect.colliderect(tree.get_hitbox()):
+                    if attack_rect.colliderect(tree.get_hitbox()) and not tree.was_hit:
                         tree.start_animation()
+                        tree.was_hit = True
                         # Add wood to inventory
                         inventory.add_item("Wood", 1)
+                        
                         # If it's from trees_2
                         if tree in trees_2:
                             inventory.add_item("Fruit", 1)
-            
+
+                        tree.update(pygame.time.get_ticks() / 1000)
+
             if self.current_weapon == 'sword':
                 for zombie in zombies:
                     if attack_rect.colliderect(zombie.rect) and zombie not in self.current_attack_targets:
@@ -649,7 +735,7 @@ class Player:
             scaled_frame = pygame.transform.scale(frame, screen.get_size())
             screen.blit(scaled_frame, (0, 0))
 user_system = UserSystem()  # Create UserSystem instance
-current_user = login_menu()  # Get current user (should return a string)
+current_user = login_menu(user_system)  # Get current user (should return a string)
 speed = 2.5  # Adjust as needed
 player_position = pygame.Vector2(1500, 125)
 player_instance = Player(player_position, speed, current_user)  # Create Player instance
@@ -668,6 +754,11 @@ class Tree:
         self.is_holding = False
         self.frame_width = 100
         self.frame_height = 100
+
+        self.was_hit = False  # To track if the tree has been hit
+        self.hit_timer = 0  # Timer for cooldown
+        self.hit_cooldown = 0.3  # cooldown before tree can be hit again
+
         
     def start_animation(self):
         if not self.animating and not self.is_holding:
@@ -689,6 +780,15 @@ class Tree:
             if current_time - self.hold_start_time > self.hold_duration:
                 self.is_holding = False
                 self.index = 0
+                self.index = 0
+                self.was_hit = False  # reset hit status
+
+
+        if self.was_hit:
+            self.hit_timer += current_time - self.last_update_time
+            if self.hit_timer >= self.hit_cooldown:
+                self.was_hit = False  # Reset after cooldown
+                self.hit_timer = 0  # Reset the timer
 
 
     def get_hitbox(self):
@@ -1137,8 +1237,9 @@ class Boss(pygame.sprite.Sprite):
         pygame.draw.rect(surface, (255, 0, 0), (x, y, bar_width, bar_height))
         pygame.draw.rect(surface, (0, 255, 0), (x, y, fill, bar_height))
 
+# Fishing
 class PondArea:
-    def __init__(self, center, radius_x, radius_y, spritesheet_path, rows, cols, detection_scale=1.5):
+    def __init__(self, center, radius_x, radius_y, day_spritesheet_path, night_spritesheet_path, rows, cols, detection_scale=1.5):
         self.center = center
         self.visual_radius_x = radius_x
         self.visual_radius_y = radius_y
@@ -1152,7 +1253,12 @@ class PondArea:
             self.visual_radius_y * 2
         )
 
-        self.spritesheet = pygame.image.load(spritesheet_path).convert_alpha()
+        # Load the day and night spritesheets
+        self.day_spritesheet = pygame.image.load(day_spritesheet_path).convert_alpha()
+        self.night_spritesheet = pygame.image.load(night_spritesheet_path).convert_alpha()
+
+        # Use the day sprite sheet by default
+        self.spritesheet = self.day_spritesheet
         self.rows = rows
         self.cols = cols
         self.frames = self.load_frames()
@@ -1160,7 +1266,43 @@ class PondArea:
         self.frame_delay = 100  # milliseconds
         self.last_update = pygame.time.get_ticks()
         self.show_animation = False
+        # rewards
+        self.result_display_time = 3000  # milliseconds to show result
+        self.result_start_time = 0
+        self.fishing_result = None  # None means nothing to show
 
+        self.rewards = [
+        {
+                "id": "fish_1",
+                "name": "Fish",
+                "message": "You got a fish!",
+                "image": pygame.image.load("rynn/fish_1.png").convert_alpha(),
+                "chance": 0.4
+            },
+            {
+                "id": "fish_2",
+                "name": "Big Fish",
+                "message": "You got a fish!",
+                "image": pygame.image.load("rynn/fish_2.png").convert_alpha(),
+                "chance": 0.3
+            },
+            {
+                "id": "nothing",
+                "name": "Nothing",
+                "message": "You got nothing...",
+                "image": pygame.image.load("rynn/nothing.png").convert_alpha(),
+                "chance": 0.27
+            },
+            {
+                "id": "crystal",
+                "name": "Crystal",
+                "message": "Congratulations! You got a rare item!",
+                "image": pygame.image.load("rynn/crystal.png").convert_alpha(),
+                "chance": 0.03
+            }
+        ]
+
+        
     def load_frames(self):
         frame_width = self.spritesheet.get_width() // self.cols
         frame_height = self.spritesheet.get_height() // self.rows
@@ -1182,7 +1324,7 @@ class PondArea:
         if self.is_player_inside(player_pos) and keys[pygame.K_j]:
             self.show_animation = True
             self.current_frame = 0
-            inventory.add_item("fish", 1)
+
 
         if self.show_animation:
             now = pygame.time.get_ticks()
@@ -1192,21 +1334,64 @@ class PondArea:
                 if self.current_frame >= len(self.frames):
                     self.current_frame = 0
                     self.show_animation = False
+                    self.choose_fishing_result()
 
-    def draw(self, screen):
+    def choose_fishing_result(self):
+        weights = [r["chance"] for r in self.rewards]
+        result = random.choices(self.rewards, weights=weights, k=1)[0]
+        self.fishing_result = result
+        self.result_start_time = pygame.time.get_ticks()
+
+        if result["id"] != "nothing":
+            inventory.add_item(result["name"], 1)
+
+                    
+    def draw(self, screen, player_position, font, reward_font):
         if self.show_animation:
             frame = self.frames[self.current_frame]
             scaled_frame = pygame.transform.scale(frame, screen.get_size())
             screen.blit(scaled_frame, (0, 0))
-            
+        # Show "Press J to fish" if player is in detection radius
+        else:
+            if self.is_player_inside(player_position):
+                text_surface = font.render("Press J to fish", True, (255, 255, 255))  # White text
+                text_rect = text_surface.get_rect(center=(screen.get_width() // 2, screen.get_height() - 100))
+                screen.blit(text_surface, text_rect)
+        # Update spritesheet based on cycle 
+        if self.fishing_result:
+            now = pygame.time.get_ticks()
+            if now - self.result_start_time < self.result_display_time:
+                if "image" in self.fishing_result:
+                    fishing_image = self.fishing_result["image"]
+                    image = pygame.transform.rotozoom(fishing_image, 0, 1.5)
+                    image_rect = image.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2 - 50))
+                    screen.blit(image, image_rect)
+
+                # Draw the result message below the image
+                text_surface = reward_font.render(self.fishing_result["message"], True, (255, 255, 255))
+                text_rect = text_surface.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2 + 70))
+                screen.blit(text_surface, text_rect)
+            else:
+                self.fishing_result = None  # Clear result after time is up
+                    
+     # Update sprite sheet based on day or night
+    def update_time_of_day(self, is_daytime):
+        if is_daytime:
+            self.spritesheet = self.day_spritesheet
+        else:
+            self.spritesheet = self.night_spritesheet
+        self.frames = self.load_frames()  # Reload frames for the new spritesheet 
+                  
 pond = PondArea(
     center=(1554, 585),
     radius_x=165,
     radius_y=162,
-    spritesheet_path="rynn/fishing-sprite.png", 
+    day_spritesheet_path="rynn/new-fish-sprite.png",
+    night_spritesheet_path="rynn/night-fish-sprite.png",
+
     rows=1,  
-    cols=13,
-    detection_scale=1.1  
+    cols=17,
+    detection_scale=1.1
 )        
 
 # Sprite groups
@@ -1244,6 +1429,7 @@ zombie_spawn_zones = [
 ]
 
 inventory = Inventory()
+
 # Main loop
 running = True
 while running:
@@ -1253,12 +1439,20 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             # Save progress before exiting
+            inventory_dict = inventory.get_inventory_dict()
             progress_data = {
                 "position": [player_instance.position.x, player_instance.position.y],
                 "health": player_instance.health,
+                "inventory":inventory_dict
             }
-            user_system.save_progress(user_system.current_user, progress_data["health"], progress_data["position"])
-            running = False
+            # Save the progress
+            user_system.save_progress(
+                player_instance.username,
+                player_instance.health,
+                [player_instance.position.x, player_instance.position.y],
+                player_instance.inventory
+                )
+            running = False        
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_EQUALS:
                 minimap_zoom_factor = min(4.0, minimap_zoom_factor + 0.1)
@@ -1281,8 +1475,7 @@ while running:
         elif event.type == pygame.KEYUP:
             if event.key == pygame.K_SPACE:
                 player_instance.attacking = True
-        
-
+    
     keys = pygame.key.get_pressed()    
     new_position, current_sprite = player_instance.move(keys, dt)
     
@@ -1367,6 +1560,7 @@ while running:
         zoom_surface.blit(boss.image, boss_rect_on_screen)
         if not boss.is_dead:  # Only draw health bar if not dead
             boss.draw_health_bar(zoom_surface, camera)
+    
 
 
     zoomed_view = pygame.transform.scale(zoom_surface, screen.get_size())
@@ -1395,9 +1589,23 @@ while running:
     screen.blit(masked_minimap, (minimap_pos[0] - minimap_radius, minimap_pos[1] - minimap_radius))
     relative_x = (player_position.x - mini_camera.left) / mini_camera.width * (minimap_radius * 2)
     relative_y = (player_position.y - mini_camera.top) / mini_camera.height * (minimap_radius * 2)
-        
-    time_counter += cycle_speed * dt
-    alpha = int((math.sin(time_counter) + 1) / 2 * 180)
+    
+    # Day-night cycle (NEW day 66% night 33%)    
+    cycle_duration = 60  # full cycle in seconds
+    day_duration = cycle_duration * 0.66  # ~39.6s
+    night_duration = cycle_duration * 0.34  # ~20.4s
+
+    time_counter += dt
+    cycle_time = time_counter % cycle_duration
+    if cycle_time < day_duration:
+        alpha = 0  # Full daylight (no fade)
+        pond.update_time_of_day(is_daytime=True)  # Set to day for fishing sprite
+    else:
+        # Night fade-in (0 to 180 alpha) during night duration
+        night_progress = (cycle_time - day_duration) / night_duration
+        alpha = int(night_progress * 180)
+        pond.update_time_of_day(is_daytime=False)  # Set to night for fishing sprite
+
     overlay.fill((0, 0, 50, alpha))
     screen.blit(overlay, (0, 0))
 
@@ -1415,18 +1623,16 @@ while running:
     screen.blit(icon_scaled, (weapon_box.x + 10, weapon_box.y + 10))
     
     #Draw pond
-    pond.draw(screen)
+    pond.draw(screen, player_position, font, reward_font)
+
 
     #Draw inventory
     inventory.draw(screen)
 
+
     pygame.display.update()
     pygame.display.flip()
 
-    user_system.save_progress(
-    player_instance.username,
-    player_instance.health,
-    [player_instance.position.x, player_instance.position.y]
-    )
+    
 pygame.quit()
 sys.exit()
