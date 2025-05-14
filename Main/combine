@@ -64,6 +64,11 @@ tree_restricted_zones = [
     }
 ]
 
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+GRAY = (100, 100, 100)
+LIGHT_GRAY = (200, 200, 200)
+
 def  login_menu(user_system) :
 
     while True:
@@ -317,6 +322,8 @@ class Inventory:
             if index < self.max_slots:
                 self.slots[index] = (name, count)
                 index += 1
+
+
 class UserSystem:
     def __init__(self, filename="profile.json"):
         self.filename = filename
@@ -428,6 +435,125 @@ class UserSystem:
 
 
 
+class SettingsMenu:
+    def __init__(self):
+        self.visible = False
+        self.buttons = []
+        self.font = pygame.font.SysFont(None, 36)
+        self.small_font = pygame.font.SysFont(None, 24)
+        
+        # Initialize music
+        pygame.mixer.init()
+        try:
+            self.music = pygame.mixer.Sound("haojun/music.mp3")  # Replace with your music file
+            self.music_volume = 0.5  # Default volume (0.0 to 1.0)
+            self.music.play(-1)  # Loop indefinitely
+            self.music.set_volume(self.music_volume)
+        except:
+            self.music = None
+            print("Could not load music file")
+        
+        # Create buttons
+        self.create_buttons()
+    
+    def create_buttons(self):
+        # Quit button
+        quit_button = Button(
+            window_size[0]//2 - 100, window_size[1]//2 + 60,
+            200, 40, "Quit Game",
+            (200, 50, 50), (250, 100, 100), (255, 255, 255)
+        )
+        self.buttons.append(quit_button)
+        
+        # Back button
+        back_button = Button(
+            window_size[0]//2 - 100, window_size[1]//2 + 10,
+            200, 40, "Back to Game",
+            (50, 50, 200), (100, 100, 250), (255, 255, 255)
+        )
+        self.buttons.append(back_button)
+    
+    def handle_events(self, event):
+        mouse_pos = pygame.mouse.get_pos()
+        
+        for button in self.buttons:
+            button.check_hover(mouse_pos)
+            if button.is_clicked(mouse_pos, event):
+                if button.text == "Quit Game":
+                    return "quit"
+                elif button.text == "Back to Game":
+                    self.visible = False
+                    return "back"
+        
+        # Handle volume keys
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_LEFT:
+                self.adjust_volume(-0.1)
+            elif event.key == pygame.K_RIGHT:
+                self.adjust_volume(0.1)
+    
+    def adjust_volume(self, change):
+        self.music_volume = max(0.0, min(1.0, self.music_volume + change))
+        if self.music:
+            self.music.set_volume(self.music_volume)
+    
+    def draw(self, screen):
+        # Darken the background
+        overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 180))
+        screen.blit(overlay, (0, 0))
+        
+        # Draw menu box
+        menu_rect = pygame.Rect(
+            window_size[0]//2 - 200, window_size[1]//2 - 150,
+            400, 300
+        )
+        pygame.draw.rect(screen, (100, 100, 100), menu_rect, border_radius=10)
+        pygame.draw.rect(screen, (255, 255, 255), menu_rect, 2, border_radius=10)
+        
+        # Draw title
+        title = self.font.render("Settings", True, (255, 255, 255))
+        screen.blit(title, (window_size[0]//2 - title.get_width()//2, window_size[1]//2 - 120))
+        
+        # Draw volume controls
+        vol_text = self.font.render(f"Music Volume: {int(self.music_volume * 100)}%", True, (255, 255, 255))
+        screen.blit(vol_text, (window_size[0]//2 - vol_text.get_width()//2, window_size[1]//2 - 60))
+        
+        controls_text = self.small_font.render("Use LEFT/RIGHT arrows to adjust", True, (200, 200, 200))
+        screen.blit(controls_text, (window_size[0]//2 - controls_text.get_width()//2, window_size[1]//2 - 30))
+        
+        # Draw buttons
+        for button in self.buttons:
+            button.draw(screen)
+
+class Button:
+    def __init__(self, x, y, width, height, text, color, hover_color, text_color, font_size=24):
+        self.rect = pygame.Rect(x, y, width, height)
+        self.text = text
+        self.color = color
+        self.hover_color = hover_color
+        self.text_color = text_color
+        self.font = pygame.font.SysFont(None, font_size)
+        self.is_hovered = False
+        
+    def draw(self, surface):
+        color = self.hover_color if self.is_hovered else self.color
+        pygame.draw.rect(surface, color, self.rect, border_radius=5)
+        pygame.draw.rect(surface, (0, 0, 0), self.rect, 2, border_radius=5)
+        
+        text_surf = self.font.render(self.text, True, self.text_color)
+        text_rect = text_surf.get_rect(center=self.rect.center)
+        surface.blit(text_surf, text_rect)
+        
+    def check_hover(self, pos):
+        self.is_hovered = self.rect.collidepoint(pos)
+        return self.is_hovered
+        
+    def is_clicked(self, pos, event):
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            return self.rect.collidepoint(pos)
+        return False
+    
 class Player:
     def __init__(self, position, speed, username):
         self.username = username
@@ -734,6 +860,7 @@ class Player:
             frame = self.frames[self.current_frame]
             scaled_frame = pygame.transform.scale(frame, screen.get_size())
             screen.blit(scaled_frame, (0, 0))
+
 user_system = UserSystem()  # Create UserSystem instance
 current_user = login_menu(user_system)  # Get current user (should return a string)
 speed = 2.5  # Adjust as needed
@@ -789,6 +916,7 @@ class Tree:
             if self.hit_timer >= self.hit_cooldown:
                 self.was_hit = False  # Reset after cooldown
                 self.hit_timer = 0  # Reset the timer
+
 
 
     def get_hitbox(self):
@@ -1074,8 +1202,7 @@ class Boss(pygame.sprite.Sprite):
 
     def update(self):
         if self.is_dead:
-            if self.handle_death():
-                return
+            self.handle_death()
             return
 
         player_pos = pygame.Vector2(self.player.rect.center)
@@ -1212,17 +1339,18 @@ class Boss(pygame.sprite.Sprite):
 
     def handle_death(self):
         current_time = time.time()
-        if current_time - self.last_animation_time > self.animation_speed:
-            if self.death_index < len(self.death_images):
+
+        if self.death_index < len(self.death_images):
+            if current_time - self.last_animation_time > self.animation_speed:
                 self.image = self.death_images[self.death_index]
                 if self.facing_left:
                     self.image = pygame.transform.flip(self.image, True, False)
                 self.death_index += 1
                 self.last_animation_time = current_time
-            else:
-                self.kill()
-                return True
-        return False
+                if self.death_index == len(self.death_images):
+                    self.death_complete_time = current_time + 0.4  # Delay before killing
+        elif hasattr(self, "death_complete_time") and current_time > self.death_complete_time:
+            self.kill()
 
     def draw_health_bar(self, surface, camera=None):
         bar_width = 100
@@ -1324,6 +1452,7 @@ class PondArea:
         if self.is_player_inside(player_pos) and keys[pygame.K_j]:
             self.show_animation = True
             self.current_frame = 0
+            inventory.add_item("fish", 1)
 
 
         if self.show_animation:
@@ -1400,6 +1529,8 @@ zombie_group = pygame.sprite.Group()
 boss_area = pygame.Rect(240, 144, 342, 129)  # x, y, width, height
 boss = Boss(399, 145, player_instance, boss_area)
 all_sprites.add(boss)
+settings_menu = SettingsMenu()
+game_state = "game"
 
 spawn_delay = 3
 last_spawn_time = time.time()
@@ -1427,9 +1558,18 @@ def get_random_spawn_position_from_zones(zones):
 zombie_spawn_zones = [
     pygame.Rect(121, 1221, 1235, 133),  # zone 1
 ]
+def draw_settings_menu(screen):
+    screen.fill((30, 30, 30))  # dark background
+    font = pygame.font.SysFont(None, 48)
+
+    # Example buttons
+    music_text = font.render("Music Volume: [Use Arrow Keys]", True, (255, 255, 255))
+    quit_text = font.render("Press Q to Quit", True, (255, 255, 255))
+
+    screen.blit(music_text, (100, 150))
+    screen.blit(quit_text, (100, 250))
 
 inventory = Inventory()
-
 # Main loop
 running = True
 while running:
@@ -1454,20 +1594,27 @@ while running:
                 )
             running = False        
         elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_ESCAPE:
+                if game_state == "game":
+                    game_state = "settings"
+                    settings_menu.visible = True
+                elif game_state == "settings":
+                    game_state = "game"
+                    settings_menu.visible = False
             if event.key == pygame.K_EQUALS:
                 minimap_zoom_factor = min(4.0, minimap_zoom_factor + 0.1)
             elif event.key == pygame.K_MINUS:
                 minimap_zoom_factor = max(0.5, minimap_zoom_factor - 0.1)
             elif event.key == pygame.K_TAB:
                 player_instance.switch_weapon(event.key)
-            elif event.key == pygame.K_f:  # F key to toggle fullscreen
+            elif event.key == pygame.K_f:
                 is_fullscreen = not is_fullscreen
                 if is_fullscreen:
                     screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
-                    character_scale = fullscreen_scale  # Increase size
+                    character_scale = fullscreen_scale
                 else:
                     screen = pygame.display.set_mode(window_size)
-                    character_scale = 1.0  # Normal size
+                    character_scale = 1.0
                 overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
             elif event.key == pygame.K_b:
                 inventory.toggle_inventory()
@@ -1475,69 +1622,63 @@ while running:
         elif event.type == pygame.KEYUP:
             if event.key == pygame.K_SPACE:
                 player_instance.attacking = True
-    
-    keys = pygame.key.get_pressed()    
-    new_position, current_sprite = player_instance.move(keys, dt)
-    
-    move_distance = speed * dt * 60
 
-    current_time = time.time()
-    if current_time - last_spawn_time >= spawn_delay and len(zombie_group) < 10:
-        spawn_zombie()
-        last_spawn_time = current_time
-    
-    zombie_group.update()
-    boss.update()  # <-- Add this line to update the boss each frame
+        # Handle settings menu events
+        if game_state == "settings":
+            result = settings_menu.handle_events(event)
+            if result == "quit":
+                running = False
+            elif result == "back":
+                game_state = "game"
+                settings_menu.visible = False
 
-    # --- NEW Restriction check per direction ---
-    proposed_position = player_instance.position.copy()
+    # ========== GAME LOGIC ONLY WHEN IN "GAME" STATE ==========
+    if game_state == "game":
+        keys = pygame.key.get_pressed()
+        new_position, current_sprite = player_instance.move(keys, dt)
+        move_distance = speed * dt * 60
 
-    if keys[pygame.K_w]:  # Up
-        test_pos = proposed_position.copy()
-        test_pos.y -= move_distance
-        test_rect = pygame.Rect(test_pos.x - 20, test_pos.y - 20, 40, 40)
-        if not is_in_restricted_zone(test_rect.center, restricted_zones):
-            proposed_position.y -= move_distance
-            player_instance.direction = 'up'
-    if keys[pygame.K_s]:  # Down
-        test_pos = proposed_position.copy()
-        test_pos.y += move_distance
-        test_rect = pygame.Rect(test_pos.x - 20, test_pos.y - 20, 40, 40)
-        if not is_in_restricted_zone(test_rect.center, restricted_zones):
-            proposed_position.y += move_distance
-            player_instance.direction = 'down'
-    if keys[pygame.K_a]:  # Left
-        test_pos = proposed_position.copy()
-        test_pos.x -= move_distance
-        test_rect = pygame.Rect(test_pos.x - 20, test_pos.y - 20, 40, 40)
-        if not is_in_restricted_zone(test_rect.center, restricted_zones):
-            proposed_position.x -= move_distance
-            player_instance.direction = 'left'
-    if keys[pygame.K_d]:  # Right
-        test_pos = proposed_position.copy()
-        test_pos.x += move_distance
-        test_rect = pygame.Rect(test_pos.x - 20, test_pos.y - 20, 40, 40)
-        if not is_in_restricted_zone(test_rect.center, restricted_zones):
-            proposed_position.x += move_distance
-            player_instance.direction = 'right'
+        current_time = time.time()
+        if current_time - last_spawn_time >= spawn_delay and len(zombie_group) < 10:
+            spawn_zombie()
+            last_spawn_time = current_time
 
-    proposed_position.x = max(0, min(proposed_position.x, map_image.get_width()))
-    proposed_position.y = max(0, min(proposed_position.y, map_image.get_height()))
+        zombie_group.update()
+        boss.update()
 
-    player_instance.position = proposed_position
-    player_position = proposed_position
+        # Movement with restriction zone logic
+        proposed_position = player_instance.position.copy()
+        for direction in ["w", "s", "a", "d"]:
+            if keys[getattr(pygame, f"K_{direction}")]:
+                test_pos = proposed_position.copy()
+                if direction == "w": test_pos.y -= move_distance
+                if direction == "s": test_pos.y += move_distance
+                if direction == "a": test_pos.x -= move_distance
+                if direction == "d": test_pos.x += move_distance
+                test_rect = pygame.Rect(test_pos.x - 20, test_pos.y - 20, 40, 40)
+                if not is_in_restricted_zone(test_rect.center, restricted_zones):
+                    if direction == "w": proposed_position.y -= move_distance; player_instance.direction = "up"
+                    if direction == "s": proposed_position.y += move_distance; player_instance.direction = "down"
+                    if direction == "a": proposed_position.x -= move_distance; player_instance.direction = "left"
+                    if direction == "d": proposed_position.x += move_distance; player_instance.direction = "right"
 
-    attack_sprite = player_instance.attack(trees,zombie_group)
+        proposed_position.x = max(0, min(proposed_position.x, map_image.get_width()))
+        proposed_position.y = max(0, min(proposed_position.y, map_image.get_height()))
+        player_instance.position = proposed_position
+        player_position = proposed_position
 
-    camera.center = player_position
-    camera.clamp_ip(map_image.get_rect())
+        attack_sprite = player_instance.attack(trees, zombie_group)
 
-    zoom_surface.fill((0, 0, 0))
-    zoom_surface.blit(map_image, (0, 0), camera)
+        camera.center = player_position
+        camera.clamp_ip(map_image.get_rect())
 
-    for tree in trees:
-        tree.update(current_time)
-        tree.draw(zoom_surface, camera)
+        # Drawing to zoom_surface
+        zoom_surface.fill((0, 0, 0))
+        zoom_surface.blit(map_image, (0, 0), camera)
+
+        for tree in trees:
+            tree.update(current_time)
+            tree.draw(zoom_surface, camera)
 
     for tree in trees_2:
         tree.update(current_time)
@@ -1550,30 +1691,31 @@ while running:
     keys = pygame.key.get_pressed()
     pond.update(player_instance.rect.center, keys)
    
-# === ADD THE BOSS DRAWING HERE ===
-    boss_rect_on_screen = boss.rect.move(-camera.x, -camera.y)
-    zoom_surface.blit(boss.image, boss_rect_on_screen)
-    boss.draw_health_bar(zoom_surface, camera)  # Pass camera for correct positioning
-    # In your main game loop's drawing section:
-    if not boss.is_dead or boss.death_index < len(boss.death_images):
-        boss_rect_on_screen = boss.rect.move(-camera.x, -camera.y)
-        zoom_surface.blit(boss.image, boss_rect_on_screen)
-        if not boss.is_dead:  # Only draw health bar if not dead
-            boss.draw_health_bar(zoom_surface, camera)
     
 
 
+
+        # Boss draw
+    if boss.alive():  # Check if boss hasn't been killed
+        boss_rect_on_screen = boss.rect.move(-camera.x, -camera.y)
+        zoom_surface.blit(boss.image, boss_rect_on_screen)
+        if not boss.is_dead:
+            boss.draw_health_bar(zoom_surface, camera)
+
+
+
+        # Final game drawing
     zoomed_view = pygame.transform.scale(zoom_surface, screen.get_size())
     screen.blit(zoomed_view, (0, 0))
 
-    # Draw scaled character
     sprite_to_draw = attack_sprite if attack_sprite else current_sprite
     scaled_sprite = scale_sprite(sprite_to_draw, character_scale)
     sprite_x = screen.get_width() // 2 - scaled_sprite.get_width() // 2
     sprite_y = screen.get_height() // 2 - scaled_sprite.get_height() // 2
     screen.blit(scaled_sprite, (sprite_x, sprite_y))
-    player_instance.draw_health_bar(screen)#player hp bar
+    player_instance.draw_health_bar(screen)
 
+    # Minimap
     minimap_surface = pygame.Surface((minimap_radius * 2, minimap_radius * 2), pygame.SRCALPHA)
     mini_camera_size = minimap_radius * 2 / minimap_zoom_factor
     mini_camera = pygame.Rect(0, 0, mini_camera_size, mini_camera_size)
@@ -1587,9 +1729,7 @@ while running:
     pygame.draw.circle(masked_minimap, player_minimap_color, (minimap_radius, minimap_radius), 3)
     pygame.draw.circle(masked_minimap, minimap_border_color, (minimap_radius, minimap_radius), minimap_radius, minimap_border_width)
     screen.blit(masked_minimap, (minimap_pos[0] - minimap_radius, minimap_pos[1] - minimap_radius))
-    relative_x = (player_position.x - mini_camera.left) / mini_camera.width * (minimap_radius * 2)
-    relative_y = (player_position.y - mini_camera.top) / mini_camera.height * (minimap_radius * 2)
-    
+
     # Day-night cycle (NEW day 66% night 33%)    
     cycle_duration = 60  # full cycle in seconds
     day_duration = cycle_duration * 0.66  # ~39.6s
@@ -1628,6 +1768,11 @@ while running:
 
     #Draw inventory
     inventory.draw(screen)
+
+    # ========== DRAW SETTINGS MENU WHEN ACTIVE ==========
+    if game_state == "settings":
+        screen.fill((10, 10, 10))  # Optional: dim background
+        settings_menu.draw(screen)
 
 
     pygame.display.update()
