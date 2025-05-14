@@ -1612,51 +1612,50 @@ while running:
         pygame.draw.circle(masked_minimap, minimap_border_color, (minimap_radius, minimap_radius), minimap_radius, minimap_border_width)
         screen.blit(masked_minimap, (minimap_pos[0] - minimap_radius, minimap_pos[1] - minimap_radius))
 
-        # Day-night overlay
-        cycle_duration = 60
-        day_duration = cycle_duration * 0.66
-        night_duration = cycle_duration * 0.34
-        time_counter += dt
-        cycle_time = time_counter % cycle_duration
-        if cycle_time < day_duration:
-            alpha = 0
-            pond.update_time_of_day(is_daytime=True)
-        else:
-            night_progress = (cycle_time - day_duration) / night_duration
-            alpha = int(night_progress * 180)
-            pond.update_time_of_day(is_daytime=False)
+    # Day-night cycle (NEW day 66% night 33%)    
+    cycle_duration = 60  # full cycle in seconds
+    day_duration = cycle_duration * 0.66  # ~39.6s
+    night_duration = cycle_duration * 0.34  # ~20.4s
 
-        overlay.fill((0, 0, 50, alpha))
-        screen.blit(overlay, (0, 0))
+    time_counter += dt
+    cycle_time = time_counter % cycle_duration
+    if cycle_time < day_duration:
+        alpha = 0  # Full daylight (no fade)
+        pond.update_time_of_day(is_daytime=True)  # Set to day for fishing sprite
+    else:
+        # Night fade-in (0 to 180 alpha) during night duration
+        night_progress = (cycle_time - day_duration) / night_duration
+        alpha = int(night_progress * 180)
+        pond.update_time_of_day(is_daytime=False)  # Set to night for fishing sprite
 
-        # HUD
-        pos_text = f"X: {int(player_position.x)}  Y: {int(player_position.y)}"
-        text_surface = font.render(pos_text, True, (255, 255, 255))
-        screen.blit(text_surface, (10, screen.get_height() - 30))
+    overlay.fill((0, 0, 50, alpha))
+    screen.blit(overlay, (0, 0))
 
-        icon = player_instance.weapon_icons[player_instance.current_weapon]
-        icon_scaled = pygame.transform.scale(icon, (60, 60))
-        weapon_box = pygame.Rect(screen.get_width() - 100, screen.get_height() - 100, 80, 80)
-        pygame.draw.rect(screen, (30, 30, 30), weapon_box)
-        pygame.draw.rect(screen, (255, 255, 255), weapon_box, 2)
-        screen.blit(icon_scaled, (weapon_box.x + 10, weapon_box.y + 10))
+    pos_text = f"X: {int(player_position.x)}  Y: {int(player_position.y)}"
+    text_surface = font.render(pos_text, True, (255, 255, 255))
+    screen.blit(text_surface, (10, screen.get_height() - 30))
 
-        pond.draw(screen, player_position, font)
+    icon = player_instance.weapon_icons[player_instance.current_weapon]
+    icon_scaled = pygame.transform.scale(icon, (60, 60))
 
-        # Save progress
-        user_system.save_progress(
-            player_instance.username,
-            player_instance.health,
-            [player_instance.position.x, player_instance.position.y]
-        )
+    # Draw a box (bottom-left for example)
+    weapon_box = pygame.Rect(screen.get_width() - 100, screen.get_height() - 100, 80, 80)
+    pygame.draw.rect(screen, (30, 30, 30), weapon_box)  # Dark box
+    pygame.draw.rect(screen, (255, 255, 255), weapon_box, 2)  # White border
+    screen.blit(icon_scaled, (weapon_box.x + 10, weapon_box.y + 10))
+    
+    #Draw pond
+    pond.draw(screen, player_position, font, reward_font)
+
+
+    #Draw inventory
+    inventory.draw(screen)
 
     # ========== DRAW SETTINGS MENU WHEN ACTIVE ==========
     if game_state == "settings":
         screen.fill((10, 10, 10))  # Optional: dim background
         settings_menu.draw(screen)
 
-    #Draw inventory
-    inventory.draw(screen)
 
     pygame.display.update()
     pygame.display.flip()
