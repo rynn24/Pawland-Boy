@@ -1,0 +1,450 @@
+*   [33m0bf8209[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mhaojun[m[33m)[m json
+[31m|[m[32m\[m  
+[31m|[m * [33me9d73dc[m[33m ([m[1;32mmain[m[33m)[m json
+[31m|[m *   [33m130cf92[m Merge branch 'main' of https://github.com/rynn24/Pawland-Boy
+[31m|[m [33m|[m[34m\[m  
+[31m|[m [33m|[m *   [33m96e0838[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Merge pull request #37 from rynn24/ting
+[31m|[m [33m|[m [35m|[m[36m\[m  
+[31m|[m [33m|[m [35m|[m *   [33mcfe6719[m Resolved merge conflicts with main
+[31m|[m [33m|[m [35m|[m [1;31m|[m[35m\[m  
+[31m|[m [33m|[m [35m|[m [1;31m|[m[35m/[m  
+[31m|[m [33m|[m [35m|[m[35m/[m[1;31m|[m   
+[31m|[m [33m|[m * [1;31m|[m   [33m283dfd8[m Merge pull request #36 from rynn24/rynn
+[31m|[m [33m|[m [1;33m|[m[1;34m\[m [1;31m\[m  
+[31m|[m [33m|[m [1;33m|[m * [1;31m\[m   [33m5c0ff62[m Merge branch 'rynn' of https://github.com/rynn24/Pawland-Boy into rynn
+[31m|[m [33m|[m [1;33m|[m [1;35m|[m[1;36m\[m [1;31m\[m  
+[31m|[m [33m|[m [1;33m|[m * [1;36m|[m [1;31m|[m [33mf97abca[m separated fishing rewards using name and id
+[31m|[m [33m|[m [1;33m|[m [1;36m|[m [1;36m|[m *   [33m1be7ef7[m added inventory but havent add to profile
+[31m|[m [33m|[m [1;33m|[m [1;36m|[m [1;36m|[m [31m|[m[1;33m\[m  
+[31m|[m [33m|[m [1;33m|[m [1;36m|[m[1;33m_[m[1;36m|[m[1;33m_[m[31m|[m[1;33m/[m  
+[31m|[m [33m|[m [1;33m|[m[1;33m/[m[1;36m|[m [1;36m|[m [31m|[m   
+[31m|[m [33m|[m * [1;36m|[m [1;36m|[m [31m|[m   [33m434b502[m Merge pull request #35 from rynn24/rynn
+[31m|[m [33m|[m [33m|[m[1;36m\[m [1;36m\[m [1;36m\[m [31m\[m  
+[31m|[m [33m|[m [33m|[m [1;36m|[m [1;36m|[m[1;36m/[m [31m/[m  
+[31m|[m [33m|[m [33m|[m [1;36m|[m[1;36m/[m[1;36m|[m [31m|[m   
+[31m|[m [33m|[m [33m|[m * [1;36m|[m [31m|[m   [33m58f2352[m Merge branch 'main' into rynn
+[31m|[m [33m|[m [33m|[m [1;36m|[m[33m\[m [1;36m\[m [31m\[m  
+[31m|[m [33m|[m [33m|[m [1;36m|[m[33m/[m [1;36m/[m [31m/[m  
+[31m|[m [33m|[m [33m|[m[33m/[m[1;36m|[m [1;36m/[m [31m/[m   
+[31m|[m [33m|[m [33m|[m [1;36m|[m[1;36m/[m [31m/[m    
+[31m|[m [33m|[m [33m|[m * [31m|[m [33m49ec58f[m json update
+[31m|[m [33m|[m [33m|[m * [31m|[m [33mc8feb1e[m  resized reward font, changed image for rewards, scaled up image for rewards to 1.5
+[31m|[m [33m|[m [33m|[m [36m|[m * [33m8819a81[m doing inventory
+[31m|[m [33m|[m [33m|[m [36m|[m *   [33m1658f81[m Merge branch 'main' into ting
+[31m|[m [33m|[m [33m|[m [36m|[m [1;31m|[m[1;32m\[m  
+[31m|[m [33m|[m [33m|[m [36m|[m * [1;32m|[m [33m8099ee2[m change to profile system
+[31m|[m * [33m|[m [36m|[m [1;32m|[m [1;32m|[m [33m7cb948d[m Merge branch 'main' of https://github.com/rynn24/Pawland-Boy
+[31m|[m [1;33m|[m[33m\[m[33m|[m [36m|[m [1;32m|[m [1;32m|[m 
+[31m|[m [1;33m|[m * [36m|[m [1;32m|[m [1;32m|[m   [33m26d1222[m Merge pull request #34 from rynn24/haojun
+[31m|[m [1;33m|[m [1;35m|[m[1;36m\[m [36m\[m [1;32m\[m [1;32m\[m  
+[31m|[m * [1;35m|[m [1;36m|[m [36m|[m [1;32m|[m [1;32m|[m [33mb060f9d[m json
+[31m|[m [31m|[m[1;35m\[m[1;35m|[m [1;36m|[m [36m|[m [1;32m|[m [1;32m|[m 
+[31m|[m [31m|[m * [1;36m|[m [36m|[m [1;32m|[m [1;32m|[m   [33me76808a[m Merge pull request #33 from rynn24/haojun
+[31m|[m [31m|[m [33m|[m[34m\[m [1;36m\[m [36m\[m [1;32m\[m [1;32m\[m  
+[31m|[m * [33m|[m [34m|[m [1;36m|[m [36m|[m [1;32m|[m [1;32m|[m [33m1ff821e[m json
+[31m|[m [35m|[m[33m\[m[33m|[m [34m|[m [1;36m|[m [36m|[m [1;32m|[m [1;32m|[m 
+[31m|[m [35m|[m * [34m|[m [1;36m|[m [36m|[m [1;32m|[m [1;32m|[m   [33m4770d4b[m Merge pull request #30 from rynn24/haojun
+[31m|[m [35m|[m [1;31m|[m[1;32m\[m [34m\[m [1;36m\[m [36m\[m [1;32m\[m [1;32m\[m  
+[31m|[m * [1;31m|[m [1;32m|[m [34m|[m [1;36m|[m [36m|[m [1;32m|[m [1;32m|[m [33m135c219[m json
+[31m|[m * [1;31m|[m [1;32m|[m [34m|[m [1;36m|[m [36m|[m [1;32m|[m [1;32m|[m [33m200df60[m json
+* [1;32m|[m [1;31m|[m [1;32m|[m [34m|[m [1;36m|[m [36m|[m [1;32m|[m [1;32m|[m [33m54778e7[m setting menu done
+[1;36m|[m [1;32m|[m[1;36m_[m[1;31m|[m[1;36m_[m[1;32m|[m[1;36m_[m[34m|[m[1;36m/[m [36m/[m [1;32m/[m [1;32m/[m  
+[1;36m|[m[1;36m/[m[1;32m|[m [1;31m|[m [1;32m|[m [34m|[m [36m|[m [1;32m|[m [1;32m|[m   
+* [1;32m|[m [1;31m|[m [1;32m|[m [34m|[m [36m|[m [1;32m|[m [1;32m|[m [33m6f7c6fe[m[33m ([m[1;31morigin/haojun[m[33m)[m deleted my ui design
+[34m|[m [1;32m|[m[34m_[m[1;31m|[m[34m_[m[1;32m|[m[34m/[m [36m/[m [1;32m/[m [1;32m/[m  
+[34m|[m[34m/[m[1;32m|[m [1;31m|[m [1;32m|[m [36m|[m [1;32m|[m [1;32m|[m   
+* [1;32m|[m [1;31m|[m [1;32m|[m [36m|[m [1;32m|[m [1;32m|[m [33m7a50607[m dont want ady
+* [1;32m|[m [1;31m|[m [1;32m|[m [36m|[m [1;32m|[m [1;32m|[m [33m32bb86c[m try
+* [1;32m|[m [1;31m|[m [1;32m|[m [36m|[m [1;32m|[m [1;32m|[m [33m65f5cc8[m try
+[1;32m|[m [1;32m|[m[1;32m_[m[1;31m|[m[1;32m/[m [36m/[m [1;32m/[m [1;32m/[m  
+[1;32m|[m[1;32m/[m[1;32m|[m [1;31m|[m [36m|[m [1;32m|[m [1;32m|[m   
+* [1;32m|[m [1;31m|[m [36m|[m [1;32m|[m [1;32m|[m [33mc07d165[m combine'
+[1;33m|[m[1;32m\[m[1;32m|[m [1;31m|[m [36m|[m [1;32m|[m [1;32m|[m 
+* [1;32m|[m [1;31m|[m [36m|[m [1;32m|[m [1;32m|[m [33m5a6ff3e[m combine together
+* [1;32m|[m [1;31m|[m [36m|[m [1;32m|[m [1;32m|[m [33m325588e[m position
+* [1;32m|[m [1;31m|[m [36m|[m [1;32m|[m [1;32m|[m   [33m6d88b35[m position
+[1;35m|[m[1;36m\[m [1;32m\[m [1;31m\[m [36m\[m [1;32m\[m [1;32m\[m  
+* [1;36m|[m [1;32m|[m [1;31m|[m [36m|[m [1;32m|[m [1;32m|[m [33mbad5ebd[m json
+* [1;36m|[m [1;32m|[m [1;31m|[m [36m|[m [1;32m|[m [1;32m|[m   [33m7a63697[m Merge branch 'main' into haojun
+[31m|[m[32m\[m [1;36m\[m [1;32m\[m [1;31m\[m [36m\[m [1;32m\[m [1;32m\[m  
+* [32m|[m [1;36m|[m [1;32m|[m [1;31m|[m [36m|[m [1;32m|[m [1;32m|[m [33m34d5364[m i add the text box function but havent use yet
+* [32m|[m [1;36m|[m [1;32m|[m [1;31m|[m [36m|[m [1;32m|[m [1;32m|[m [33mf3d7613[m i have add the settings feature
+[32m|[m [32m|[m [1;36m|[m [1;32m|[m [1;31m|[m [36m|[m [1;32m|[m [1;32m|[m * [33m852bc3f[m[33m ([m[1;35mrefs/stash[m[33m)[m WIP on main: 1887369 json
+[32m|[m [32m|[m [1;36m|[m [1;32m|[m [1;31m|[m[1;32m_[m[36m|[m[1;32m_[m[1;32m|[m[1;32m_[m[1;32m|[m[1;32m/[m[34m|[m 
+[32m|[m [32m|[m [1;36m|[m [1;32m|[m[1;32m/[m[1;31m|[m [36m|[m [1;32m|[m [1;32m|[m [34m|[m 
+[32m|[m [32m|[m [1;36m|[m [1;32m|[m [1;31m|[m [36m|[m [1;32m|[m [1;32m|[m * [33m4508929[m index on main: 1887369 json
+[32m|[m [32m|[m [1;36m|[m [1;32m|[m [1;31m|[m[1;32m_[m[36m|[m[1;32m_[m[1;32m|[m[1;32m_[m[1;32m|[m[1;32m/[m  
+[32m|[m [32m|[m [1;36m|[m [1;32m|[m[1;32m/[m[1;31m|[m [36m|[m [1;32m|[m [1;32m|[m   
+[32m|[m [32m|[m [1;36m|[m * [1;31m|[m [36m|[m [1;32m|[m [1;32m|[m [33m1887369[m json
+[32m|[m [32m|[m [1;36m|[m [35m|[m[1;31m\[m[1;31m|[m [36m|[m [1;32m|[m [1;32m|[m 
+[32m|[m [32m|[m [1;36m|[m [35m|[m * [36m|[m [1;32m|[m [1;32m|[m [33mc351dcf[m Merge pull request #32 from rynn24/rynn
+[32m|[m [32m|[m [1;36m|[m [35m|[m [1;31m|[m[36m\[m[36m|[m [1;32m|[m [1;32m|[m 
+[32m|[m [32m|[m [1;36m|[m [35m|[m [1;31m|[m * [1;32m|[m [1;32m|[m   [33mc2cb070[m rewards appear after fishing
+[32m|[m [32m|[m [1;36m|[m [35m|[m [1;31m|[m [1;33m|[m[1;34m\[m [1;32m\[m [1;32m\[m  
+[32m|[m [32m|[m [1;36m|[m [35m|[m [1;31m|[m * [1;34m|[m [1;32m|[m [1;32m|[m [33mc005f12[m rewards will appear after fishing
+[32m|[m [32m|[m [1;36m|[m [35m|[m * [1;34m|[m [1;34m|[m [1;32m|[m [1;32m|[m   [33m0164aa5[m Merge pull request #31 from rynn24/rynn
+[32m|[m [32m|[m [1;36m|[m [35m|[m [1;35m|[m[1;34m\[m [1;34m\[m [1;34m\[m [1;32m\[m [1;32m\[m  
+[32m|[m [32m|[m [1;36m|[m [35m|[m [1;35m|[m [1;34m|[m [1;34m|[m[1;34m/[m [1;32m/[m [1;32m/[m  
+[32m|[m [32m|[m [1;36m|[m [35m|[m [1;35m|[m [1;34m|[m[1;34m/[m[1;34m|[m [1;32m|[m [1;32m|[m   
+[32m|[m [32m|[m [1;36m|[m [35m|[m [1;35m|[m * [1;34m|[m [1;32m|[m [1;32m|[m   [33mb12d54e[m Merge branch 'main' into rynn
+[32m|[m [32m|[m [1;36m|[m [35m|[m [1;35m|[m [1;34m|[m[1;35m\[m [1;34m\[m [1;32m\[m [1;32m\[m  
+[32m|[m [32m|[m [1;36m|[m [35m|[m [1;35m|[m [1;34m|[m[1;35m/[m [1;34m/[m [1;32m/[m [1;32m/[m  
+[32m|[m [32m|[m [1;36m|[m [35m|[m [1;35m|[m[1;35m/[m[1;34m|[m [1;34m/[m [1;32m/[m [1;32m/[m   
+[32m|[m [32m|[m [1;36m|[m [35m|[m [1;35m|[m [1;34m|[m[1;34m/[m [1;32m/[m [1;32m/[m    
+[32m|[m [32m|[m [1;36m|[m [35m|[m [1;35m|[m * [1;32m|[m [1;32m|[m [33mac67af4[m update user position in json
+[32m|[m [32m|[m [1;36m|[m [35m|[m [1;35m|[m * [1;32m|[m [1;32m|[m   [33md91f6aa[m Merge branch 'main' into rynn
+[32m|[m [32m|[m [1;36m|[m [35m|[m [1;35m|[m [33m|[m[34m\[m [1;32m\[m [1;32m\[m  
+[32m|[m [32m|[m [1;36m|[m * [1;35m|[m [33m|[m [34m|[m [1;32m|[m [1;32m|[m [33m486b7e6[m position
+[32m|[m [32m|[m [1;36m|[m[1;36m/[m [1;35m/[m [33m/[m [34m/[m [1;32m/[m [1;32m/[m  
+[32m|[m [32m|[m * [1;35m/[m [33m/[m [34m/[m [1;32m/[m [1;32m/[m [33m5c0787c[m position
+[32m|[m [32m|[m[32m/[m [1;35m/[m [33m/[m [34m/[m [1;32m/[m [1;32m/[m  
+[32m|[m * [1;35m/[m [33m/[m [34m/[m [1;32m/[m [1;32m/[m [33m26aa673[m json
+[32m|[m[32m/[m[1;35m|[m [1;35m|[m [33m|[m [34m|[m [1;32m|[m [1;32m|[m 
+[32m|[m [1;35m|[m[1;35m/[m [33m/[m [34m/[m [1;32m/[m [1;32m/[m  
+[32m|[m * [33m|[m [34m/[m [1;32m/[m [1;32m/[m [33md23fa35[m Merge pull request #29 from rynn24/rynn
+[32m|[m [34m|[m[33m\[m[33m|[m [34m|[m [1;32m|[m [1;32m|[m 
+[32m|[m [34m|[m [33m|[m[34m/[m [1;32m/[m [1;32m/[m  
+[32m|[m [34m|[m[34m/[m[33m|[m [1;32m|[m [1;32m|[m   
+[32m|[m [34m|[m * [1;32m|[m [1;32m|[m [33mf9a1179[m separate day and night fishing
+[32m|[m * [1;32m|[m [1;32m|[m [1;32m|[m [33m5743e41[m Merge pull request #28 from rynn24/rynn
+[32m|[m [1;32m|[m[1;32m\[m[1;32m|[m [1;32m|[m [1;32m|[m 
+[32m|[m [1;32m|[m [1;32m|[m[1;32m_[m[1;32m|[m[1;32m/[m  
+[32m|[m [1;32m|[m[1;32m/[m[1;32m|[m [1;32m|[m   
+[32m|[m [1;32m|[m * [1;32m|[m   [33mcfd563d[m added text trigger near pond and updated day night cycle
+[32m|[m [1;32m|[m [1;35m|[m[1;32m\[m [1;32m\[m  
+[32m|[m [1;32m|[m [1;35m|[m[1;32m/[m [1;32m/[m  
+[32m|[m [1;32m|[m[1;32m/[m[1;35m|[m [1;32m|[m   
+[32m|[m [1;32m|[m * [1;32m|[m [33m1c91dd5[m updated day night cycle and added text pop up for pond
+[32m|[m [1;32m|[m * [1;32m|[m [33mf559903[m added files.
+[32m|[m [1;32m|[m * [1;32m|[m [33m300052b[m text trigger out when near to pond
+[32m|[m [1;32m|[m * [1;32m|[m [33mf7a2806[m Restricted top water zone
+[32m|[m [1;32m|[m * [1;32m|[m [33mcfd393b[m changed version
+[32m|[m [1;32m|[m * [1;32m|[m   [33m40c5bdc[m Merge branch 'main' into rynn
+[32m|[m [1;32m|[m [31m|[m[32m\[m [1;32m\[m  
+[32m|[m [1;32m|[m * [32m\[m [1;32m\[m   [33mdf9d4a3[m Merge branch 'rynn' of https://github.com/rynn24/Pawland-Boy into rynn
+[32m|[m [1;32m|[m [33m|[m[34m\[m [32m\[m [1;32m\[m  
+[32m|[m [1;32m|[m [33m|[m * [32m\[m [1;32m\[m   [33mfc7d62c[m Merge branch 'rynn' of https://github.com/rynn24/Pawland-Boy into rynn
+[32m|[m [1;32m|[m [33m|[m [35m|[m[36m\[m [32m\[m [1;32m\[m  
+[32m|[m [1;32m|[m [33m|[m * [36m|[m [32m|[m [1;32m|[m [33m79ce287[m Added map into main file
+[32m|[m [1;32m|[m [33m|[m * [36m|[m [32m|[m [1;32m|[m [33m4cc9ab6[m Add map code
+[32m|[m [1;32m|[m [33m|[m * [36m|[m [32m|[m [1;32m|[m [33ma0de4b0[m Removed accidentally nested repo
+[32m|[m [1;32m|[m [33m|[m  [36m/[m [32m/[m [1;32m/[m  
+[32m|[m [1;32m|[m * [36m/[m [32m/[m [1;32m/[m [33me114607[m added fishing
+[32m|[m [1;32m|[m [36m|[m[36m/[m [32m/[m [1;32m/[m  
+* [1;32m|[m [36m|[m [32m|[m [1;32m|[m [33mdfd2055[m my pw
+[1;31m|[m[1;32m\[m[1;32m|[m [36m|[m [32m|[m [1;32m|[m 
+[1;31m|[m * [36m|[m [32m|[m [1;32m|[m   [33me376308[m Merge pull request #27 from rynn24/ting
+[1;31m|[m [1;33m|[m[1;32m\[m [36m\[m [32m\[m [1;32m\[m  
+[1;31m|[m [1;33m|[m [1;32m|[m [36m|[m[1;32m_[m[32m|[m[1;32m/[m  
+[1;31m|[m [1;33m|[m [1;32m|[m[1;32m/[m[36m|[m [32m|[m   
+[1;31m|[m [1;33m|[m * [36m|[m [32m|[m   [33m8494ca1[m Merge branch 'main' into ting
+[1;31m|[m [1;33m|[m [1;35m|[m[1;33m\[m [36m\[m [32m\[m  
+[1;31m|[m [1;33m|[m [1;35m|[m[1;33m/[m [36m/[m [32m/[m  
+[1;31m|[m [1;33m|[m[1;33m/[m[1;35m|[m [36m|[m [32m|[m   
+[1;31m|[m * [1;35m|[m [36m|[m [32m|[m [33m99dc4f8[m Restricted top water area - Chracter movement
+[1;31m|[m * [1;35m|[m [36m|[m [32m|[m   [33m1f9ef9d[m Merge pull request #26 from rynn24/ting
+[1;31m|[m [31m|[m[32m\[m [1;35m\[m [36m\[m [32m\[m  
+[1;31m|[m [31m|[m [32m|[m * [36m|[m [32m|[m [33mb04610c[m default location fixed
+[1;31m|[m [31m|[m [32m|[m[32m/[m [36m/[m [32m/[m  
+[1;31m|[m [31m|[m * [36m|[m [32m|[m [33m82c20e1[m changed speed to 2.5
+* [31m|[m [32m|[m [36m|[m [32m|[m [33m43b89d9[m nothing
+* [31m|[m [32m|[m [36m|[m [32m|[m [33m7156c32[m my pw
+[31m|[m[31m/[m [32m/[m [36m/[m [32m/[m  
+* [32m|[m [36m|[m [32m|[m [33m70c7154[m Merge pull request #25 from rynn24/ting
+[33m|[m[32m\[m[32m|[m [36m|[m [32m|[m 
+[33m|[m * [36m|[m [32m|[m [33mb26220e[m delete duplicate lines
+[33m|[m * [36m|[m [32m|[m [33mf5f5920[m fixxed
+[33m|[m[33m/[m [36m/[m [32m/[m  
+* [36m|[m [32m|[m   [33m07823f5[m Merge pull request #24 from rynn24/ting
+[35m|[m[36m\[m [36m\[m [32m\[m  
+[35m|[m * [36m\[m [32m\[m   [33m97cdffa[m resolved merge conflict
+[35m|[m [1;31m|[m[35m\[m [36m\[m [32m\[m  
+[35m|[m [1;31m|[m[35m/[m [36m/[m [32m/[m  
+[35m|[m[35m/[m[1;31m|[m [36m|[m [32m|[m   
+* [1;31m|[m [36m|[m [32m|[m [33mc314fbc[m Reduced fishing detection area
+* [1;31m|[m [36m|[m [32m|[m [33mcdd810c[m Deleted duplicated class and rearrannged some parts
+[32m|[m [1;31m|[m[32m_[m[36m|[m[32m/[m  
+[32m|[m[32m/[m[1;31m|[m [36m|[m   
+* [1;31m|[m [36m|[m   [33ma8d2ffd[m Merge pull request #21 from rynn24/haojun
+[1;33m|[m[1;34m\[m [1;31m\[m [36m\[m  
+[1;33m|[m * [1;31m|[m [36m|[m [33m6eb2f0f[m nothing
+[1;33m|[m * [1;31m|[m [36m|[m   [33m5d3f9cf[m Merge branch 'main' into haojun
+[1;33m|[m [1;35m|[m[1;33m\[m [1;31m\[m [36m\[m  
+[1;33m|[m [1;35m|[m[1;33m/[m [1;31m/[m [36m/[m  
+[1;33m|[m[1;33m/[m[1;35m|[m [1;31m|[m [36m|[m   
+* [1;35m|[m [1;31m|[m [36m|[m [33m877f636[m Removed my features
+[1;36m|[m * [1;31m|[m [36m|[m [33m07dc6bb[m nothing
+[1;36m|[m * [1;31m|[m [36m|[m   [33m72eab63[m Merge branch 'main' into haojun
+[1;36m|[m [31m|[m[1;36m\[m [1;31m\[m [36m\[m  
+[1;36m|[m [31m|[m[1;36m/[m [1;31m/[m [36m/[m  
+[1;36m|[m[1;36m/[m[31m|[m [1;31m|[m [36m|[m   
+* [31m|[m [1;31m|[m [36m|[m   [33mfd6760f[m Merge pull request #20 from rynn24/rynn
+[33m|[m[36m\[m [31m\[m [1;31m\[m [36m\[m  
+[33m|[m [36m|[m [31m|[m[36m_[m[1;31m|[m[36m/[m  
+[33m|[m [36m|[m[36m/[m[31m|[m [1;31m|[m   
+[33m|[m * [31m|[m [1;31m|[m   [33m418ac10[m Merge branch 'main' into rynn
+[33m|[m [35m|[m[33m\[m [31m\[m [1;31m\[m  
+[33m|[m [35m|[m[33m/[m [31m/[m [1;31m/[m  
+[33m|[m[33m/[m[35m|[m [31m|[m [1;31m|[m   
+[33m|[m * [31m|[m [1;31m|[m [33mda1319e[m Added fishing by pressing J
+[33m|[m * [31m|[m [1;31m|[m [33mdfa28e2[m Pond spritesheet added.
+[33m|[m [36m|[m * [1;31m|[m [33m74d8cbf[m change hp icon
+[33m|[m [36m|[m [36m|[m * [33m9e2f241[m can save progree now
+[33m|[m [36m|[m[33m_[m[36m|[m[33m/[m  
+[33m|[m[33m/[m[36m|[m [36m|[m   
+* [36m|[m [36m|[m [33m0a154d6[m Restricted tree growth at top water zone
+* [36m|[m [36m|[m   [33m4cd0bf2[m Merge pull request #19 from rynn24/haojun
+[36m|[m[36m\[m [36m\[m [36m\[m  
+[36m|[m [36m|[m[36m/[m [36m/[m  
+[36m|[m[36m/[m[36m|[m [36m/[m   
+[36m|[m [36m|[m[36m/[m    
+[36m|[m * [33mf07de61[m i adjust the zombie
+[36m|[m * [33m761102a[m i add hp bar
+[36m|[m[36m/[m  
+*   [33m0a90b08[m[33m ([m[1;31morigin/rynn[m[33m)[m Merge branch 'rynn'
+[1;33m|[m[1;34m\[m  
+[1;33m|[m * [33m3e6f6af[m Changed player initial spawn area
+* [1;34m|[m   [33m7b37c79[m Merge branch 'main' of https://github.com/rynn24/Pawland-Boy
+[1;35m|[m[1;36m\[m [1;34m\[m  
+[1;35m|[m * [1;34m|[m [33m68e1bd1[m Merge pull request #18 from rynn24/rynn
+[1;35m|[m [31m|[m[1;34m\[m[1;34m|[m 
+* [31m|[m [1;34m|[m [33m9e1fd8b[m Changed player initial spawn location
+* [31m|[m [1;34m|[m   [33m54273fa[m Merge branch 'rynn'
+[31m|[m[1;34m\[m [31m\[m [1;34m\[m  
+[31m|[m [1;34m|[m[31m/[m [1;34m/[m  
+[31m|[m[31m/[m[1;34m|[m [1;34m/[m   
+[31m|[m [1;34m|[m[1;34m/[m    
+[31m|[m * [33m1ef4ccd[m Restricted plants growing at certain areas
+* [34m|[m   [33mfa84ab7[m Merge pull request #17 from rynn24/haojun
+[35m|[m[36m\[m [34m\[m  
+[35m|[m * [34m\[m   [33m085a19b[m Merge branch 'main' into haojun
+[35m|[m [1;31m|[m[35m\[m [34m\[m  
+[35m|[m [1;31m|[m[35m/[m [34m/[m  
+[35m|[m[35m/[m[1;31m|[m [34m|[m   
+* [1;31m|[m [34m|[m   [33m8330aca[m Merge pull request #16 from rynn24/haojun
+[34m|[m[1;34m\[m [1;31m\[m [34m\[m  
+[34m|[m [1;34m|[m[34m_[m[1;31m|[m[34m/[m  
+[34m|[m[34m/[m[1;34m|[m [1;31m|[m   
+[34m|[m [1;34m|[m * [33m94168a1[m photo
+[34m|[m [1;34m|[m *   [33m0d61280[m Merge branch 'haojun' of https://github.com/rynn24/Pawland-Boy into haojun
+[34m|[m [1;34m|[m [1;35m|[m[1;34m\[m  
+[34m|[m [1;34m|[m [1;35m|[m[1;34m/[m  
+[34m|[m [1;34m|[m[1;34m/[m[1;35m|[m   
+[34m|[m * [1;35m|[m   [33m8f5c576[m Merge pull request #15 from rynn24/main
+[34m|[m [31m|[m[34m\[m [1;35m\[m  
+[34m|[m [31m|[m[34m/[m [1;35m/[m  
+[34m|[m[34m/[m[31m|[m [1;35m|[m   
+[34m|[m [31m|[m *   [33m1358915[m Merge branch 'main' into haojun
+[34m|[m [31m|[m [33m|[m[34m\[m  
+[34m|[m [31m|[m[34m_[m[33m|[m[34m/[m  
+[34m|[m[34m/[m[31m|[m [33m|[m   
+* [31m|[m [33m|[m [33m5e28009[m Merge pull request #14 from rynn24/haojun
+[35m|[m[31m\[m[31m|[m [33m|[m 
+[35m|[m [31m|[m * [33m04474e0[m change photo
+[35m|[m [31m|[m[31m/[m  
+[35m|[m * [33m4d4d403[m boss spawn area
+[35m|[m *   [33m28de053[m Merge branch 'main' into haojun
+[35m|[m [1;31m|[m[35m\[m  
+[35m|[m [1;31m|[m[35m/[m  
+[35m|[m[35m/[m[1;31m|[m   
+* [1;31m|[m   [33m72e6390[m Merge pull request #13 from rynn24/ting
+[1;33m|[m[1;34m\[m [1;31m\[m  
+[1;33m|[m * [1;31m|[m [33m7ac1b3f[m[33m ([m[1;31morigin/ting[m[33m)[m New user system added - no gui
+[1;33m|[m[1;33m/[m [1;31m/[m  
+* [1;31m|[m   [33med26ab0[m Merge pull request #12 from rynn24/haojun
+[1;35m|[m[1;36m\[m [1;31m\[m  
+[1;35m|[m [1;36m|[m * [33mccb5092[m i have add the boss and all the feature of it i have done all of it except the area of the boss
+[1;35m|[m [1;36m|[m[1;36m/[m  
+[1;35m|[m * [33me41f6c3[m i have combine
+[1;35m|[m *   [33mb5e92fa[m Merge branch 'main' into haojun
+[1;35m|[m [31m|[m[1;35m\[m  
+[1;35m|[m [31m|[m[1;35m/[m  
+[1;35m|[m[1;35m/[m[31m|[m   
+* [31m|[m   [33md56083c[m Merge pull request #11 from rynn24/ting
+[33m|[m[34m\[m [31m\[m  
+[33m|[m * [31m|[m [33m86c6f31[m added weapon box
+[33m|[m[33m/[m [31m/[m  
+* [31m|[m   [33m098d36f[m Merge pull request #10 from rynn24/rynn
+[35m|[m[36m\[m [31m\[m  
+[35m|[m * [31m\[m   [33m2a0e0ea[m Merge branch 'main' into rynn
+[35m|[m [1;31m|[m[35m\[m [31m\[m  
+[35m|[m [1;31m|[m[35m/[m [31m/[m  
+[35m|[m[35m/[m[1;31m|[m [31m|[m   
+[35m|[m * [31m|[m [33m912ba02[m Added fruit-tree, added full screen feature
+[35m|[m * [31m|[m   [33m9ae55a1[m Deleted unused lines.
+[35m|[m [1;33m|[m[1;34m\[m [31m\[m  
+[35m|[m * [1;34m\[m [31m\[m   [33mcdcea6e[m Merge branch 'main' of https://github.com/rynn24/Pawland-Boy into rynn
+[35m|[m [1;35m|[m[1;36m\[m [1;34m\[m [31m\[m  
+[35m|[m * [1;36m|[m [1;34m|[m [31m|[m [33mb33f4a2[m restricted pond area
+[35m|[m [1;36m|[m [1;36m|[m [1;34m|[m * [33md5307eb[m i have let the zombie have delay and combine it in the main code for the boss part i oso let the boss have the delay but not for the ult and i havent combine it together
+[35m|[m [1;36m|[m [1;36m|[m [1;34m|[m *   [33m09328f9[m Merge branch 'main' into haojun
+[35m|[m [1;36m|[m [1;36m|[m [1;34m|[m [31m|[m[35m\[m  
+[35m|[m [1;36m|[m[35m_[m[1;36m|[m[35m_[m[1;34m|[m[35m_[m[31m|[m[35m/[m  
+[35m|[m[35m/[m[1;36m|[m [1;36m|[m [1;34m|[m [31m|[m   
+* [1;36m|[m [1;36m|[m [1;34m|[m [31m|[m [33m046e03a[m Deleted unused lines
+[1;34m|[m [1;36m|[m[1;34m_[m[1;36m|[m[1;34m/[m [31m/[m  
+[1;34m|[m[1;34m/[m[1;36m|[m [1;36m|[m [31m|[m   
+* [1;36m|[m [1;36m|[m [31m|[m   [33mf5b7c23[m Merge pull request #9 from rynn24/ting
+[1;36m|[m[34m\[m [1;36m\[m [1;36m\[m [31m\[m  
+[1;36m|[m [34m|[m[1;36m_[m[1;36m|[m[1;36m/[m [31m/[m  
+[1;36m|[m[1;36m/[m[34m|[m [1;36m|[m [31m|[m   
+[1;36m|[m * [1;36m|[m [31m|[m   [33m3fbfb91[m Merge branch 'main' into ting
+[1;36m|[m [35m|[m[1;36m\[m [1;36m\[m [31m\[m  
+[1;36m|[m [35m|[m[1;36m/[m [1;36m/[m [31m/[m  
+[1;36m|[m[1;36m/[m[35m|[m [1;36m|[m [31m|[m   
+[1;36m|[m * [1;36m|[m [31m|[m [33md33543d[m added axes and empty hand attacking
+[1;36m|[m [36m|[m [1;36m|[m * [33m40b28e9[m i add something about the zombie
+[1;36m|[m [36m|[m [1;36m|[m *   [33m7b2da32[m Merge branch 'main' into haojun
+[1;36m|[m [36m|[m [1;36m|[m [1;31m|[m[1;36m\[m  
+[1;36m|[m [36m|[m[1;36m_[m[1;36m|[m[1;36m_[m[1;31m|[m[1;36m/[m  
+[1;36m|[m[1;36m/[m[36m|[m [1;36m|[m [1;31m|[m   
+* [36m|[m [1;36m|[m [1;31m|[m [33m18fa9df[m restricted pond area
+[1;36m|[m [36m|[m[1;36m/[m [1;31m/[m  
+[1;36m|[m[1;36m/[m[36m|[m [1;31m|[m   
+* [36m|[m [1;31m|[m [33mdc40925[m Changed minimap size smaller.
+* [36m|[m [1;31m|[m [33m45fcfd6[m Changed tree spawn area smaller
+* [36m|[m [1;31m|[m [33mdda986e[m Fixed tree animation to stop at exactly frame 7
+* [36m|[m [1;31m|[m [33m075844f[m .
+[1;32m|[m [36m|[m * [33m0a4d75a[m i have flip the zombie and the boss and added the ult feature for the boss
+[1;32m|[m [36m|[m *   [33m3b32bf8[m Merge branch 'main' into haojun
+[1;32m|[m [36m|[m [1;33m|[m[1;32m\[m  
+[1;32m|[m [36m|[m[1;32m_[m[1;33m|[m[1;32m/[m  
+[1;32m|[m[1;32m/[m[36m|[m [1;33m|[m   
+* [36m|[m [1;33m|[m [33m488a9fb[m Merge pull request #7 from rynn24/ting
+[1;35m|[m[36m\[m[36m|[m [1;33m|[m 
+[1;35m|[m * [1;33m|[m [33mfea76fe[m combine edited
+* [1;36m|[m [1;33m|[m   [33m9a22eef[m Merge pull request #8 from rynn24/rynn
+[1;36m|[m[32m\[m [1;36m\[m [1;33m\[m  
+[1;36m|[m [32m|[m[1;36m/[m [1;33m/[m  
+[1;36m|[m[1;36m/[m[32m|[m [1;33m|[m   
+[1;36m|[m * [1;33m|[m [33ma3fdd04[m Restricted pond area.
+* [32m|[m [1;33m|[m   [33mbfc2da4[m Merge branch 'main' of https://github.com/rynn24/Pawland-Boy
+[33m|[m[34m\[m [32m\[m [1;33m\[m  
+[33m|[m * [32m\[m [1;33m\[m   [33m88c17fc[m Merge pull request #6 from rynn24/haojun
+[33m|[m [35m|[m[36m\[m [32m\[m [1;33m\[m  
+* [35m|[m [36m\[m [32m\[m [1;33m\[m   [33m29cd0c5[m Merge branch 'rynn'
+[35m|[m[32m\[m [35m\[m [36m\[m [32m\[m [1;33m\[m  
+[35m|[m [32m|[m[35m/[m [36m/[m [32m/[m [1;33m/[m  
+[35m|[m[35m/[m[32m|[m [36m|[m [32m/[m [1;33m/[m   
+[35m|[m [32m|[m [36m|[m[32m/[m [1;33m/[m    
+[35m|[m [32m|[m[32m/[m[36m|[m [1;33m|[m     
+[35m|[m * [36m|[m [1;33m|[m [33m62d598a[m Changed frame number
+[35m|[m * [36m|[m [1;33m|[m [33m2e1a3dc[m Some changes to tree
+[35m|[m * [36m|[m [1;33m|[m [33mfcefff3[m Added tree animation
+[35m|[m [1;32m|[m [36m|[m * [33mb34201d[m i add the boss feature
+[35m|[m [1;32m|[m [36m|[m * [33mcd2db0b[m i add the zombie attack and die animation
+[35m|[m [1;32m|[m [36m|[m * [33m1c16458[m i add boss walk and attack frame
+[35m|[m [1;32m|[m [36m|[m * [33mf670e0f[m Merge branch 'main' into haojun
+[35m|[m [1;32m|[m [36m|[m[36m/[m[35m|[m 
+[35m|[m [1;32m|[m[35m_[m[36m|[m[35m/[m  
+[35m|[m[35m/[m[1;32m|[m [36m|[m   
+* [1;32m|[m [36m|[m [33mce3ab1c[m Merge branch 'rynn'
+[1;35m|[m[1;32m\[m[1;32m|[m [36m|[m 
+[1;35m|[m * [36m|[m [33m8a82959[m Resize map image
+* [1;36m|[m [36m|[m [33mba1fff8[m Changed combined ver
+[1;36m|[m[1;36m/[m [36m/[m  
+* [36m|[m [33m2d6fd61[m Combined map.py with latest character.py
+* [36m|[m [33m91bef36[m Added all files.
+* [36m|[m   [33mcf78927[m Deleted all my files
+[31m|[m[32m\[m [36m\[m  
+[31m|[m * [36m|[m [33m6a88084[m Changed map image name
+[31m|[m * [36m|[m [33m3e24405[m Fixed load map image error.
+* [32m|[m [36m|[m [33m2eb6887[m Resized map size to 1280 * 960
+* [32m|[m [36m|[m [33m7c51594[m Added files
+* [32m|[m [36m|[m [33mb8407f3[m Merge branch 'main' into rynn
+[33m|[m[32m\[m[32m|[m [36m|[m 
+[33m|[m * [36m|[m   [33me59880e[m updated and changed minting character code
+[33m|[m [35m|[m[36m\[m [36m\[m  
+* [35m|[m [36m\[m [36m\[m   [33m67c19ad[m Deleted file.
+[1;31m|[m[36m\[m [35m\[m [36m\[m [36m\[m  
+[1;31m|[m [36m|[m [35m|[m[36m/[m [36m/[m  
+[1;31m|[m [36m|[m[36m/[m[35m|[m [36m|[m   
+[1;31m|[m * [35m|[m [36m|[m [33m4d205a0[m added attack movement
+[1;31m|[m * [35m|[m [36m|[m [33m0fe8ff1[m update character movement to use spritesheet
+* [1;32m|[m [35m|[m [36m|[m   [33m570a89c[m Deleted a few files
+[1;33m|[m[35m\[m [1;32m\[m [35m\[m [36m\[m  
+[1;33m|[m [35m|[m [1;32m|[m[35m/[m [36m/[m  
+[1;33m|[m [35m|[m[35m/[m[1;32m|[m [36m|[m   
+* [35m|[m [1;32m|[m [36m|[m [33m1814a9d[m Changed file organisations
+* [35m|[m [1;32m|[m [36m|[m [33mf266507[m Added chopping tree code
+[1;34m|[m [35m|[m [1;32m|[m * [33m7b7bdb2[m i add boss in my code
+[1;34m|[m [35m|[m [1;32m|[m *   [33m31480b8[m Merge branch 'main' into haojun
+[1;34m|[m [35m|[m [1;32m|[m [1;35m|[m[35m\[m  
+[1;34m|[m [35m|[m [1;32m|[m[35m_[m[1;35m|[m[35m/[m  
+[1;34m|[m [35m|[m[35m/[m[1;32m|[m [1;35m|[m   
+[1;34m|[m * [1;32m|[m [1;35m|[m [33m0a06164[m Changed file name 'map' to 'rynn'
+[1;34m|[m * [1;32m|[m [1;35m|[m [33me11bf46[m Created new folder: combined map & character.
+[1;34m|[m * [1;32m|[m [1;35m|[m [33m23b2de0[m Added the latest map image.
+[1;34m|[m * [1;32m|[m [1;35m|[m [33m5d2d865[m Deleted the 'hi' file.
+[1;34m|[m * [1;32m|[m [1;35m|[m [33m983bd1e[m Added wrong files into wrong branch.. removed files
+[1;34m|[m * [1;32m|[m [1;35m|[m   [33m8a548f5[m Added new files
+[1;34m|[m [31m|[m[1;34m\[m [1;32m\[m [1;35m\[m  
+[1;34m|[m [31m|[m[1;34m/[m [1;32m/[m [1;35m/[m  
+[1;34m|[m[1;34m/[m[31m|[m [1;32m|[m [1;35m|[m   
+* [31m|[m [1;32m|[m [1;35m|[m   [33m51c4af6[m Merge branch 'rynn' of https://github.com/rynn24/Pawland-Boy into rynn
+[33m|[m[34m\[m [31m\[m [1;32m\[m [1;35m\[m  
+[33m|[m * [31m|[m [1;32m|[m [1;35m|[m [33mb578f12[m Delete map directory
+[33m|[m * [31m|[m [1;32m|[m [1;35m|[m [33m6300c12[m Delete map/map.PNG
+* [34m|[m [31m|[m [1;32m|[m [1;35m|[m   [33m485e887[m Merge branch 'main' into rynn
+[34m|[m[36m\[m [34m\[m [31m\[m [1;32m\[m [1;35m\[m  
+[34m|[m [36m|[m[34m/[m [31m/[m [1;32m/[m [1;35m/[m  
+[34m|[m[34m/[m[36m|[m [31m|[m [1;32m|[m [1;35m|[m   
+* [36m|[m [31m|[m [1;32m|[m [1;35m|[m [33mbe99811[m Changed player speed and minimap zoom factor.
+* [36m|[m [31m|[m [1;32m|[m [1;35m|[m [33m5850e7c[m Changed map image
+[36m|[m [36m|[m [31m|[m [1;32m|[m * [33m7e8eba1[m now i change the player into a class and then after it i can add the zombie class into it and easier for me to work
+[36m|[m [36m|[m [31m|[m [1;32m|[m * [33m809a0db[m trying to combine the code want to cry liao
+[36m|[m [36m|[m [31m|[m [1;32m|[m[31m/[m  
+[36m|[m [36m|[m [31m|[m[31m/[m[1;32m|[m   
+[36m|[m [36m|[m * [1;32m|[m [33m6645e23[m Uploaded map combined with character
+[36m|[m [36m|[m * [1;32m|[m [33mb991491[m Deleted old map image
+[36m|[m [36m|[m[36m/[m [1;32m/[m  
+[36m|[m * [1;32m|[m   [33m8334f59[m Merge branch 'rynn'
+[36m|[m [1;31m|[m[36m\[m [1;32m\[m  
+[36m|[m [1;31m|[m[36m/[m [1;32m/[m  
+[36m|[m[36m/[m[1;31m|[m [1;32m|[m   
+* [1;31m|[m [1;32m|[m   [33m7ad2291[m Merge branch 'main' into rynn
+[1;33m|[m[1;34m\[m [1;31m\[m [1;32m\[m  
+* [1;34m|[m [1;31m|[m [1;32m|[m [33m48ab99e[m Deleted file
+* [1;34m|[m [1;31m|[m [1;32m|[m [33m2f99730[m Deleted file
+* [1;34m|[m [1;31m|[m [1;32m|[m [33ma35b446[m Added new branch.
+* [1;34m|[m [1;31m|[m [1;32m|[m [33me63b377[m[33m ([m[1;32mrynn[m[33m)[m Dragged file out from folder.
+* [1;34m|[m [1;31m|[m [1;32m|[m [33m669c0c3[m Added map code and image.
+ [1;34m/[m [1;31m/[m [1;32m/[m  
+[1;34m|[m * [1;32m|[m [33ma79049f[m Merge branch 'main' of https://github.com/rynn24/Pawland-Boy
+[1;34m|[m[1;34m/[m[1;36m|[m [1;32m|[m 
+[1;34m|[m * [1;32m|[m   [33mf35072c[m Merge pull request #4 from rynn24/haojun
+[1;34m|[m [31m|[m[32m\[m [1;32m\[m  
+[1;34m|[m [31m|[m * [1;32m|[m [33md8833a2[m minting one i added minting/ and mine one i change the zombie icon become besar
+[1;34m|[m [31m|[m[31m/[m [1;32m/[m  
+* [31m/[m [1;32m/[m [33mf08f051[m changed resolution size
+[31m|[m[31m/[m [1;32m/[m  
+* [1;32m|[m   [33me686256[m Merge branch 'main' of https://github.com/rynn24/Pawland-Boy
+[33m|[m[34m\[m [1;32m\[m  
+[33m|[m * [1;32m\[m   [33m2d70caf[m Merge pull request #3 from rynn24/haojun
+[33m|[m [35m|[m[36m\[m [1;32m\[m  
+* [35m|[m [36m|[m [1;32m|[m [33m5fbfe9b[m i add the zombie thing into a file
+[36m|[m [35m|[m[36m/[m [1;32m/[m  
+[36m|[m[36m/[m[35m|[m [1;32m|[m   
+* [35m|[m [1;32m|[m   [33m89ec1d0[m Merge branch 'haojun'
+[1;31m|[m[1;32m\[m [35m\[m [1;32m\[m  
+[1;31m|[m * [35m\[m [1;32m\[m   [33mc39c732[m Merge branch 'ting' of https://github.com/rynn24/Pawland-Boy into haojun
+[1;31m|[m [1;33m|[m[1;32m\[m [35m\[m [1;32m\[m  
+[1;31m|[m [1;33m|[m [1;32m|[m [35m|[m[1;32m/[m  
+[1;31m|[m [1;33m|[m [1;32m|[m[1;32m/[m[35m|[m   
+* [1;33m|[m [1;32m|[m [35m|[m   [33md069c29[m Merge branch 'main' of https://github.com/rynn24/Pawland-Boy
+[1;33m|[m[35m\[m [1;33m\[m [1;32m\[m [35m\[m  
+[1;33m|[m [35m|[m[1;33m/[m [1;32m/[m [35m/[m  
+[1;33m|[m[1;33m/[m[35m|[m [1;32m|[m [35m/[m   
+[1;33m|[m [35m|[m [1;32m|[m[35m/[m    
+[1;33m|[m [35m|[m[35m/[m[1;32m|[m     
+[1;33m|[m * [1;32m|[m [33m1752c57[m Delete Map.PNG
+[1;33m|[m * [1;32m|[m [33m77a2917[m Added map.png
+[1;33m|[m * [1;32m|[m [33mfff966d[m Merge pull request #2 from rynn24/ting
+[1;33m|[m [31m|[m[1;32m\[m[1;32m|[m 
+[1;33m|[m [31m|[m * [33m2114adf[m[33m ([m[1;32mting[m[33m)[m deleted unused files
+[1;33m|[m [31m|[m * [33ma4e67fb[m added my code to this branch
+[1;33m|[m [31m|[m[31m/[m  
+* [31m|[m [33me79904f[m common thing about zombie
+* [31m|[m [33mc09d22f[m[33m ([m[1;31morigin/haojun1[m[33m)[m 456
+[31m|[m[31m/[m  
+* [33m57d25ad[m first thing to upload
