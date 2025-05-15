@@ -110,7 +110,7 @@ def is_valid_tree_position(pos, restricted_zones):
     return True  
 
 # Day-night cycle
-cycle_duration = 60  # 60 seconds total for one full cycle
+cycle_duration = 180  # 3 mins total for one full cycle
 day_duration = cycle_duration * 0.66  # 66% day → 39.6 seconds
 night_duration = cycle_duration * 0.34  # 34% night → 20.4 seconds
 time_counter = 0
