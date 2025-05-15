@@ -964,6 +964,121 @@ for _ in range(20):
             valid_position = True
         attempts += 1
 
+class Firefly(pygame.sprite.Sprite):
+    def __init__(self, x, y, sprite_sheet, frame_width, frame_height, map_rect, id, name, respawn_time=180):
+        super().__init__()
+        self.id = id
+        self.name = name
+        self.map_rect = map_rect
+        self.respawn_time = respawn_time
+        self.last_caught_time = 0
+        self.visible = True
+
+        # Animation setup
+        self.frames = self.load_frames(sprite_sheet, frame_width, frame_height)
+        self.animation_index = 0
+        self.last_animation_time = time.time()
+        self.animation_speed = 0.15
+
+        self.image = self.frames[self.animation_index]
+        self.rect = self.image.get_rect(center=(x, y))
+        self.position = pygame.Vector2(x, y)
+
+        # Wandering setup
+        self.speed = 20
+        self.is_wandering = True
+        self.wander_direction = pygame.Vector2(random.uniform(-1, 1), random.uniform(-1, 1)).normalize()
+        self.last_wander_time = time.time()
+        self.wander_interval = 2
+        self.pause_duration = 1.5
+
+        # States
+        self.state = "wander"  # or "idle"
+        self.caught = False
+
+    def load_frames(self, sheet, width, height):
+        frames = []
+        sheet_width, sheet_height = sheet.get_size()
+        for y in range(0, sheet_height, height):
+            for x in range(0, sheet_width, width):
+                frame = sheet.subsurface(pygame.Rect(x, y, width, height))
+                frames.append(frame)
+        return frames
+
+    def update(self, dt):
+        now = time.time()
+
+        # Handle respawn
+        if not self.visible:
+            if now - self.last_caught_time >= self.respawn_time:
+                self.respawn()
+            return
+
+        # Wandering behavior
+        if self.state == "wander":
+            self.position += self.wander_direction * self.speed * dt
+            self.clamp_to_map()
+            if now - self.last_wander_time > self.wander_interval:
+                self.state = "idle"
+                self.last_wander_time = now
+        elif self.state == "idle":
+            if now - self.last_wander_time > self.pause_duration:
+                self.state = "wander"
+                self.last_wander_time = now
+                self.wander_direction = pygame.Vector2(random.uniform(-1, 1), random.uniform(-1, 1)).normalize()
+
+        # Animation
+        if now - self.last_animation_time > self.animation_speed:
+            self.animation_index = (self.animation_index + 1) % len(self.frames)
+            self.image = self.frames[self.animation_index]
+            self.last_animation_time = now
+
+        # Update rect
+        self.rect.center = (round(self.position.x), round(self.position.y))
+
+    def clamp_to_map(self):
+        self.position.x = max(0, min(self.position.x, self.map_rect.width))
+        self.position.y = max(0, min(self.position.y, self.map_rect.height))
+
+    def draw(self, surface, camera):
+        if self.visible:
+            draw_pos = self.rect.move(-camera.x, -camera.y)
+            surface.blit(self.image, draw_pos)
+
+    def catch(self):
+        if self.visible:
+            self.visible = False
+            self.last_caught_time = time.time()
+            return {"id": self.id, "name": self.name}
+        return None
+
+    def respawn(self):
+        self.visible = True
+        self.position = pygame.Vector2(random.randint(0, self.map_rect.width),
+                                       random.randint(0, self.map_rect.height))
+        self.rect.center = self.position
+        self.state = "wander"
+        self.last_wander_time = time.time()
+        self.wander_direction = pygame.Vector2(random.uniform(-1, 1), random.uniform(-1, 1)).normalize()
+
+# Load firefly sprite sheet
+firefly_sprite_sheet = pygame.image.load("rynn/firefly.png").convert_alpha()  # Update path
+
+# Create fireflies
+fireflies = pygame.sprite.Group()
+for i in range(5):
+    fireflies.add(Firefly(
+        x=random.randint(100, 1000),
+        y=random.randint(100, 1000),
+        sprite_sheet=firefly_sprite_sheet,
+        frame_width=32,
+        frame_height=32,
+        map_rect=map_image.get_rect(),
+        id=i,
+        name="Powder"
+    ))
+
+
 class Zombie(pygame.sprite.Sprite):
     def __init__(self, x, y, player):
         super().__init__()
@@ -1570,6 +1685,7 @@ def draw_settings_menu(screen):
     screen.blit(quit_text, (100, 250))
 
 inventory = Inventory()
+
 # Main loop
 running = True
 while running:
@@ -1774,6 +1890,10 @@ while running:
         screen.fill((10, 10, 10))  # Optional: dim background
         settings_menu.draw(screen)
 
+    #Fireflies
+    for firefly in fireflies:
+        firefly.update(dt)
+        firefly.draw(screen, camera)
 
     pygame.display.update()
     pygame.display.flip()
