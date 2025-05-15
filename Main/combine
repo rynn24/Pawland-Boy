@@ -301,20 +301,23 @@ class UserSystem:
 
     def save_users(self):
         try:
-            # Test if the data is serializable
-            json.dumps(self.users)  # This will raise TypeError if anything is unserializable
+            # Test serialization first
+            test_data = json.dumps(self.users, indent=2)
+            print("Test serialization successful!")
+            
             with open(self.filename, "w") as f:
-                json.dump(self.users, f)
+                json.dump(self.users, f, indent=2)  # Pretty-print for debugging
             print("✅ Users saved successfully.")
-        except TypeError as e:
-            print("❌ Serialization error! Non-serializable object found:")
-            print(e)
-
+            return True
+        except (TypeError, ValueError) as e:
+            print(f"❌ Serialization error: {e}")
+            print("Problematic data:")
             import pprint
-            pprint.pprint(self.users)  # Pretty print for easier debugging
-
-            # Optional: show exactly which part failed
-            self.inspect_for_unserializables(self.users)
+            pprint.pprint(self.users)
+            return False
+        except Exception as e:
+            print(f"❌ Unexpected error saving users: {e}")
+            return False
 
     def inspect_for_unserializables(self, data, path="root"):
         if isinstance(data, dict):
@@ -392,14 +395,18 @@ class UserSystem:
 
     def save_progress(self, username, health, position, inventory_dict):
         if username in self.users:
-            # Ensure position is serializable (convert pygame.Vector2 to list)
+            # Convert position to list if it's a Vector2
             if isinstance(position, pygame.Vector2):
-                position = [position.x, position.y]  # Convert to list
+                position = [position.x, position.y]
+            elif hasattr(position, '__iter__'):  # If it's already a list/tuple
+                position = [float(position[0]), float(position[1])]
             
-            self.users[username]["health"] = health
-            self.users[username]["position"] = position  # Store position as a list
-            self.users[username]["inventory"] = inventory_dict
-            print(f"Updated inventory for {username}: {self.users[username]['inventory']}")  # Debugging line
+            self.users[username] = {
+                "health": health,
+                "position": position,
+                "inventory": inventory_dict
+            }
+            print(f"Saving data for {username}: {self.users[username]}")  # Debug print
             self.save_users()
 
 class MainMenu:
@@ -527,6 +534,7 @@ class RegisterPage:
             self.screen.blit(msg, (self.window_size[0] // 2 - msg.get_width() // 2, 280))
 
         pygame.display.flip()
+
 class SettingsMenu:
     def __init__(self):
         self.visible = False
@@ -1712,20 +1720,16 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             # Save progress before exiting
+            # In your quit event handler:
             inventory_dict = inventory.get_inventory_dict()
-            progress_data = {
-                "position": [player_instance.position.x, player_instance.position.y],
-                "health": player_instance.health,
-                "inventory":inventory_dict
-            }
-            # Save the progress
             user_system.save_progress(
                 player_instance.username,
                 player_instance.health,
-                [player_instance.position.x, player_instance.position.y],
-                player_instance.inventory
-                )
-            running = False        
+                player_instance.position,  # This should be a Vector2 or list
+                inventory_dict
+            )
+            running = False     
+   
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 if game_state == "game":
