@@ -110,7 +110,7 @@ def is_valid_tree_position(pos, restricted_zones):
     return True  
 
 # Day-night cycle
-cycle_duration = 180  # 3 mins total for one full cycle
+cycle_duration = 60  # 60 seconds total for one full cycle
 day_duration = cycle_duration * 0.66  # 66% day → 39.6 seconds
 night_duration = cycle_duration * 0.34  # 34% night → 20.4 seconds
 time_counter = 0
@@ -1551,7 +1551,6 @@ class PondArea:
         if self.is_player_inside(player_pos) and keys[pygame.K_j]:
             self.show_animation = True
             self.current_frame = 0
-            inventory.add_item("fish", 1)
 
 
         if self.show_animation:
@@ -1720,15 +1719,20 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             # Save progress before exiting
-            # In your quit event handler:
             inventory_dict = inventory.get_inventory_dict()
+            progress_data = {
+                "position": [player_instance.position.x, player_instance.position.y],
+                "health": player_instance.health,
+                "inventory":inventory_dict
+            }
+            # Save the progress
             user_system.save_progress(
                 player_instance.username,
                 player_instance.health,
-                player_instance.position,  # This should be a Vector2 or list
-                inventory_dict
+                [player_instance.position.x, player_instance.position.y],
+                inventory.get_inventory_dict()
             )
-            running = False     
+            running = False   
    
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
