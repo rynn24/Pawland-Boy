@@ -141,7 +141,7 @@ def is_valid_tree_position(pos, restricted_zones):
     return True  
 
 # Day-night cycle
-cycle_duration = 60  # 60 seconds total for one full cycle
+cycle_duration = 180  # 3 mins total for one full cycle
 day_duration = cycle_duration * 0.66  # 66% day → 39.6 seconds
 night_duration = cycle_duration * 0.34  # 34% night → 20.4 seconds
 time_counter = 0
@@ -149,14 +149,14 @@ time_counter = 0
 
 # Minimap settings
 minimap_radius = 60
-minimap_zoom_factor = 0.8
+minimap_zoom_factor = 1
 minimap_pos = (minimap_radius + 10, minimap_radius + 10)
 minimap_border_color = (0, 0, 0)
 minimap_border_width = 2
 player_minimap_color = (255, 50, 50)
 minimap_mask = pygame.Surface((minimap_radius * 2, minimap_radius * 2), pygame.SRCALPHA)
 pygame.draw.circle(minimap_mask, (255, 255, 255), (minimap_radius, minimap_radius), minimap_radius)
-
+    
 FRAME_WIDTH, FRAME_HEIGHT = 200, 200
 
 def load_frames(sheet, frame_width, frame_height, row, num_frames, spacing=0):
@@ -973,6 +973,7 @@ class Firefly(pygame.sprite.Sprite):
         self.respawn_time = respawn_time
         self.last_caught_time = 0
         self.visible = True
+        self.facing_left = False
 
         # Animation setup
         self.frames = self.load_frames(sprite_sheet, frame_width, frame_height)
@@ -1001,9 +1002,11 @@ class Firefly(pygame.sprite.Sprite):
         sheet_width, sheet_height = sheet.get_size()
         for y in range(0, sheet_height, height):
             for x in range(0, sheet_width, width):
-                frame = sheet.subsurface(pygame.Rect(x, y, width, height))
-                frames.append(frame)
+                if x + width <= sheet_width and y + height <= sheet_height:
+                    frame = sheet.subsurface(pygame.Rect(x, y, width, height))
+                    frames.append(frame)
         return frames
+
 
     def update(self, dt):
         now = time.time()
@@ -1026,12 +1029,22 @@ class Firefly(pygame.sprite.Sprite):
                 self.state = "wander"
                 self.last_wander_time = now
                 self.wander_direction = pygame.Vector2(random.uniform(-1, 1), random.uniform(-1, 1)).normalize()
+        # Flip sprite based on horizontal direction
+        if self.wander_direction.x < 0 and not self.facing_left:
+            self.facing_left = True
+        elif self.wander_direction.x > 0 and self.facing_left:
+            self.facing_left = False
 
         # Animation
         if now - self.last_animation_time > self.animation_speed:
             self.animation_index = (self.animation_index + 1) % len(self.frames)
-            self.image = self.frames[self.animation_index]
+
+            frame = self.frames[self.animation_index]
+            if self.facing_left:
+                frame = pygame.transform.flip(frame, True, False)
+            self.image = frame
             self.last_animation_time = now
+
 
         # Update rect
         self.rect.center = (round(self.position.x), round(self.position.y))
@@ -1068,11 +1081,11 @@ firefly_sprite_sheet = pygame.image.load("rynn/firefly.png").convert_alpha()  # 
 fireflies = pygame.sprite.Group()
 for i in range(5):
     fireflies.add(Firefly(
-        x=random.randint(100, 1000),
-        y=random.randint(100, 1000),
+        x=random.randint(50, 570),  # 620 - 50
+        y=random.randint(50, 370),  # 420 - 50
         sprite_sheet=firefly_sprite_sheet,
-        frame_width=32,
-        frame_height=32,
+        frame_width=100,
+        frame_height=100,
         map_rect=map_image.get_rect(),
         id=i,
         name="Powder"
@@ -1567,7 +1580,6 @@ class PondArea:
         if self.is_player_inside(player_pos) and keys[pygame.K_j]:
             self.show_animation = True
             self.current_frame = 0
-            inventory.add_item("fish", 1)
 
 
         if self.show_animation:
@@ -1806,10 +1818,6 @@ while running:
 
     keys = pygame.key.get_pressed()
     pond.update(player_instance.rect.center, keys)
-   
-    
-
-
 
         # Boss draw
     if boss.alive():  # Check if boss hasn't been killed
@@ -1817,9 +1825,12 @@ while running:
         zoom_surface.blit(boss.image, boss_rect_on_screen)
         if not boss.is_dead:
             boss.draw_health_bar(zoom_surface, camera)
-
-
-
+    
+    #Fireflies
+    for firefly in fireflies:
+        firefly.update(dt)
+        firefly.draw(screen, camera)
+        
         # Final game drawing
     zoomed_view = pygame.transform.scale(zoom_surface, screen.get_size())
     screen.blit(zoomed_view, (0, 0))
@@ -1889,11 +1900,6 @@ while running:
     if game_state == "settings":
         screen.fill((10, 10, 10))  # Optional: dim background
         settings_menu.draw(screen)
-
-    #Fireflies
-    for firefly in fireflies:
-        firefly.update(dt)
-        firefly.draw(screen, camera)
 
     pygame.display.update()
     pygame.display.flip()
