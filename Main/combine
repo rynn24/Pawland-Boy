@@ -194,7 +194,7 @@ class Inventory:
     def __init__(self, max_slots=20):
         self.items = {}
         self.max_slots = max_slots
-        self.slots = [None] * max_slots  # Initial empty slots
+        self.slots = [None] * self.max_slots  # Initial empty slots
         self.slot_rects = []
         self.font = pygame.font.SysFont("Arial", 20)
         self.item_icons = {
@@ -273,8 +273,6 @@ class Inventory:
                     self.draw_item_icon(surface, name, count, rect)
 
     def add_item(self, name, count):
-        """Add or combine an item into the inventory"""
-
         # 1. Try to find and combine with existing item of same name
         for i in range(self.max_slots):
             item = self.slots[i]
@@ -331,10 +329,12 @@ class UserSystem:
         self.current_user = None
 
     def save_users(self):
-            json.dumps(self.users)  
+            
+            # Test if the data is serializable
+            json.dumps(self.users)  # This will raise TypeError if anything is unserializable
             with open(self.filename, "w") as f:
                 json.dump(self.users, f)
-
+            print("✅ Users saved successfully.")
 
 
     def load_users(self):
@@ -375,6 +375,8 @@ class UserSystem:
         health = user_data.get("health", 100)
         position = user_data.get("position", [1500, 125])
         inventory = user_data.get("inventory", {})
+
+        print(f"get_player_data inventory for {username}: {inventory}")
     
         if isinstance(position, dict):
             position = [position.get("0", 1500), position.get("1", 125)]
@@ -535,6 +537,8 @@ class Player:
         self.username = username
         self.user_system = UserSystem()
         self.health, self.position, self.inventory = self.user_system.get_player_data(self.username)
+        print(f"Loaded player data for {self.username}: health={self.health}, position={self.position}, inventory={self.inventory}")
+
         self.position = pygame.Vector2(self.position[0], self.position[1])
         self.speed = speed 
         if isinstance(self.position, list) or isinstance(self.position, tuple):
@@ -1427,7 +1431,7 @@ class PondArea:
         if self.is_player_inside(player_pos) and keys[pygame.K_j]:
             self.show_animation = True
             self.current_frame = 0
-            inventory.add_item("fish", 1)
+
 
 
         if self.show_animation:
@@ -1544,7 +1548,17 @@ def draw_settings_menu(screen):
     screen.blit(music_text, (100, 150))
     screen.blit(quit_text, (100, 250))
 
+
+#Load saved data
+health, position, inventory_data = user_system.get_player_data(current_user)
+
+#Create and fill inventory
 inventory = Inventory()
+inventory.set_items(inventory_data)  #Load saved items
+
+#Create player and assign the filled inventory
+player = Player(position, speed, current_user)
+player.inventory = inventory  #Assign filled inventory
 
 # Main loop
 running = True
@@ -1563,10 +1577,10 @@ while running:
             }
             # Save the progress
             user_system.save_progress(
-                player_instance.username,
-                player_instance.health,
-                [player_instance.position.x, player_instance.position.y],
-                player_instance.inventory
+                    player_instance.username,
+                    player_instance.health,
+                    [player_instance.position.x, player_instance.position.y],
+                    inventory_dict
                 )
             running = False        
         elif event.type == pygame.KEYDOWN:
