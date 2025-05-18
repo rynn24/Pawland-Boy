@@ -1624,6 +1624,23 @@ pond = PondArea(
     detection_scale=1.1
 )
 
+def quit_game():
+    print("[DEBUG] Quit triggered")
+    print(f"[DEBUG] current_user = {current_user}")
+    print(f"[DEBUG] player_instance.username = {player_instance.username}")
+    print(f"[DEBUG] player_instance.health = {player_instance.health}")
+    print(f"[DEBUG] player_instance.position = {[player_instance.position.x, player_instance.position.y]}")
+    print(f"[DEBUG] player_instance.inventory = {player_instance.inventory}")
+    inventory_dict = inventory.get_inventory_dict()
+    user_system.save_progress(
+        player_instance.username,
+        player_instance.health,
+        [player_instance.position.x, player_instance.position.y],
+        player_instance.inventory
+    )
+    pygame.quit()
+    sys.exit()
+    
 main_menu = MainMenu(screen, window_size)
 login_page = LoginPage(screen, user_system, window_size)
 register_page = RegisterPage(screen, user_system, window_size)
@@ -1634,9 +1651,7 @@ in_game = False
 while not in_game:
     events = pygame.event.get()
     for event in events:
-        print(f"[DEBUG] Event detected: {event}, type: {event.type}")
         if event.type == pygame.QUIT:
-            print("[DEBUG] Quit event detected in menu loop")
             pygame.quit()
             sys.exit()
 
@@ -1722,30 +1737,8 @@ while running:
     dt = clock.tick(60) / 1000
     current_time = pygame.time.get_ticks() / 1000
     for event in pygame.event.get():
-        print(f"[DEBUG] Event detected: {event}, type: {event.type}")
         if event.type == pygame.QUIT:
-            print("[DEBUG] Quit event detected in game loop")
-            # Save progress before exiting
-            print("[DEBUG] QUIT event detected")
-            print(f"[DEBUG] current_user = {current_user}")
-            print(f"[DEBUG] player_instance.username = {player_instance.username}")
-            print(f"[DEBUG] player_instance.health = {player_instance.health}")
-            print(f"[DEBUG] player_instance.position = {[player_instance.position.x, player_instance.position.y]}")
-            print(f"[DEBUG] player_instance.inventory = {player_instance.inventory}")
-            inventory_dict = inventory.get_inventory_dict()
-            progress_data = {
-                "position": [player_instance.position.x, player_instance.position.y],
-                "health": player_instance.health,
-                "inventory":inventory_dict
-            }
-            # Save the progress
-            user_system.save_progress(
-                player_instance.username,
-                player_instance.health,
-                [player_instance.position.x, player_instance.position.y],
-                player_instance.inventory
-                )
-            running = False
+            quit_game()
    
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
@@ -1781,7 +1774,7 @@ while running:
         if game_state == "settings":
             result = settings_menu.handle_events(event)
             if result == "quit":
-                running = False
+                quit_game()
             elif result == "back":
                 game_state = "game"
                 settings_menu.visible = False
