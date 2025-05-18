@@ -350,8 +350,7 @@ class UserSystem:
         self.users[username] = {
             "health": 100,  # Initial health
             "position": [1500,125],  # Initial position (center of screen)
-            "inventory": {
-                "sword": 1,  # Starting item
+            "inventory": { 
             }
         }
         self.save_users()
