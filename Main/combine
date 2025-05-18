@@ -324,34 +324,10 @@ class UserSystem:
         self.current_user = None
 
     def save_users(self):
-        try:
-            # Test if the data is serializable
-            json.dumps(self.users)  # This will raise TypeError if anything is unserializable
+            json.dumps(self.users)  
             with open(self.filename, "w") as f:
                 json.dump(self.users, f)
-            print("✅ Users saved successfully.")
-        except TypeError as e:
-            print("❌ Serialization error! Non-serializable object found:")
-            print(e)
 
-            import pprint
-            pprint.pprint(self.users)  # Pretty print for easier debugging
-
-            # Optional: show exactly which part failed
-            self.inspect_for_unserializables(self.users)
-
-    def inspect_for_unserializables(self, data, path="root"):
-        if isinstance(data, dict):
-            for key, value in data.items():
-                self.inspect_for_unserializables(value, f"{path}['{key}']")
-        elif isinstance(data, list):
-            for index, item in enumerate(data):
-                self.inspect_for_unserializables(item, f"{path}[{index}]")
-        else:
-            try:
-                json.dumps(data)
-            except TypeError:
-                print(f"❗ Unserializable data at {path}: {type(data)} -> {repr(data)}")
 
 
     def load_users(self):
@@ -1290,7 +1266,6 @@ class PondArea:
         "id": "nothing",
         "name": "Nothing",
         "message": "You got nothing...",
-        "image": pygame.image.load("rynn/nothing.png").convert_alpha(),
         "chance": 0.27
     },
     {
