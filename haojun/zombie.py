@@ -26,6 +26,7 @@ reward_font = pygame.font.Font(None, 45) # font for fishing reward
 # Load map image
 map_image = pygame.image.load(os.path.join("rynn/Map.png")).convert()
 
+<<<<<<< HEAD
 # Load abandoned house image
 house_image = pygame.image.load("rynn/house.png").convert_alpha()
 house_rect = house_image.get_rect(topleft=(1500, 125))
@@ -33,6 +34,8 @@ house_rect = house_image.get_rect(topleft=(1500, 125))
 inside_house_image = pygame.image.load("rynn/inside-house.jpg").convert()
 inside_house = False
 
+=======
+>>>>>>> origin/main
 # Camera and player position 
 camera_width, camera_height = 320, 180
 camera = pygame.Rect(0, 0, camera_width, camera_height)
@@ -1698,6 +1701,7 @@ while running:
     keys = pygame.key.get_pressed()
     pond.update(player_instance.rect.center, keys)
    
+<<<<<<< HEAD
         # Boss draw
     if boss.alive():  # Check if boss hasn't been killed
         boss_rect_on_screen = boss.rect.move(-camera.x, -camera.y)
@@ -1705,6 +1709,21 @@ while running:
         if not boss.is_dead:
             boss.draw_health_bar(zoom_surface, camera)
 
+=======
+    
+
+
+
+        # Boss draw
+    if boss.alive():  # Check if boss hasn't been killed
+        boss_rect_on_screen = boss.rect.move(-camera.x, -camera.y)
+        zoom_surface.blit(boss.image, boss_rect_on_screen)
+        if not boss.is_dead:
+            boss.draw_health_bar(zoom_surface, camera)
+
+
+
+>>>>>>> origin/main
         # Final game drawing
     zoomed_view = pygame.transform.scale(zoom_surface, screen.get_size())
     screen.blit(zoomed_view, (0, 0))
@@ -1769,12 +1788,17 @@ while running:
 
     #Draw inventory
     inventory.draw(screen)
+<<<<<<< HEAD
                 
+=======
+
+>>>>>>> origin/main
     # ========== DRAW SETTINGS MENU WHEN ACTIVE ==========
     if game_state == "settings":
         screen.fill((10, 10, 10))  # Optional: dim background
         settings_menu.draw(screen)
 
+<<<<<<< HEAD
     #Abandoned house
     if inside_house:
         screen.blit(inside_house_image, (0, 0))
@@ -1800,6 +1824,8 @@ while running:
             screen.blit(text, (screen.get_width() // 2 - text.get_width() // 2, 30))
             if keys[pygame.K_j]:
                 inside_house = True
+=======
+>>>>>>> origin/main
 
     pygame.display.update()
     pygame.display.flip()
