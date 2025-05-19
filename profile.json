@@ -1,1 +1,36 @@
-{"1": {"health": 100, "position": [1586.0199999999977, 744.8049999999986], "inventory": {"sword": 1, "Wood": 13, "Fruit": 8, "Big Fish": 3, "Fish": 2, "Crystal": 1}}, "2": {"health": 100, "position": [1715.9, 616.7849999999999], "inventory": {"sword": 1, "Wood": 8, "Fruit": 2, "Fish": 1}}, "3": {"health": 100, "position": [1500, 125], "inventory": {"sword": 1}}, "11": {"health": 100, "position": [1392.3825, 423.3550000000017], "inventory": {"Wood": 7, "Fruit": 6, "Crystal": 1}}, "12": {"health": 100, "position": [1535.3649999999989, 747.729999999998], "inventory": {"Wood": 6, "Fruit": 2, "Fish": 2}}}
+{
+  "2": {
+    "health": 0,
+    "position": [
+      419.8350000000056,
+      337.8800000000004
+    ],
+    "inventory": {
+      "Wood": 2,
+      "Fruit": 2,
+      "fish": 8,
+      "Big Fish": 1,
+      "Fish": 1
+    }
+  },
+  "h": {
+    "health": 100,
+    "position": [
+      1500,
+      125
+    ],
+    "inventory": {
+      "sword": 1
+    }
+  },
+  "hj": {
+    "health": 100,
+    "position": [
+      1500,
+      125
+    ],
+    "inventory": {
+      "sword": 1
+    }
+  }
+}

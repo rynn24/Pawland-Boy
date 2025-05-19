@@ -68,39 +68,8 @@ WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 GRAY = (100, 100, 100)
 LIGHT_GRAY = (200, 200, 200)
-
-def  login_menu(user_system) :
-
-    while True:
-        print("=== Welcome to Pawland Boy ===")
-        print("1. Open new profile")
-        print("2. Enter profile")
-        print("3. Quit")
-        choice = input("Choose an option: ")
-
-        if choice == "1":
-            username = input("New Username: ")
-            if user_system.register(username):
-                print("Successfully create new profile!")
-            else:
-                print("Username already exists.")
-        elif choice == "2":
-            print("Available profiles:")
-            for profile_name in user_system.users.keys():
-                print(f"- {profile_name}")
-
-            username = input("Enter username: ")
-            if username in user_system.users:
-                user_system.current_user = username
-                print(f"Profile '{username}' loaded.")
-                health, position, inventory = user_system.get_player_data(username)
-                return username
-            else:
-                print("Profile not found.")
-        elif choice == "3":
-            quit()
-        else:
-            print("Invalid choice.") 
+DARK_BLUE = (30, 30, 50)
+RED = (255, 50, 50)
 
 
 def scale_sprite(sprite, scale):
@@ -332,9 +301,37 @@ class UserSystem:
             
             # Test if the data is serializable
             json.dumps(self.users)  # This will raise TypeError if anything is unserializable
+        try:
+            # Test serialization first
+            test_data = json.dumps(self.users, indent=2)
+            print("Test serialization successful!")
+            
             with open(self.filename, "w") as f:
-                json.dump(self.users, f)
+                json.dump(self.users, f, indent=2)  # Pretty-print for debugging
             print("✅ Users saved successfully.")
+            return True
+        except (TypeError, ValueError) as e:
+            print(f"❌ Serialization error: {e}")
+            print("Problematic data:")
+            import pprint
+            pprint.pprint(self.users)
+            return False
+        except Exception as e:
+            print(f"❌ Unexpected error saving users: {e}")
+            return False
+
+    def inspect_for_unserializables(self, data, path="root"):
+        if isinstance(data, dict):
+            for key, value in data.items():
+                self.inspect_for_unserializables(value, f"{path}['{key}']")
+        elif isinstance(data, list):
+            for index, item in enumerate(data):
+                self.inspect_for_unserializables(item, f"{path}[{index}]")
+        else:
+            try:
+                json.dumps(data)
+            except TypeError:
+                print(f"❗ Unserializable data at {path}: {type(data)} -> {repr(data)}")
 
 
     def load_users(self):
@@ -399,18 +396,149 @@ class UserSystem:
         return inventory_dict
 
     def save_progress(self, username, health, position, inventory_dict):
+        print(f"[DEBUG] save_progress called for username: {username}")
         if username in self.users:
-            # Ensure position is serializable (convert pygame.Vector2 to list)
+            # Convert position to list if it's a Vector2
             if isinstance(position, pygame.Vector2):
-                position = [position.x, position.y]  # Convert to list
+                position = [position.x, position.y]
+            elif hasattr(position, '__iter__'):  # If it's already a list/tuple
+                position = [float(position[0]), float(position[1])]
             
-            self.users[username]["health"] = health
-            self.users[username]["position"] = position  # Store position as a list
-            self.users[username]["inventory"] = inventory_dict
-            print(f"Updated inventory for {username}: {self.users[username]['inventory']}")  # Debugging line
+            self.users[username] = {
+                "health": health,
+                "position": position,
+                "inventory": inventory_dict
+            }
+            print(f"Saving data for {username}: {self.users[username]}")  # Debug print
             self.save_users()
+        else:
+            print(f"Username {username} not found in users!")  # Add this debug line!
+
+class MainMenu:
+    def __init__(self, screen, window_size):
+        self.screen = screen
+        self.window_size = window_size
+        self.font = pygame.font.SysFont(None, 48)
+        self.login_button = Button(window_size[0] // 2 - 100, 200, 200, 50, "Login",
+                                   (50, 150, 50), (100, 200, 100), (255, 255, 255))
+        self.register_button = Button(window_size[0] // 2 - 100, 270, 200, 50, "Register",
+                                      (50, 50, 150), (100, 100, 200), (255, 255, 255))
+
+    def handle_events(self, events):
+        for event in events:
+            if self.login_button.is_clicked(pygame.mouse.get_pos(), event):
+                return "login_page"
+            if self.register_button.is_clicked(pygame.mouse.get_pos(), event):
+                return "register_page"
+        return None
+
+    def draw(self):
+        self.screen.fill((0, 0, 30))
+        title = self.font.render("Pawland Boy", True, (255, 255, 255))
+        self.screen.blit(title, (self.window_size[0] // 2 - title.get_width() // 2, 100))
+        self.login_button.draw(self.screen)
+        self.register_button.draw(self.screen)
+        pygame.display.flip()
+
+class LoginPage:
+    def __init__(self, screen, user_system, window_size):
+        self.screen = screen
+        self.user_system = user_system
+        self.window_size = window_size
+        self.font = pygame.font.SysFont(None, 36)
+        self.back_button = Button(20, 20, 100, 40, "Back",
+                                  (100, 100, 100), (150, 150, 150), (255, 255, 255))
+
+    def handle_events(self, events):
+        for event in events:
+            if self.back_button.is_clicked(pygame.mouse.get_pos(), event):
+                return "main_menu"
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                mouse_y = event.pos[1]
+                index = (mouse_y - 140) // 40
+                usernames = list(self.user_system.users.keys())
+                if 0 <= index < len(usernames):
+                    username = usernames[index]
+                    self.user_system.current_user = username
+                    return "game", username
+        return None
+
+    def draw(self):
+        self.screen.fill((20, 20, 20))
+        title = self.font.render("Select Profile", True, (255, 255, 255))
+        self.screen.blit(title, (self.window_size[0] // 2 - title.get_width() // 2, 60))
+        for i, username in enumerate(self.user_system.users.keys()):
+            label = self.font.render(f"{username}", True, (200, 200, 200))
+            self.screen.blit(label, (100, 140 + i * 40))
+        self.back_button.draw(self.screen)
+        pygame.display.flip()
 
 
+class RegisterPage:
+    def __init__(self, screen, user_system, window_size):
+        self.screen = screen
+        self.user_system = user_system
+        self.window_size = window_size
+        self.font = pygame.font.SysFont(None, 36)
+        self.username_input = ""
+        self.input_rect = pygame.Rect(window_size[0] // 2 - 100, 160, 200, 40)
+        self.active_input = False
+        self.register_button = Button(window_size[0] // 2 - 60, 220, 120, 40, "Register",
+                                      (50, 100, 150), (100, 150, 200), (255, 255, 255))
+        self.back_button = Button(20, 20, 100, 40, "Back",
+                                  (100, 100, 100), (150, 150, 150), (255, 255, 255))
+        self.message = ""
+
+    def handle_events(self, events):
+        for event in events:
+            if self.back_button.is_clicked(pygame.mouse.get_pos(), event):
+                return "main_menu"
+
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if self.input_rect.collidepoint(event.pos):
+                    self.active_input = True
+                else:
+                    self.active_input = False
+
+                if self.register_button.is_clicked(event.pos, event):
+                    if self.username_input:
+                        if self.user_system.register(self.username_input):
+                            return "game", self.username_input
+                        else:
+                            self.message = "Username already exists!"
+
+            elif event.type == pygame.KEYDOWN and self.active_input:
+                if event.key == pygame.K_RETURN:
+                    pass
+                elif event.key == pygame.K_BACKSPACE:
+                    self.username_input = self.username_input[:-1]
+                else:
+                    if len(self.username_input) < 20:
+                        self.username_input += event.unicode
+        return None
+
+    def draw(self):
+        self.screen.fill((30, 0, 0))
+        title = self.font.render("Create New Profile", True, (255, 255, 255))
+        self.screen.blit(title, (self.window_size[0] // 2 - title.get_width() // 2, 80))
+
+        pygame.draw.rect(self.screen, (255, 255, 255) if self.active_input else (180, 180, 180),
+                         self.input_rect, 2)
+        input_text = self.font.render(self.username_input, True, (255, 255, 255))
+        self.screen.blit(input_text, (self.input_rect.x + 8, self.input_rect.y + 6))
+
+        if not self.username_input and not self.active_input:
+            placeholder = self.font.render("Enter username...", True, (100, 100, 100))
+            self.screen.blit(placeholder, (self.input_rect.x + 8, self.input_rect.y + 6))
+
+        self.register_button.draw(self.screen)
+        self.back_button.draw(self.screen)
+
+        if self.message:
+            msg = self.font.render(self.message, True, (255, 0, 0))
+            self.screen.blit(msg, (self.window_size[0] // 2 - msg.get_width() // 2, 280))
+
+        pygame.display.flip()
 
 class SettingsMenu:
     def __init__(self):
@@ -841,10 +969,9 @@ class Player:
             screen.blit(scaled_frame, (0, 0))
 
 user_system = UserSystem()  # Create UserSystem instance
-current_user = login_menu(user_system)  # Get current user (should return a string)
 speed = 2.5  # Adjust as needed
 player_position = pygame.Vector2(1500, 125)
-player_instance = Player(player_position, speed, current_user)  # Create Player instance
+
 
 
 class Tree:
@@ -1432,7 +1559,6 @@ class PondArea:
             self.current_frame = 0
 
 
-
         if self.show_animation:
             now = pygame.time.get_ticks()
             if now - self.last_update > self.frame_delay:
@@ -1499,8 +1625,68 @@ pond = PondArea(
     rows=1,  
     cols=17,
     detection_scale=1.1
-)        
+)
 
+def quit_game():
+    print("[DEBUG] Quit triggered")
+    print(f"[DEBUG] current_user = {current_user}")
+    print(f"[DEBUG] player_instance.username = {player_instance.username}")
+    print(f"[DEBUG] player_instance.health = {player_instance.health}")
+    print(f"[DEBUG] player_instance.position = {[player_instance.position.x, player_instance.position.y]}")
+    print(f"[DEBUG] player_instance.inventory = {player_instance.inventory}")
+    inventory_dict = inventory.get_inventory_dict()
+    user_system.save_progress(
+        player_instance.username,
+        player_instance.health,
+        [player_instance.position.x, player_instance.position.y],
+        player_instance.inventory
+    )
+    pygame.quit()
+    sys.exit()
+    
+main_menu = MainMenu(screen, window_size)
+login_page = LoginPage(screen, user_system, window_size)
+register_page = RegisterPage(screen, user_system, window_size)
+current_screen = "main_menu"
+current_user = None
+in_game = False
+
+while not in_game:
+    events = pygame.event.get()
+    for event in events:
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            sys.exit()
+
+    if current_screen == "main_menu":
+        result = main_menu.handle_events(events)
+        if result:
+            current_screen = result
+        main_menu.draw()
+
+    elif current_screen == "login_page":
+        result = login_page.handle_events(events)
+        if result:
+            if isinstance(result, tuple) and result[0] == "game":
+                current_user = result[1]
+                in_game = True  # EXIT this loop and start game
+            else:
+                current_screen = result
+        login_page.draw()
+
+    elif current_screen == "register_page":
+        result = register_page.handle_events(events)
+        if result:
+            if isinstance(result, tuple) and result[0] == "game":
+                current_user = result[1]
+                in_game = True  # EXIT this loop and start game
+            else:
+                current_screen = result
+        register_page.draw()
+
+    pygame.display.flip()
+
+player_instance = Player(player_position, speed, current_user)  # Create Player instance
 # Sprite groups
 all_sprites = pygame.sprite.Group()
 zombie_group = pygame.sprite.Group()
@@ -1564,7 +1750,6 @@ running = True
 while running:
     dt = clock.tick(60) / 1000
     current_time = pygame.time.get_ticks() / 1000
-
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             # Save progress before exiting
@@ -1582,6 +1767,8 @@ while running:
                     inventory_dict
                 )
             running = False        
+            quit_game()
+   
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 if game_state == "game":
@@ -1611,51 +1798,45 @@ while running:
         elif event.type == pygame.KEYUP:
             if event.key == pygame.K_SPACE:
                 player_instance.attacking = True
-    
-    keys = pygame.key.get_pressed()    
-    new_position, current_sprite = player_instance.move(keys, dt)
-    
-    move_distance = speed * dt * 60
 
-    current_time = time.time()
-    if current_time - last_spawn_time >= spawn_delay and len(zombie_group) < 10:
-        spawn_zombie()
-        last_spawn_time = current_time
-    
-    zombie_group.update()
-    boss.update()  # <-- Add this line to update the boss each frame
+        # Handle settings menu events
+        if game_state == "settings":
+            result = settings_menu.handle_events(event)
+            if result == "quit":
+                quit_game()
+            elif result == "back":
+                game_state = "game"
+                settings_menu.visible = False
 
-    # --- NEW Restriction check per direction ---
-    proposed_position = player_instance.position.copy()
+    # ========== GAME LOGIC ONLY WHEN IN "GAME" STATE ==========
+    if game_state == "game":
+        keys = pygame.key.get_pressed()
+        new_position, current_sprite = player_instance.move(keys, dt)
+        move_distance = speed * dt * 60
 
-    if keys[pygame.K_w]:  # Up
-        test_pos = proposed_position.copy()
-        test_pos.y -= move_distance
-        test_rect = pygame.Rect(test_pos.x - 20, test_pos.y - 20, 40, 40)
-        if not is_in_restricted_zone(test_rect.center, restricted_zones):
-            proposed_position.y -= move_distance
-            player_instance.direction = 'up'
-    if keys[pygame.K_s]:  # Down
-        test_pos = proposed_position.copy()
-        test_pos.y += move_distance
-        test_rect = pygame.Rect(test_pos.x - 20, test_pos.y - 20, 40, 40)
-        if not is_in_restricted_zone(test_rect.center, restricted_zones):
-            proposed_position.y += move_distance
-            player_instance.direction = 'down'
-    if keys[pygame.K_a]:  # Left
-        test_pos = proposed_position.copy()
-        test_pos.x -= move_distance
-        test_rect = pygame.Rect(test_pos.x - 20, test_pos.y - 20, 40, 40)
-        if not is_in_restricted_zone(test_rect.center, restricted_zones):
-            proposed_position.x -= move_distance
-            player_instance.direction = 'left'
-    if keys[pygame.K_d]:  # Right
-        test_pos = proposed_position.copy()
-        test_pos.x += move_distance
-        test_rect = pygame.Rect(test_pos.x - 20, test_pos.y - 20, 40, 40)
-        if not is_in_restricted_zone(test_rect.center, restricted_zones):
-            proposed_position.x += move_distance
-            player_instance.direction = 'right'
+        current_time = time.time()
+        if current_time - last_spawn_time >= spawn_delay and len(zombie_group) < 10:
+            spawn_zombie()
+            last_spawn_time = current_time
+
+        zombie_group.update()
+        boss.update()
+
+        # Movement with restriction zone logic
+        proposed_position = player_instance.position.copy()
+        for direction in ["w", "s", "a", "d"]:
+            if keys[getattr(pygame, f"K_{direction}")]:
+                test_pos = proposed_position.copy()
+                if direction == "w": test_pos.y -= move_distance
+                if direction == "s": test_pos.y += move_distance
+                if direction == "a": test_pos.x -= move_distance
+                if direction == "d": test_pos.x += move_distance
+                test_rect = pygame.Rect(test_pos.x - 20, test_pos.y - 20, 40, 40)
+                if not is_in_restricted_zone(test_rect.center, restricted_zones):
+                    if direction == "w": proposed_position.y -= move_distance; player_instance.direction = "up"
+                    if direction == "s": proposed_position.y += move_distance; player_instance.direction = "down"
+                    if direction == "a": proposed_position.x -= move_distance; player_instance.direction = "left"
+                    if direction == "d": proposed_position.x += move_distance; player_instance.direction = "right"
 
     proposed_position.x = max(0, min(proposed_position.x, map_image.get_width()))
     proposed_position.y = max(0, min(proposed_position.y, map_image.get_height()))
@@ -1686,18 +1867,12 @@ while running:
     keys = pygame.key.get_pressed()
     pond.update(player_instance.rect.center, keys)
    
-# === ADD THE BOSS DRAWING HERE ===
-    boss_rect_on_screen = boss.rect.move(-camera.x, -camera.y)
-    zoom_surface.blit(boss.image, boss_rect_on_screen)
-    boss.draw_health_bar(zoom_surface, camera)  # Pass camera for correct positioning
-    # In your main game loop's drawing section:
-    if not boss.is_dead or boss.death_index < len(boss.death_images):
+        # Boss draw
+    if boss.alive():  # Check if boss hasn't been killed
         boss_rect_on_screen = boss.rect.move(-camera.x, -camera.y)
         zoom_surface.blit(boss.image, boss_rect_on_screen)
-        if not boss.is_dead:  # Only draw health bar if not dead
+        if not boss.is_dead:
             boss.draw_health_bar(zoom_surface, camera)
-    
-
 
         # Final game drawing
     zoomed_view = pygame.transform.scale(zoom_surface, screen.get_size())
@@ -1775,7 +1950,5 @@ while running:
 
     pygame.display.update()
     pygame.display.flip()
-
-    
 pygame.quit()
 sys.exit()
