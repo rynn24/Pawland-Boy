@@ -28,5 +28,13 @@
     "inventory": {
       "sword": 1
     }
+  },
+  "hi": {
+    "health": 100,
+    "position": [
+      1500,
+      125
+    ],
+    "inventory": {}
   }
 }
