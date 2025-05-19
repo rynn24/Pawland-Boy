@@ -163,7 +163,7 @@ class Inventory:
     def __init__(self, max_slots=20):
         self.items = {}
         self.max_slots = max_slots
-        self.slots = [None] * max_slots  # Initial empty slots
+        self.slots = [None] * self.max_slots  # Initial empty slots
         self.slot_rects = []
         self.font = pygame.font.SysFont("Arial", 20)
         self.item_icons = {
@@ -242,8 +242,6 @@ class Inventory:
                     self.draw_item_icon(surface, name, count, rect)
 
     def add_item(self, name, count):
-        """Add or combine an item into the inventory"""
-
         # 1. Try to find and combine with existing item of same name
         for i in range(self.max_slots):
             item = self.slots[i]
@@ -300,24 +298,12 @@ class UserSystem:
         self.current_user = None
 
     def save_users(self):
-        try:
-            # Test serialization first
-            test_data = json.dumps(self.users, indent=2)
-            print("Test serialization successful!")
             
             with open(self.filename, "w") as f:
                 json.dump(self.users, f, indent=2)  # Pretty-print for debugging
             print("✅ Users saved successfully.")
             return True
-        except (TypeError, ValueError) as e:
-            print(f"❌ Serialization error: {e}")
-            print("Problematic data:")
-            import pprint
-            pprint.pprint(self.users)
-            return False
-        except Exception as e:
-            print(f"❌ Unexpected error saving users: {e}")
-            return False
+
 
     def inspect_for_unserializables(self, data, path="root"):
         if isinstance(data, dict):
@@ -346,8 +332,7 @@ class UserSystem:
         self.users[username] = {
             "health": 100,  # Initial health
             "position": [1500,125],  # Initial position (center of screen)
-            "inventory": {
-                "sword": 1,  # Starting item
+            "inventory": { 
             }
         }
         self.save_users()
@@ -371,6 +356,8 @@ class UserSystem:
         health = user_data.get("health", 100)
         position = user_data.get("position", [1500, 125])
         inventory = user_data.get("inventory", {})
+
+        print(f"get_player_data inventory for {username}: {inventory}")
     
         if isinstance(position, dict):
             position = [position.get("0", 1500), position.get("1", 125)]
@@ -662,6 +649,8 @@ class Player:
         self.username = username
         self.user_system = UserSystem()
         self.health, self.position, self.inventory = self.user_system.get_player_data(self.username)
+        print(f"Loaded player data for {self.username}: health={self.health}, position={self.position}, inventory={self.inventory}")
+
         self.position = pygame.Vector2(self.position[0], self.position[1])
         self.speed = speed 
         if isinstance(self.position, list) or isinstance(self.position, tuple):
@@ -1304,7 +1293,8 @@ class Boss(pygame.sprite.Sprite):
 
     def update(self):
         if self.is_dead:
-            self.handle_death()
+            if self.handle_death():
+                return
             return
 
         player_pos = pygame.Vector2(self.player.rect.center)
@@ -1441,18 +1431,17 @@ class Boss(pygame.sprite.Sprite):
 
     def handle_death(self):
         current_time = time.time()
-
-        if self.death_index < len(self.death_images):
-            if current_time - self.last_animation_time > self.animation_speed:
+        if current_time - self.last_animation_time > self.animation_speed:
+            if self.death_index < len(self.death_images):
                 self.image = self.death_images[self.death_index]
                 if self.facing_left:
                     self.image = pygame.transform.flip(self.image, True, False)
                 self.death_index += 1
                 self.last_animation_time = current_time
-                if self.death_index == len(self.death_images):
-                    self.death_complete_time = current_time + 0.4  # Delay before killing
-        elif hasattr(self, "death_complete_time") and current_time > self.death_complete_time:
-            self.kill()
+            else:
+                self.kill()
+                return True
+        return False
 
     def draw_health_bar(self, surface, camera=None):
         bar_width = 100
@@ -1520,7 +1509,6 @@ class PondArea:
         "id": "nothing",
         "name": "Nothing",
         "message": "You got nothing...",
-        "image": pygame.image.load("rynn/nothing.png").convert_alpha(),
         "chance": 0.27
     },
     {
@@ -1636,7 +1624,7 @@ def quit_game():
         player_instance.username,
         player_instance.health,
         [player_instance.position.x, player_instance.position.y],
-        player_instance.inventory
+        inventory_dict
     )
     pygame.quit()
     sys.exit()
@@ -1730,7 +1718,18 @@ def draw_settings_menu(screen):
     screen.blit(music_text, (100, 150))
     screen.blit(quit_text, (100, 250))
 
+
+#Load saved data
+health, position, inventory_data = user_system.get_player_data(current_user)
+
+#Create and fill inventory
 inventory = Inventory()
+inventory.set_items(inventory_data)  #Load saved items
+
+#Create player and assign the filled inventory
+player = Player(position, speed, current_user)
+player.inventory = inventory  #Assign filled inventory
+
 # Main loop
 running = True
 while running:
@@ -1738,6 +1737,21 @@ while running:
     current_time = pygame.time.get_ticks() / 1000
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
+            # Save progress before exiting
+            inventory_dict = inventory.get_inventory_dict()
+            progress_data = {
+                "position": [player_instance.position.x, player_instance.position.y],
+                "health": player_instance.health,
+                "inventory":inventory_dict
+            }
+            # Save the progress
+            user_system.save_progress(
+                    player_instance.username,
+                    player_instance.health,
+                    [player_instance.position.x, player_instance.position.y],
+                    inventory_dict
+                )
+            running = False        
             quit_game()
    
         elif event.type == pygame.KEYDOWN:
@@ -1754,14 +1768,14 @@ while running:
                 minimap_zoom_factor = max(0.5, minimap_zoom_factor - 0.1)
             elif event.key == pygame.K_TAB:
                 player_instance.switch_weapon(event.key)
-            elif event.key == pygame.K_f:
+            elif event.key == pygame.K_f:  # F key to toggle fullscreen
                 is_fullscreen = not is_fullscreen
                 if is_fullscreen:
                     screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
-                    character_scale = fullscreen_scale
+                    character_scale = fullscreen_scale  # Increase size
                 else:
                     screen = pygame.display.set_mode(window_size)
-                    character_scale = 1.0
+                    character_scale = 1.0  # Normal size
                 overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
             elif event.key == pygame.K_b:
                 inventory.toggle_inventory()
@@ -1809,23 +1823,23 @@ while running:
                     if direction == "a": proposed_position.x -= move_distance; player_instance.direction = "left"
                     if direction == "d": proposed_position.x += move_distance; player_instance.direction = "right"
 
-        proposed_position.x = max(0, min(proposed_position.x, map_image.get_width()))
-        proposed_position.y = max(0, min(proposed_position.y, map_image.get_height()))
-        player_instance.position = proposed_position
-        player_position = proposed_position
+    proposed_position.x = max(0, min(proposed_position.x, map_image.get_width()))
+    proposed_position.y = max(0, min(proposed_position.y, map_image.get_height()))
 
-        attack_sprite = player_instance.attack(trees, zombie_group)
+    player_instance.position = proposed_position
+    player_position = proposed_position
 
-        camera.center = player_position
-        camera.clamp_ip(map_image.get_rect())
+    attack_sprite = player_instance.attack(trees,zombie_group)
 
-        # Drawing to zoom_surface
-        zoom_surface.fill((0, 0, 0))
-        zoom_surface.blit(map_image, (0, 0), camera)
+    camera.center = player_position
+    camera.clamp_ip(map_image.get_rect())
 
-        for tree in trees:
-            tree.update(current_time)
-            tree.draw(zoom_surface, camera)
+    zoom_surface.fill((0, 0, 0))
+    zoom_surface.blit(map_image, (0, 0), camera)
+
+    for tree in trees:
+        tree.update(current_time)
+        tree.draw(zoom_surface, camera)
 
     for tree in trees_2:
         tree.update(current_time)
@@ -1849,12 +1863,13 @@ while running:
     zoomed_view = pygame.transform.scale(zoom_surface, screen.get_size())
     screen.blit(zoomed_view, (0, 0))
 
+    # Draw scaled character
     sprite_to_draw = attack_sprite if attack_sprite else current_sprite
     scaled_sprite = scale_sprite(sprite_to_draw, character_scale)
     sprite_x = screen.get_width() // 2 - scaled_sprite.get_width() // 2
     sprite_y = screen.get_height() // 2 - scaled_sprite.get_height() // 2
     screen.blit(scaled_sprite, (sprite_x, sprite_y))
-    player_instance.draw_health_bar(screen)
+    player_instance.draw_health_bar(screen)#player hp bar
 
     # Minimap
     minimap_surface = pygame.Surface((minimap_radius * 2, minimap_radius * 2), pygame.SRCALPHA)
@@ -1870,7 +1885,9 @@ while running:
     pygame.draw.circle(masked_minimap, player_minimap_color, (minimap_radius, minimap_radius), 3)
     pygame.draw.circle(masked_minimap, minimap_border_color, (minimap_radius, minimap_radius), minimap_radius, minimap_border_width)
     screen.blit(masked_minimap, (minimap_pos[0] - minimap_radius, minimap_pos[1] - minimap_radius))
-
+    relative_x = (player_position.x - mini_camera.left) / mini_camera.width * (minimap_radius * 2)
+    relative_y = (player_position.y - mini_camera.top) / mini_camera.height * (minimap_radius * 2)
+    
     # Day-night cycle (NEW day 66% night 33%)    
     cycle_duration = 60  # full cycle in seconds
     day_duration = cycle_duration * 0.66  # ~39.6s
