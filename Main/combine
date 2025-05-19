@@ -736,10 +736,28 @@ class Player:
             }
         }
 
+        self.dead = False
+        self.death_frame_index = 0
+        self.death_frame_timer = 0
+        self.time_of_death = 0
+        self.respawn_delay = 3000  # 3 seconds
+
+        # Load death animation (you can change the image path and frame count as needed)
+        death_sheet = pygame.image.load("minting/die.png").convert_alpha()
+        self.death_frames = load_frames(death_sheet, FRAME_WIDTH, FRAME_HEIGHT, 0, 25)
+
+
     def move(self, keys, dt):
         move_distance = self.speed * dt 
         moving = False
         direction_vector = pygame.math.Vector2(0, 0)
+
+        if self.dead:
+            self.update_death()
+            if self.death_frame_index < len(self.death_frames):
+                return self.position, self.death_frames[self.death_frame_index]
+            else:
+                return self.position, self.death_frames[-1]
 
         if self.attacking:
             self.rect.center = (self.position.x, self.position.y)
@@ -880,11 +898,37 @@ class Player:
         return sprite_list[self.frame]
 
     def take_damage(self, amount):
+        if self.dead:
+            return
         self.health -= amount
-        if self.health < 0:
+        if self.health <= 0:
             self.health = 0
+            self.dead = True
+            self.death_frame_index = 0
+            self.death_frame_timer = pygame.time.get_ticks()
+            self.time_of_death = pygame.time.get_ticks()
+
+    def respawn(self):
+        self.health = 100
+        self.dead = False
+        self.attacking = False
+        self.attack_frame = 0
+        self.frame = 0
+        self.position = pygame.Vector2(1500, 125)  
+        
+    def update_death(self):
+        current_time = pygame.time.get_ticks()
+        if self.death_frame_index < len(self.death_frames):
+            if current_time - self.death_frame_timer > 150:
+                self.death_frame_timer = current_time
+                self.death_frame_index += 1
+        else:
+            if current_time - self.time_of_death >= self.respawn_delay:
+                self.respawn()
 
     def draw_health_bar(self, surface):
+        if self.dead:
+            return
         bar_width = 200
         bar_height = 20
         x = (surface.get_width() - bar_width) // 2
