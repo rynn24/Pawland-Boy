@@ -299,26 +299,11 @@ class UserSystem:
 
     def save_users(self):
             
-            # Test if the data is serializable
-            json.dumps(self.users)  # This will raise TypeError if anything is unserializable
-        try:
-            # Test serialization first
-            test_data = json.dumps(self.users, indent=2)
-            print("Test serialization successful!")
-            
             with open(self.filename, "w") as f:
                 json.dump(self.users, f, indent=2)  # Pretty-print for debugging
             print("✅ Users saved successfully.")
             return True
-        except (TypeError, ValueError) as e:
-            print(f"❌ Serialization error: {e}")
-            print("Problematic data:")
-            import pprint
-            pprint.pprint(self.users)
-            return False
-        except Exception as e:
-            print(f"❌ Unexpected error saving users: {e}")
-            return False
+
 
     def inspect_for_unserializables(self, data, path="root"):
         if isinstance(data, dict):
@@ -1639,7 +1624,7 @@ def quit_game():
         player_instance.username,
         player_instance.health,
         [player_instance.position.x, player_instance.position.y],
-        player_instance.inventory
+        inventory_dict
     )
     pygame.quit()
     sys.exit()

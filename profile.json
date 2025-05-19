@@ -32,5 +32,16 @@
     "inventory": {
       "sword": 1
     }
+  },
+  "hi": {
+    "health": 100,
+    "position": [
+      560.6500000000055,
+      1293.7674999999947
+    ],
+    "inventory": {
+      "Wood": 6,
+      "Fruit": 4
+    }
   }
 }
