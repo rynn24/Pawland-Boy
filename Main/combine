@@ -24,7 +24,7 @@ font = pygame.font.SysFont(None, 24)
 reward_font = pygame.font.Font(None, 45) # font for fishing reward
 
 # Load map image
-map_image = pygame.image.load(os.path.join("rynn/Map.png")).convert()
+map_image = pygame.image.load(os.path.join("rynn/Map2.png")).convert()
 
 # Camera and player position 
 camera_width, camera_height = 320, 180
