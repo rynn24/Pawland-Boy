@@ -1,1 +1,32 @@
-{"2": {"health": 70, "position": [726.5150000000028, 801.842499999998], "inventory": {"sword": 1}}, "h": {"health": 100, "position": [1500, 125], "inventory": {"sword": 1}}, "lee": {"health": 40, "position": [1038.932499999999, 657.1500000000018], "inventory": {"sword": 1}}}
+{
+  "2": {
+    "health": 70,
+    "position": [
+      726.5150000000028,
+      801.842499999998
+    ],
+    "inventory": {
+      "sword": 1
+    }
+  },
+  "h": {
+    "health": 100,
+    "position": [
+      1500,
+      125
+    ],
+    "inventory": {
+      "sword": 1
+    }
+  },
+  "lee": {
+    "health": 40,
+    "position": [
+      1639.9300000000019,
+      181.63250000000218
+    ],
+    "inventory": {
+      "sword": 1
+    }
+  }
+}
