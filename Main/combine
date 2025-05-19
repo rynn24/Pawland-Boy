@@ -64,6 +64,11 @@ tree_restricted_zones = [
     }
 ]
 
+#House area
+house_img = pygame.image.load("rynn/house.png").convert_alpha()
+house_rect = house_img.get_rect(topleft=(1520, 50))
+house_detection_radius = 100
+
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 GRAY = (100, 100, 100)
@@ -1656,6 +1661,37 @@ pond = PondArea(
     detection_scale=1.1
 )
 
+class House:
+    def __init__(self, position, image_path, detection_radius):
+        self.position = pygame.Vector2(position)
+        self.image = pygame.image.load(image_path).convert_alpha()
+        self.rect = self.image.get_rect(topleft=position)
+        self.detection_radius = detection_radius
+        self.show_prompt = False
+        
+    def update(self, player_pos, keys):
+        distance = pygame.math.Vector2(self.rect.center).distance_to(player_pos)
+        self.show_prompt = distance < self.detection_radius
+        
+        if self.show_prompt and keys[pygame.K_j]:
+            return True  # Player entered house
+        return False
+    
+    def draw(self, surface, camera_offset):
+        # Draw house
+        pos_on_surface = (self.rect.x - camera_offset.x, self.rect.y - camera_offset.y)
+        surface.blit(self.image, pos_on_surface)
+        
+        # Draw prompt if player is nearby
+        if self.show_prompt:
+            text = font.render("Press J to enter house", True, (255, 255, 255))
+            text_rect = text.get_rect(center=(surface.get_width() // 2, surface.get_height() - 100))
+            surface.blit(text, text_rect)
+
+# Create the house instance 
+house = House((1520, 50), "rynn/house.png", 100)
+
+
 def quit_game():
     print("[DEBUG] Quit triggered")
     print(f"[DEBUG] current_user = {current_user}")
@@ -1967,9 +2003,29 @@ while running:
     #Draw pond
     pond.draw(screen, player_position, font, reward_font)
 
-
-    #Draw inventory
-    inventory.draw(screen)
+    #House 
+    house_pos_on_screen = (house_rect.x - camera.x, house_rect.y - camera.y)
+    screen.blit(house_img, house_pos_on_screen)
+    house_entered = house.update(player_instance.position, keys)
+    # Check if player is near house
+    player_distance = pygame.math.Vector2(house_rect.center).distance_to(player_instance.position)
+    if player_distance < house_detection_radius:
+        # Show "Press J to enter" prompt
+        text_surface = font.render("Press J to enter house", True, (255, 255, 255))
+        text_rect = text_surface.get_rect(center=(screen.get_width() // 2, screen.get_height() - 100))
+        screen.blit(text_surface, text_rect)
+    
+    # Check for J key press
+    if keys[pygame.K_j]:
+        print("Player entered the house!")
+        # Here you could transition to a house interior scene
+    if house_entered:
+        # Handle house transition
+        print("Player entered house!")
+            
+        house.draw(screen, pygame.Vector2(camera.topleft))
+        #Draw inventory
+        inventory.draw(screen)
 
     # ========== DRAW SETTINGS MENU WHEN ACTIVE ==========
     if game_state == "settings":
