@@ -169,7 +169,7 @@ class Inventory:
         self.item_icons = {
                 "Wood": pygame.image.load("minting/Wood.png").convert_alpha(),
                 "Fruit": pygame.image.load("minting/Fruit.png").convert_alpha(),
-                "Fish": pygame.image.load("minting/fish_1.png").convert_alpha(),
+                "Fish": pygame.image.load("minting/Fish_1.png").convert_alpha(),
                 "Big Fish": pygame.image.load("minting/Fish_2.png").convert_alpha(),
                 "Crystal": pygame.image.load("minting/Crystal.png").convert_alpha(),
                 "Boat": pygame.image.load("minting/Boat.png").convert_alpha(),

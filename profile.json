@@ -43,5 +43,13 @@
       "Wood": 6,
       "Fruit": 4
     }
+  },
+  "hj2": {
+    "health": 100,
+    "position": [
+      1500,
+      125
+    ],
+    "inventory": {}
   }
 }
