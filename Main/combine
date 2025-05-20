@@ -83,7 +83,7 @@ tree_restricted_zones = [
     }
 ]
 
-# House area
+# House area & load images
 house_area = [
 
         {
@@ -95,6 +95,8 @@ in_house = False
 house_image = pygame.image.load("rynn/inside-house.png").convert()
 house_rect = house_image.get_rect()
 show_house_prompt = False
+paper_image = pygame.image.load("rynn/paper.jpg").convert()
+paper_visible = False
 
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
@@ -2080,13 +2082,11 @@ while running:
                 mouse_clicked = True
                 
         # UI elements in house
-        # Button size
-        button_width = 120
-        button_height = 40
+        button_width, button_height = 120, 40
 
         # Top-center anchor
         button_x = screen_width // 2 - button_width // 2
-        button_y = 36  # stays fixed from top
+        button_y = 36  
         
         # Draw the button
         button_rect = pygame.Rect(button_x, button_y, button_width, button_height)
@@ -2101,7 +2101,29 @@ while running:
             in_house = False
             player_position = paused_world_state["player_pos"]
             time_counter = paused_world_state["time_counter"]
+            
+        #  Paper Zone (clickable wall area)
+        paper_zone_rect = pygame.Rect(25, 95, 81, 50)  # Adjust coords and size
+        if paper_zone_rect.collidepoint(mouse_x, mouse_y) and mouse_clicked and not paper_visible:
+            paper_visible = True
 
+        #  Paper UI
+        if paper_visible:
+            scaled_paper = pygame.transform.scale(paper_image, (screen_width, screen_height))
+            screen.blit(scaled_paper, (0, 0))
+
+            close_width, close_height = 100, 40
+            close_x = screen_width // 2 - close_width // 2
+            close_y = 400
+            close_button_rect = pygame.Rect(260, 400, 100, 25)
+            pygame.draw.rect(screen, (220, 220, 220), (close_x, close_y, close_width, close_height))
+            close_text = font.render("Close", True, (0, 0, 0))
+            close_text_rect = close_text.get_rect(center=(close_x + close_width // 2, close_y + close_height // 2))
+            screen.blit(close_text, close_text_rect)
+
+            if close_button_rect.collidepoint(mouse_x, mouse_y) and mouse_clicked:
+                paper_visible = False
+                
         # Show mouse position on screen
         mouse_pos_text = font.render(f"Mouse: {mouse_x}, {mouse_y}", True, (255, 255, 255))
         screen.blit(mouse_pos_text, (10, 10))
