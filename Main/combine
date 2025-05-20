@@ -91,7 +91,6 @@ house_area = [
         "rect": pygame.Rect(1464, 144, 116, 56)
     }   
 ] 
-
 in_house = False
 house_image = pygame.image.load("rynn/inside-house.png").convert()
 house_rect = house_image.get_rect()
@@ -1063,7 +1062,7 @@ class HouseUI:
                 return True
         return False
 
-# Initialize it (with your other game objects)
+# Initialize
 house_ui = HouseUI()
 house_ui.add_button(pygame.Rect(100, 100, 200, 50), "Exit House", lambda: globals().update({"in_house": False}))
 
@@ -2063,8 +2062,14 @@ while running:
             break
         
     if in_house:
+        # Get screen size
+        screen_width, screen_height = screen.get_size()
+        
+        # Scale the house background to fit the screen
+        scaled_house = pygame.transform.scale(house_image, (screen_width, screen_height))
+
         # Draw house interior
-        screen.blit(house_image, (0, 0))
+        screen.blit(scaled_house, (0, 0))
         
         # Handle mouse events for house UI
         mouse_pos = pygame.mouse.get_pos()
@@ -2079,23 +2084,21 @@ while running:
         button_width = 120
         button_height = 40
 
-        # Fixed position at (562, 36)
-        button_x = 462
-        button_y = 36
+        # Top-center anchor
+        button_x = screen_width // 2 - button_width // 2
+        button_y = 36  # stays fixed from top
         
         # Draw the button
+        button_rect = pygame.Rect(button_x, button_y, button_width, button_height)
         pygame.draw.rect(screen, (200, 200, 200), (button_x, button_y, button_width, button_height))
 
         # Render and center the text
         button_text = font.render("Exit House", True, (0, 0, 0))
         text_rect = button_text.get_rect(center=(button_x + button_width // 2, button_y + button_height // 2))
         screen.blit(button_text, text_rect)
-
         
-        # Example button interaction
-        if (461 <= mouse_x <= 581 and 35 <= mouse_y <= 76 and mouse_clicked):
+        if button_rect.collidepoint(mouse_x, mouse_y) and mouse_clicked:
             in_house = False
-            # Restore game state
             player_position = paused_world_state["player_pos"]
             time_counter = paused_world_state["time_counter"]
 
