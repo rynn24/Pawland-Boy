@@ -1,6 +1,5 @@
 import pygame
 import os
-import math
 import sys
 import random
 import time
@@ -50,18 +49,38 @@ restricted_zones = [
 
 # Trees restricted area
 tree_restricted_zones = [
-    # Pond area 
+    # Pond area (ellipse)
     {
         "type": "ellipse",
         "center": (1554, 585),
-        "radius_x": 165,
-        "radius_y": 162
+        "radius_x": 170,
+        "radius_y": 170
     },
-    # Boss & top water area 
+    # Top area (rectangle)
     {
         "type": "rect",
-        "rect": pygame.Rect(0, 0, 1500, 340)  # x, y, width, height
-    }
+        "rect": pygame.Rect(0, 0, 1900, 340)
+    },
+    # Boss area (rectangle)
+    {
+        "type": "rect", 
+        "rect": pygame.Rect(240, 144, 342, 129)
+    },
+    # Right area(rectangle)
+    {
+        "type": "rect",
+        "rect": pygame.Rect(1750, 0, 170, 1440)
+    },
+    # Bottom area(rectangle)
+    {
+        "type": "rect",
+        "rect": pygame.Rect(0, 1340, 1920, 100)
+    },
+    # Left area(rectangle)
+    {
+        "type": "rect",
+        "rect": pygame.Rect(0, 284, 164, 1060)
+    },
 ]
 
 WHITE = (255, 255, 255)
