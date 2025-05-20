@@ -23,7 +23,7 @@ font = pygame.font.SysFont(None, 24)
 reward_font = pygame.font.Font(None, 45) # font for fishing reward
 
 # Load map image
-map_image = pygame.image.load(os.path.join("rynn/Map.png")).convert()
+map_image = pygame.image.load(os.path.join("rynn/Map2.png")).convert()
 
 # Camera and player position 
 camera_width, camera_height = 320, 180
@@ -80,8 +80,22 @@ tree_restricted_zones = [
     {
         "type": "rect",
         "rect": pygame.Rect(0, 284, 164, 1060)
-    },
+    }
 ]
+
+# House area
+house_area = [
+
+        {
+        "type": "rect",
+        "rect": pygame.Rect(1464, 144, 116, 56)
+    }   
+] 
+
+in_house = False
+house_image = pygame.image.load("rynn/inside-house.png").convert()
+house_rect = house_image.get_rect()
+show_house_prompt = False
 
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
@@ -1020,7 +1034,38 @@ user_system = UserSystem()  # Create UserSystem instance
 speed = 2.5  # Adjust as needed
 player_position = pygame.Vector2(1500, 125)
 
+class HouseUI:
+    def __init__(self):
+        self.elements = []
+        self.background = house_image
+    
+    def add_button(self, rect, text, action):
+        self.elements.append({
+            "type": "button",
+            "rect": rect,
+            "text": text,
+            "action": action
+        })
+    
+    def draw(self, surface):
+        surface.blit(self.background, (0, 0))
+        for element in self.elements:
+            if element["type"] == "button":
+                pygame.draw.rect(surface, (200, 200, 200), element["rect"])
+                text = font.render(element["text"], True, (0, 0, 0))
+                text_rect = text.get_rect(center=element["rect"].center)
+                surface.blit(text, text_rect)
+    
+    def handle_click(self, pos):
+        for element in self.elements:
+            if element["type"] == "button" and element["rect"].collidepoint(pos):
+                element["action"]()
+                return True
+        return False
 
+# Initialize it (with your other game objects)
+house_ui = HouseUI()
+house_ui.add_button(pygame.Rect(100, 100, 200, 50), "Exit House", lambda: globals().update({"in_house": False}))
 
 class Tree:
     def __init__(self, position, frames):
@@ -1855,7 +1900,7 @@ while running:
             elif result == "back":
                 game_state = "game"
                 settings_menu.visible = False
-
+                         
     # ========== GAME LOGIC ONLY WHEN IN "GAME" STATE ==========
     if game_state == "game":
         keys = pygame.key.get_pressed()
@@ -1995,7 +2040,70 @@ while running:
         screen.fill((10, 10, 10))  # Optional: dim background
         settings_menu.draw(screen)
 
+    if show_house_prompt and not in_house:
+        text = font.render("Press J to enter house", True, (255, 255, 255))
+        text_rect = text.get_rect(center=(screen.get_width()//2, screen.get_height()-100))
+        screen.blit(text, text_rect)
+    
+    if not in_house:  # Only process these if player is outside
+    # Check if player is in house area
+        player_rect = pygame.Rect(player_position.x-20, player_position.y-20, 40, 40)
+        show_house_prompt = False
+    for zone in house_area:
+        if zone["type"] == "rect" and zone["rect"].colliderect(player_rect):
+            show_house_prompt = True
+            if keys[pygame.K_j]:
+                in_house = True
+                # Pause game state
+                paused_world_state = {
+                    "player_pos": player_position.copy(),
+                    "time_counter": time_counter,
+                    # Add any other state you want to preserve
+                }
+            break
+        
+    if in_house:
+        # Draw house interior
+        screen.blit(house_image, (0, 0))
+        
+        # Handle mouse events for house UI
+        mouse_pos = pygame.mouse.get_pos()
+        mouse_x, mouse_y = mouse_pos  # Unpack once
+        mouse_clicked = False
+        for event in pygame.event.get():
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                mouse_clicked = True
+                
+        # UI elements in house
+        # Button size
+        button_width = 120
+        button_height = 40
 
+        # Fixed position at (562, 36)
+        button_x = 462
+        button_y = 36
+        
+        # Draw the button
+        pygame.draw.rect(screen, (200, 200, 200), (button_x, button_y, button_width, button_height))
+
+        # Render and center the text
+        button_text = font.render("Exit House", True, (0, 0, 0))
+        text_rect = button_text.get_rect(center=(button_x + button_width // 2, button_y + button_height // 2))
+        screen.blit(button_text, text_rect)
+
+        
+        # Example button interaction
+        if (461 <= mouse_x <= 581 and 35 <= mouse_y <= 76 and mouse_clicked):
+            in_house = False
+            # Restore game state
+            player_position = paused_world_state["player_pos"]
+            time_counter = paused_world_state["time_counter"]
+
+        # Show mouse position on screen
+        mouse_pos_text = font.render(f"Mouse: {mouse_x}, {mouse_y}", True, (255, 255, 255))
+        screen.blit(mouse_pos_text, (10, 10))
+    
+            
     pygame.display.update()
     pygame.display.flip()
 pygame.quit()
