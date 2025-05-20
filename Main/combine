@@ -169,7 +169,7 @@ class Inventory:
         self.item_icons = {
                 "Wood": pygame.image.load("minting/Wood.png").convert_alpha(),
                 "Fruit": pygame.image.load("minting/Fruit.png").convert_alpha(),
-                "Fish": pygame.image.load("minting/Fish_1.png").convert_alpha(),
+                "Fish": pygame.image.load("minting/fish_1.png").convert_alpha(),
                 "Big Fish": pygame.image.load("minting/Fish_2.png").convert_alpha(),
                 "Crystal": pygame.image.load("minting/Crystal.png").convert_alpha(),
                 "Boat": pygame.image.load("minting/Boat.png").convert_alpha(),
@@ -333,7 +333,9 @@ class UserSystem:
             "health": 100,  # Initial health
             "position": [1500,125],  # Initial position (center of screen)
             "inventory": { 
-            }
+            },
+            "level": 1,
+            "exp": 0
         }
         self.save_users()
         return True
@@ -356,13 +358,15 @@ class UserSystem:
         health = user_data.get("health", 100)
         position = user_data.get("position", [1500, 125])
         inventory = user_data.get("inventory", {})
+        level = user_data.get("level", 1)
+        exp = user_data.get("exp", 0)
 
         print(f"get_player_data inventory for {username}: {inventory}")
     
         if isinstance(position, dict):
             position = [position.get("0", 1500), position.get("1", 125)]
 
-        return health, position, inventory
+        return health, position, inventory, level, exp 
 
     def get_inventory_dict(self, username):
         inventory = self.users[username]["inventory"]
@@ -380,7 +384,7 @@ class UserSystem:
 
         return inventory_dict
 
-    def save_progress(self, username, health, position, inventory_dict):
+    def save_progress(self, username, health, position, inventory_dict, level, exp):
         print(f"[DEBUG] save_progress called for username: {username}")
         if username in self.users:
             # Convert position to list if it's a Vector2
@@ -392,7 +396,9 @@ class UserSystem:
             self.users[username] = {
                 "health": health,
                 "position": position,
-                "inventory": inventory_dict
+                "inventory": inventory_dict,
+                "level": level,
+                "exp": exp
             }
             print(f"Saving data for {username}: {self.users[username]}")  # Debug print
             self.save_users()
@@ -404,9 +410,9 @@ class MainMenu:
         self.screen = screen
         self.window_size = window_size
         self.font = pygame.font.SysFont(None, 48)
-        self.login_button = Button(window_size[0] // 2 - 100, 200, 200, 50, "Login",
+        self.login_button = Button(window_size[0] // 2 - 100, 200, 200, 50, "Choose Profile",
                                    (50, 150, 50), (100, 200, 100), (255, 255, 255))
-        self.register_button = Button(window_size[0] // 2 - 100, 270, 200, 50, "Register",
+        self.register_button = Button(window_size[0] // 2 - 100, 270, 200, 50, "Create Profile",
                                       (50, 50, 150), (100, 100, 200), (255, 255, 255))
 
     def handle_events(self, events):
@@ -468,7 +474,7 @@ class RegisterPage:
         self.username_input = ""
         self.input_rect = pygame.Rect(window_size[0] // 2 - 100, 160, 200, 40)
         self.active_input = False
-        self.register_button = Button(window_size[0] // 2 - 60, 220, 120, 40, "Register",
+        self.register_button = Button(window_size[0] // 2 - 60, 220, 120, 40, "Create Profile",
                                       (50, 100, 150), (100, 150, 200), (255, 255, 255))
         self.back_button = Button(20, 20, 100, 40, "Back",
                                   (100, 100, 100), (150, 150, 150), (255, 255, 255))
@@ -524,6 +530,60 @@ class RegisterPage:
             self.screen.blit(msg, (self.window_size[0] // 2 - msg.get_width() // 2, 280))
 
         pygame.display.flip()
+class InventoryMenu:
+    def __init__(self, inventory, window_size):
+        self.visible = False
+        self.inventory = inventory  # Reference to your Inventory instance
+        self.window_size = window_size
+        self.font = pygame.font.SysFont("Arial", 24)
+        
+        # Define window rect for the bag display area
+        self.window_rect = pygame.Rect(
+            window_size[0]//2 - 250, window_size[1]//2 - 200,
+            500, 400
+        )
+        self.bg_color = (50, 50, 70)
+        
+    def toggle(self):
+        self.visible = not self.visible
+        
+    def draw(self, screen):
+        if not self.visible:
+            return
+        
+        # Darken background like settings menu
+        overlay = pygame.Surface(self.window_size, pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 180))
+        screen.blit(overlay, (0, 0))
+        
+        # Draw the bag window background
+        pygame.draw.rect(screen, self.bg_color, self.window_rect, border_radius=10)
+        pygame.draw.rect(screen, (255, 255, 255), self.window_rect, 2, border_radius=10)
+        
+        # Title
+        title = self.font.render("Inventory", True, (255, 255, 255))
+        screen.blit(title, (self.window_rect.centerx - title.get_width() // 2, self.window_rect.top + 20))
+        
+        # Draw all the inventory slots inside the window_rect area
+        # We'll draw them in a grid, e.g. 5 columns x 4 rows, similar to your Inventory
+        start_x = self.window_rect.left + 90
+        start_y = self.window_rect.top + 70
+        slot_size = 60
+        slot_margin = 10
+        
+        for i in range(self.inventory.max_slots):
+            x = start_x + (i % 5) * (slot_size + slot_margin)
+            y = start_y + (i // 5) * (slot_size + slot_margin)
+            slot_rect = pygame.Rect(x, y, slot_size, slot_size)
+            
+            # Draw slot box
+            pygame.draw.rect(screen, (150, 150, 150), slot_rect)
+            
+            # Draw item icon + count if present
+            item = self.inventory.slots[i]
+            if item:
+                name, count = item
+                self.inventory.draw_item_icon(screen, name, count, slot_rect)
 
 class SettingsMenu:
     def __init__(self):
@@ -645,11 +705,11 @@ class Button:
         return False
     
 class Player:
-    def __init__(self, position, speed, username):
+    def __init__(self, position, speed, username,level,exp):
         self.username = username
         self.user_system = UserSystem()
-        self.health, self.position, self.inventory = self.user_system.get_player_data(self.username)
-        print(f"Loaded player data for {self.username}: health={self.health}, position={self.position}, inventory={self.inventory}")
+        self.health, self.position, self.inventory, self.level, self.exp = self.user_system.get_player_data(self.username)
+        print(f"Loaded player data for {self.username}: health={self.health}, position={self.position}, inventory={self.inventory},level={self.level}, exp={self.exp}")
 
         self.position = pygame.Vector2(self.position[0], self.position[1])
         self.speed = speed 
@@ -671,6 +731,9 @@ class Player:
         self.current_weapon = 'hand'
         self.last_update = pygame.time.get_ticks()
         self.animation_cooldown = 100
+        self.level = level
+        self.exp = exp
+        self.exp_to_next_level = self.calculate_exp_needed(self.level)
         
         self.current_attack_targets = []
 
@@ -707,6 +770,14 @@ class Player:
             20: pygame.image.load("haojun/image/hp.20.png").convert_alpha(),
             10: pygame.image.load("haojun/image/hp.10.png").convert_alpha(),
             0 : pygame.image.load("haojun/image/hp.0.png").convert_alpha(),
+        }
+        self.exp_bar_frames = {
+            0: pygame.image.load("haojun/image/exp 0.png").convert_alpha(),
+            20: pygame.image.load("haojun/image/exp 20.png").convert_alpha(),
+            40: pygame.image.load("haojun/image/exp 40.png").convert_alpha(),
+            60: pygame.image.load("haojun/image/exp 60.png").convert_alpha(),
+            80: pygame.image.load("haojun/image/exp 80.png").convert_alpha(),
+            100: pygame.image.load("haojun/image/exp 100.png").convert_alpha(),
         }
 
         self.walk_sheet = pygame.image.load("minting/character.png").convert_alpha()
@@ -996,6 +1067,42 @@ class Player:
             frame = self.frames[self.current_frame]
             scaled_frame = pygame.transform.scale(frame, screen.get_size())
             screen.blit(scaled_frame, (0, 0))
+    def calculate_exp_needed(self, level):
+        # You can tweak the formula for difficulty scaling
+        return 50 * level
+
+    def add_exp(self, amount):
+        self.exp += amount
+        while self.exp >= self.exp_to_next_level:
+            self.exp -= self.exp_to_next_level
+            self.level += 1
+            self.exp_to_next_level = self.calculate_exp_needed(self.level)
+            print(f"{self.username} leveled up to level {self.level}!")
+            self.health = 100  # optional: restore HP on level-up
+    
+    def draw_exp_bar(self, surface):
+        if self.dead:
+            return
+
+        percent = int((self.exp / self.exp_to_next_level) * 100)
+        percent = max(0, min(100, (percent // 10) * 10))  # Round to nearest 10%
+
+        rounded_percent = min(self.exp_bar_frames.keys(), key=lambda k: abs(k - percent))
+        bar_img = self.exp_bar_frames[rounded_percent]
+
+        scale_factor = 2
+        scaled_img = pygame.transform.scale(bar_img, (
+            bar_img.get_width() * scale_factor,
+            bar_img.get_height() * scale_factor
+        ))
+
+        x = (surface.get_width() - scaled_img.get_width()) // 2
+        y = surface.get_height() - scaled_img.get_height() + 30
+        surface.blit(scaled_img, (x, y))
+
+        # Level text
+        level_text = font.render(f"Level {self.level}", True, (255, 255, 0))
+        surface.blit(level_text, (x + scaled_img.get_width() + 10, y))
 
 user_system = UserSystem()  # Create UserSystem instance
 speed = 2.5  # Adjust as needed
@@ -1275,6 +1382,8 @@ class Zombie(pygame.sprite.Sprite):
             self.animation_index = 0
             self.is_dead = True
             self.death_time = time.time()
+            self.player.add_exp(25)
+
     def draw_health_bar(self, surface, camera):
         if self.hp <= 0:  # Do not draw health bar if the zombie is dead
             return
@@ -1715,7 +1824,8 @@ while not in_game:
 
     pygame.display.flip()
 
-player_instance = Player(player_position, speed, current_user)  # Create Player instance
+health, position, inventory_data, level, exp = user_system.get_player_data(current_user)
+player_instance = Player(player_position, speed, current_user, level, exp)  # Create Player instance
 # Sprite groups
 all_sprites = pygame.sprite.Group()
 zombie_group = pygame.sprite.Group()
@@ -1724,7 +1834,6 @@ boss = Boss(399, 145, player_instance, boss_area)
 all_sprites.add(boss)
 settings_menu = SettingsMenu()
 game_state = "game"
-
 spawn_delay = 3
 last_spawn_time = time.time()
 
@@ -1763,15 +1872,14 @@ def draw_settings_menu(screen):
     screen.blit(quit_text, (100, 250))
 
 
-#Load saved data
-health, position, inventory_data = user_system.get_player_data(current_user)
 
 #Create and fill inventory
 inventory = Inventory()
 inventory.set_items(inventory_data)  #Load saved items
+inventory_menu = InventoryMenu(inventory, window_size)
 
 #Create player and assign the filled inventory
-player = Player(position, speed, current_user)
+player = Player(position, speed, current_user,level,exp)
 player.inventory = inventory  #Assign filled inventory
 
 # Main loop
@@ -1786,17 +1894,21 @@ while running:
             progress_data = {
                 "position": [player_instance.position.x, player_instance.position.y],
                 "health": player_instance.health,
-                "inventory":inventory_dict
+                "inventory":inventory_dict,
+                "level": player_instance.level,
+                "exp":player_instance.exp
+                
             }
             # Save the progress
             user_system.save_progress(
                     player_instance.username,
                     player_instance.health,
                     [player_instance.position.x, player_instance.position.y],
-                    inventory_dict
+                    inventory_dict,
+                    player_instance.level,
+                    player_instance.exp
                 )
             running = False        
-            quit_game()
    
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
@@ -1822,7 +1934,7 @@ while running:
                     character_scale = 1.0  # Normal size
                 overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
             elif event.key == pygame.K_b:
-                inventory.toggle_inventory()
+                inventory_menu.toggle()
 
         elif event.type == pygame.KEYUP:
             if event.key == pygame.K_SPACE:
@@ -1832,7 +1944,20 @@ while running:
         if game_state == "settings":
             result = settings_menu.handle_events(event)
             if result == "quit":
-                quit_game()
+                inventory_dict = inventory.get_inventory_dict()
+                progress_data = {
+                    "position": [player_instance.position.x, player_instance.position.y],
+                    "health": player_instance.health,
+                    "inventory":inventory_dict
+                }
+                # Save the progress
+                user_system.save_progress(
+                        player_instance.username,
+                        player_instance.health,
+                        [player_instance.position.x, player_instance.position.y],
+                        inventory_dict
+                    )
+                running = False
             elif result == "back":
                 game_state = "game"
                 settings_menu.visible = False
@@ -1914,6 +2039,8 @@ while running:
     sprite_y = screen.get_height() // 2 - scaled_sprite.get_height() // 2
     screen.blit(scaled_sprite, (sprite_x, sprite_y))
     player_instance.draw_health_bar(screen)#player hp bar
+    player_instance.draw_health_bar(screen)
+    player_instance.draw_exp_bar(screen)
 
     # Minimap
     minimap_surface = pygame.Surface((minimap_radius * 2, minimap_radius * 2), pygame.SRCALPHA)
@@ -1976,6 +2103,8 @@ while running:
         screen.fill((10, 10, 10))  # Optional: dim background
         settings_menu.draw(screen)
 
+    if inventory_menu.visible:
+        inventory_menu.draw(screen)
 
     pygame.display.update()
     pygame.display.flip()
