@@ -9,7 +9,7 @@ pygame.display.set_caption("Pawland Boy")
 clock = pygame.time.Clock()
 
 # Load assets
-map_image = pygame.image.load(os.path.join("Map.png")).convert()
+map_image = pygame.image.load(os.path.join("rynn/Map.png")).convert()
 
 # Game settings
 camera_width, camera_height = 320, 180  
@@ -18,6 +18,7 @@ zoom_surface = pygame.Surface((camera_width, camera_height))
 player_position = pygame.Vector2(320, 180)
 speed = 2
 restricted_zones = []
+inside_house = False
 
 # Day-night cycle
 overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
@@ -53,6 +54,9 @@ while running:
     # Player movement
     new_position = player_position.copy()
     keys = pygame.key.get_pressed()
+    if inside_house and keys[pygame.K_ESCAPE]:
+        inside_house = False
+    
     move_distance = speed * dt * 60
     if keys[pygame.K_w]: new_position.y -= move_distance
     if keys[pygame.K_s]: new_position.y += move_distance

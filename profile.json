@@ -1,16 +1,12 @@
 {
   "2": {
-    "health": 0,
+    "health": 70,
     "position": [
-      419.8350000000056,
-      337.8800000000004
+      726.5150000000028,
+      801.842499999998
     ],
     "inventory": {
-      "Wood": 2,
-      "Fruit": 2,
-      "fish": 8,
-      "Big Fish": 1,
-      "Fish": 1
+      "sword": 1
     }
   },
   "h": {
@@ -23,25 +19,38 @@
       "sword": 1
     }
   },
-  "hj": {
-    "health": 100,
+  "lee": {
+    "health": 0,
     "position": [
-      1500.0,
-      213.45
+      1429.752499999997,
+      479.4449999999994
     ],
     "inventory": {
-      "sword": 1
+      "sword": 1,
+      "Wood": 2,
+      "Fruit": 2,
+      "Crystal": 1,
+      "Big Fish": 1
     }
   },
   "hi": {
     "health": 100,
     "position": [
-      1585.8575000000005,
-      125.0
+      1500,
+      125
+    ],
+    "inventory": {}
+  },
+  "bye": {
+    "health": 70,
+    "position": [
+      1489.9350000000002,
+      192.48000000000013
     ],
     "inventory": {
-      "Wood": 6,
-      "Fruit": 4
+      "Fish": 3,
+      "Wood": 2,
+      "Fruit": 2
     }
   },
   "hj2": {
