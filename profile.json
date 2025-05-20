@@ -12,8 +12,8 @@
   "h": {
     "health": 100,
     "position": [
-      1500,
-      125
+      1500.0,
+      125.0
     ],
     "inventory": {
       "sword": 1
@@ -22,15 +22,11 @@
   "lee": {
     "health": 0,
     "position": [
-      1429.752499999997,
-      479.4449999999994
+      1500.0,
+      213.45
     ],
     "inventory": {
-      "sword": 1,
-      "Wood": 2,
-      "Fruit": 2,
-      "Crystal": 1,
-      "Big Fish": 1
+      "sword": 1
     }
   },
   "hi": {
@@ -52,5 +48,39 @@
       "Wood": 2,
       "Fruit": 2
     }
+  },
+  "hj2": {
+    "health": 70,
+    "position": [
+      214.12000000000288,
+      1214.144999999989
+    ],
+    "inventory": {
+      "Big Fish": 3,
+      "Wood": 23,
+      "Fruit": 15
+    },
+    "level": 2,
+    "exp": 25
+  },
+  "hj3": {
+    "health": 100,
+    "position": [
+      1396.2999999999995,
+      530.6375000000015
+    ],
+    "inventory": {
+      "Wood": 2,
+      "Fruit": 2,
+      "Fish": 1
+    }
+  },
+  "hj1": {
+    "health": 100,
+    "position": [
+      1500.0,
+      125.0
+    ],
+    "inventory": {}
   }
 }
