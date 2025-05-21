@@ -1103,6 +1103,7 @@ class Player:
             frame = self.frames[self.current_frame]
             scaled_frame = pygame.transform.scale(frame, screen.get_size())
             screen.blit(scaled_frame, (0, 0))
+
     def calculate_exp_needed(self, level):
         # You can tweak the formula for difficulty scaling
         return 50 * level
@@ -1116,6 +1117,8 @@ class Player:
             print(f"{self.username} leveled up to level {self.level}!")  # optional: restore HP on level-up
             self.max_health = 100 * self.level  # or any formula you like
             self.health = self.max_health       # optionally heal to full on level up
+            for weapon in self.weapon_damage:
+                self.weapon_damage[weapon] +=200
     
     def draw_exp_bar(self, surface):
         if self.dead:
