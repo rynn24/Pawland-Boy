@@ -620,38 +620,40 @@ class InventoryMenu:
                 self.inventory.draw_item_icon(screen, name, count, slot_rect)
 
 class SettingsMenu:
-    def __init__(self):
+    def __init__(self, screen_size):
         self.visible = False
         self.buttons = []
         self.font = pygame.font.SysFont(None, 36)
         self.small_font = pygame.font.SysFont(None, 24)
-        
+        self.screen_size = screen_size  # Save the initial screen size
+
         # Initialize music
         pygame.mixer.init()
         try:
             self.music = pygame.mixer.Sound("haojun/music.mp3")  # Replace with your music file
-            self.music_volume = 0.5  # Default volume (0.0 to 1.0)
-            self.music.play(-1)  # Loop indefinitely
+            self.music_volume = 0.5
+            self.music.play(-1)
             self.music.set_volume(self.music_volume)
         except:
             self.music = None
             print("Could not load music file")
-        
-        # Create buttons
-        self.create_buttons()
+
+        # Create buttons using the current screen size
+        self.create_buttons(self.screen_size)
     
-    def create_buttons(self):
-        # Quit button
+    def create_buttons(self, screen_size):
+        self.buttons.clear()
+        w, h = screen_size
+
         quit_button = Button(
-            window_size[0]//2 - 100, window_size[1]//2 + 60,
+            w // 2 - 100, h // 2 + 60,
             200, 40, "Quit Game",
             (200, 50, 50), (250, 100, 100), (255, 255, 255)
         )
         self.buttons.append(quit_button)
-        
-        # Back button
+
         back_button = Button(
-            window_size[0]//2 - 100, window_size[1]//2 + 10,
+            w // 2 - 100, h // 2 + 10,
             200, 40, "Back to Game",
             (50, 50, 200), (100, 100, 250), (255, 255, 255)
         )
@@ -682,31 +684,25 @@ class SettingsMenu:
             self.music.set_volume(self.music_volume)
     
     def draw(self, screen):
-        # Darken the background
-        overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
+        w, h = screen.get_size()
+
+        overlay = pygame.Surface((w, h), pygame.SRCALPHA)
         overlay.fill((0, 0, 0, 180))
         screen.blit(overlay, (0, 0))
-        
-        # Draw menu box
-        menu_rect = pygame.Rect(
-            window_size[0]//2 - 200, window_size[1]//2 - 150,
-            400, 300
-        )
+
+        menu_rect = pygame.Rect(w // 2 - 200, h // 2 - 150, 400, 300)
         pygame.draw.rect(screen, (100, 100, 100), menu_rect, border_radius=10)
         pygame.draw.rect(screen, (255, 255, 255), menu_rect, 2, border_radius=10)
-        
-        # Draw title
+
         title = self.font.render("Settings", True, (255, 255, 255))
-        screen.blit(title, (window_size[0]//2 - title.get_width()//2, window_size[1]//2 - 120))
-        
-        # Draw volume controls
+        screen.blit(title, (w // 2 - title.get_width() // 2, h // 2 - 120))
+
         vol_text = self.font.render(f"Music Volume: {int(self.music_volume * 100)}%", True, (255, 255, 255))
-        screen.blit(vol_text, (window_size[0]//2 - vol_text.get_width()//2, window_size[1]//2 - 60))
-        
+        screen.blit(vol_text, (w // 2 - vol_text.get_width() // 2, h // 2 - 60))
+
         controls_text = self.small_font.render("Use LEFT/RIGHT arrows to adjust", True, (200, 200, 200))
-        screen.blit(controls_text, (window_size[0]//2 - controls_text.get_width()//2, window_size[1]//2 - 30))
-        
-        # Draw buttons
+        screen.blit(controls_text, (w // 2 - controls_text.get_width() // 2, h // 2 - 30))
+
         for button in self.buttons:
             button.draw(screen)
 
@@ -768,7 +764,8 @@ class Player:
         self.level = level
         self.exp = exp
         self.exp_to_next_level = self.calculate_exp_needed(self.level)
-        
+        self.max_health= 100*self.level
+
         self.current_attack_targets = []
 
         self.weapon_icons = {
@@ -1014,7 +1011,7 @@ class Player:
             self.time_of_death = pygame.time.get_ticks()
 
     def respawn(self):
-        self.health = 100
+        self.health = self.max_health
         self.dead = False
         self.attacking = False
         self.attack_frame = 0
@@ -1041,8 +1038,13 @@ class Player:
 
 
         # Round to nearest 10
-        hp_level = max(0, min(100, int(round(self.health / 10) * 10)))
-        current_frame = self.hp_frames.get(hp_level, self.hp_frames[0])
+        hp_percent = int((self.health / self.max_health) * 100)
+        hp_percent = min(max(hp_percent, 0), 100)
+
+        # Optional: round down to nearest 10 if you only have images per 10%
+        hp_frame_level = (hp_percent // 10) * 10
+
+        current_frame = self.hp_frames.get(hp_frame_level, self.hp_frames[0])
 
         # No need to scale unless needed
         # If too small visually, you can still scale like this:
@@ -1057,7 +1059,7 @@ class Player:
         surface.blit(scaled_frame, (x, y))
 
         # HP number
-        health_text = font.render(f"{int(self.health)}/100", True, (255, 255, 255))
+        health_text = font.render(f"{int(self.health)}/{(self.max_health)}", True, (255, 255, 255))
         text_x = x + scaled_frame.get_width() + 10
         text_y = y + (scaled_frame.get_height() - health_text.get_height()) // 2
         surface.blit(health_text, (text_x, text_y))
@@ -1111,8 +1113,9 @@ class Player:
             self.exp -= self.exp_to_next_level
             self.level += 1
             self.exp_to_next_level = self.calculate_exp_needed(self.level)
-            print(f"{self.username} leveled up to level {self.level}!")
-            self.health = 100  # optional: restore HP on level-up
+            print(f"{self.username} leveled up to level {self.level}!")  # optional: restore HP on level-up
+            self.max_health = 100 * self.level  # or any formula you like
+            self.health = self.max_health       # optionally heal to full on level up
     
     def draw_exp_bar(self, surface):
         if self.dead:
@@ -1897,10 +1900,12 @@ zombie_group = pygame.sprite.Group()
 boss_area = pygame.Rect(240, 144, 342, 129)  # x, y, width, height
 boss = Boss(399, 145, player_instance, boss_area)
 all_sprites.add(boss)
-settings_menu = SettingsMenu()
 game_state = "game"
 spawn_delay = 3
 last_spawn_time = time.time()
+screen_width, screen_height = screen.get_size() 
+screen_size=screen.get_size()
+settings_menu = SettingsMenu(screen_size)
 
 # Function to spawn zombies (limit to 10)
 def spawn_zombie():
@@ -1994,9 +1999,13 @@ while running:
                 if is_fullscreen:
                     screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
                     character_scale = fullscreen_scale  # Increase size
+                    screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+                    settings_menu.create_buttons(screen.get_size())
                 else:
                     screen = pygame.display.set_mode(window_size)
                     character_scale = 1.0  # Normal size
+                    screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+                    settings_menu.create_buttons(screen.get_size())
                 overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
             elif event.key == pygame.K_b:
                 inventory_menu.toggle()
@@ -2020,7 +2029,9 @@ while running:
                         player_instance.username,
                         player_instance.health,
                         [player_instance.position.x, player_instance.position.y],
-                        inventory_dict
+                        inventory_dict,
+                        player_instance.level,
+                        player_instance.exp
                     )
                 running = False
             elif result == "back":
