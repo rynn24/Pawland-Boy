@@ -38,30 +38,32 @@
     "inventory": {}
   },
   "bye": {
-    "health": 70,
+    "health": 200,
     "position": [
-      1489.9350000000002,
-      192.48000000000013
+      487.26000000000573,
+      1173.054999999995
     ],
     "inventory": {
       "Fish": 3,
       "Wood": 2,
       "Fruit": 2
-    }
+    },
+    "level": 2,
+    "exp": 50
   },
   "hj2": {
-    "health": 70,
+    "health": 300,
     "position": [
-      214.12000000000288,
-      1214.144999999989
+      1502.8974999999998,
+      150.4675
     ],
     "inventory": {
       "Big Fish": 3,
-      "Wood": 23,
-      "Fruit": 15
+      "Wood": 27,
+      "Fruit": 17
     },
-    "level": 2,
-    "exp": 25
+    "level": 3,
+    "exp": 0
   },
   "hj3": {
     "health": 100,
