@@ -1,6 +1,5 @@
 import pygame
 import os
-import math
 import sys
 import random
 import time
@@ -24,7 +23,7 @@ font = pygame.font.SysFont(None, 24)
 reward_font = pygame.font.Font(None, 45) # font for fishing reward
 
 # Load map image
-map_image = pygame.image.load(os.path.join("rynn/Map.png")).convert()
+map_image = pygame.image.load(os.path.join("rynn/Map2.png")).convert()
 
 # Camera and player position 
 camera_width, camera_height = 320, 180
@@ -50,19 +49,54 @@ restricted_zones = [
 
 # Trees restricted area
 tree_restricted_zones = [
-    # Pond area 
+    # Pond area (ellipse)
     {
         "type": "ellipse",
         "center": (1554, 585),
-        "radius_x": 165,
-        "radius_y": 162
+        "radius_x": 170,
+        "radius_y": 170
     },
-    # Boss & top water area 
+    # Top area (rectangle)
     {
         "type": "rect",
-        "rect": pygame.Rect(0, 0, 1500, 340)  # x, y, width, height
+        "rect": pygame.Rect(0, 0, 1900, 340)
+    },
+    # Boss area (rectangle)
+    {
+        "type": "rect", 
+        "rect": pygame.Rect(240, 144, 342, 129)
+    },
+    # Right area(rectangle)
+    {
+        "type": "rect",
+        "rect": pygame.Rect(1750, 0, 170, 1440)
+    },
+    # Bottom area(rectangle)
+    {
+        "type": "rect",
+        "rect": pygame.Rect(0, 1340, 1920, 100)
+    },
+    # Left area(rectangle)
+    {
+        "type": "rect",
+        "rect": pygame.Rect(0, 284, 164, 1060)
     }
 ]
+
+# House area & load images
+house_area = [
+
+        {
+        "type": "rect",
+        "rect": pygame.Rect(1464, 144, 116, 56)
+    }   
+] 
+in_house = False
+house_image = pygame.image.load("rynn/inside-house.png").convert()
+house_rect = house_image.get_rect()
+show_house_prompt = False
+paper_image = pygame.image.load("rynn/paper.jpg").convert()
+paper_visible = False
 
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
@@ -118,9 +152,9 @@ time_counter = 0
 
 # Minimap settings
 minimap_radius = 60
-minimap_zoom_factor = 0.8
+minimap_zoom_factor = 0.2
 minimap_pos = (minimap_radius + 10, minimap_radius + 10)
-minimap_border_color = (0, 0, 0)
+minimap_border_color = BLACK
 minimap_border_width = 2
 player_minimap_color = (255, 50, 50)
 minimap_mask = pygame.Surface((minimap_radius * 2, minimap_radius * 2), pygame.SRCALPHA)
@@ -190,17 +224,6 @@ class Inventory:
         self.visible_slots_x = (800 - 5 * (self.slot_size + self.slot_margin)) // 2  # Centered on top
         self.visible_slots_y = 50  # Start y position for visible slots
         self.generate_slot_rects()
-        self.selected_slot_index = None  # Track which item is clicked
-        self.item_descriptions = {
-                "Wood": "Used for crafting basic tools.",
-                "Fruit": "Fruits that looks yummy.",
-                "Fish": "A common catch. Can be cooked.",
-                "Big Fish": "A rare fish with high nutrition.",
-                "Crystal": "A mysterious rare gem.",
-                "Boat": "Used to travel across water.",
-                "Firefly": "It glows at night."
-            }
-
 
     def generate_slot_rects(self):
         """Generate the positions for all the inventory slots"""
@@ -344,7 +367,9 @@ class UserSystem:
             "health": 100,  # Initial health
             "position": [1500,125],  # Initial position (center of screen)
             "inventory": { 
-            }
+            },
+            "level": 1,
+            "exp": 0
         }
         self.save_users()
         return True
@@ -367,13 +392,15 @@ class UserSystem:
         health = user_data.get("health", 100)
         position = user_data.get("position", [1500, 125])
         inventory = user_data.get("inventory", {})
+        level = user_data.get("level", 1)
+        exp = user_data.get("exp", 0)
 
         print(f"get_player_data inventory for {username}: {inventory}")
     
         if isinstance(position, dict):
             position = [position.get("0", 1500), position.get("1", 125)]
 
-        return health, position, inventory
+        return health, position, inventory, level, exp 
 
     def get_inventory_dict(self, username):
         inventory = self.users[username]["inventory"]
@@ -391,7 +418,7 @@ class UserSystem:
 
         return inventory_dict
 
-    def save_progress(self, username, health, position, inventory_dict):
+    def save_progress(self, username, health, position, inventory_dict, level, exp):
         print(f"[DEBUG] save_progress called for username: {username}")
         if username in self.users:
             # Convert position to list if it's a Vector2
@@ -403,7 +430,9 @@ class UserSystem:
             self.users[username] = {
                 "health": health,
                 "position": position,
-                "inventory": inventory_dict
+                "inventory": inventory_dict,
+                "level": level,
+                "exp": exp
             }
             print(f"Saving data for {username}: {self.users[username]}")  # Debug print
             self.save_users()
@@ -415,9 +444,9 @@ class MainMenu:
         self.screen = screen
         self.window_size = window_size
         self.font = pygame.font.SysFont(None, 48)
-        self.login_button = Button(window_size[0] // 2 - 100, 200, 200, 50, "Login",
+        self.login_button = Button(window_size[0] // 2 - 100, 200, 200, 50, "Choose Profile",
                                    (50, 150, 50), (100, 200, 100), (255, 255, 255))
-        self.register_button = Button(window_size[0] // 2 - 100, 270, 200, 50, "Register",
+        self.register_button = Button(window_size[0] // 2 - 100, 270, 200, 50, "Create Profile",
                                       (50, 50, 150), (100, 100, 200), (255, 255, 255))
 
     def handle_events(self, events):
@@ -479,7 +508,7 @@ class RegisterPage:
         self.username_input = ""
         self.input_rect = pygame.Rect(window_size[0] // 2 - 100, 160, 200, 40)
         self.active_input = False
-        self.register_button = Button(window_size[0] // 2 - 60, 220, 120, 40, "Register",
+        self.register_button = Button(window_size[0] // 2 - 60, 220, 120, 40, "Create Profile",
                                       (50, 100, 150), (100, 150, 200), (255, 255, 255))
         self.back_button = Button(20, 20, 100, 40, "Back",
                                   (100, 100, 100), (150, 150, 150), (255, 255, 255))
@@ -535,40 +564,96 @@ class RegisterPage:
             self.screen.blit(msg, (self.window_size[0] // 2 - msg.get_width() // 2, 280))
 
         pygame.display.flip()
+class InventoryMenu:
+    def __init__(self, inventory, window_size):
+        self.visible = False
+        self.inventory = inventory  # Reference to your Inventory instance
+        self.window_size = window_size
+        self.font = pygame.font.SysFont("Arial", 24)
+        
+        # Define window rect for the bag display area
+        self.window_rect = pygame.Rect(
+            window_size[0]//2 - 250, window_size[1]//2 - 200,
+            500, 400
+        )
+        self.bg_color = (50, 50, 70)
+        
+    def toggle(self):
+        self.visible = not self.visible
+        
+    def draw(self, screen):
+        if not self.visible:
+            return
+        
+        # Darken background like settings menu
+        overlay = pygame.Surface(self.window_size, pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 180))
+        screen.blit(overlay, (0, 0))
+        
+        # Draw the bag window background
+        pygame.draw.rect(screen, self.bg_color, self.window_rect, border_radius=10)
+        pygame.draw.rect(screen, (255, 255, 255), self.window_rect, 2, border_radius=10)
+        
+        # Title
+        title = self.font.render("Inventory", True, (255, 255, 255))
+        screen.blit(title, (self.window_rect.centerx - title.get_width() // 2, self.window_rect.top + 20))
+        
+        # Draw all the inventory slots inside the window_rect area
+        # We'll draw them in a grid, e.g. 5 columns x 4 rows, similar to your Inventory
+        start_x = self.window_rect.left + 90
+        start_y = self.window_rect.top + 70
+        slot_size = 60
+        slot_margin = 10
+        
+        for i in range(self.inventory.max_slots):
+            x = start_x + (i % 5) * (slot_size + slot_margin)
+            y = start_y + (i // 5) * (slot_size + slot_margin)
+            slot_rect = pygame.Rect(x, y, slot_size, slot_size)
+            
+            # Draw slot box
+            pygame.draw.rect(screen, (150, 150, 150), slot_rect)
+            
+            # Draw item icon + count if present
+            item = self.inventory.slots[i]
+            if item:
+                name, count = item
+                self.inventory.draw_item_icon(screen, name, count, slot_rect)
 
 class SettingsMenu:
-    def __init__(self):
+    def __init__(self, screen_size):
         self.visible = False
         self.buttons = []
         self.font = pygame.font.SysFont(None, 36)
         self.small_font = pygame.font.SysFont(None, 24)
-        
+        self.screen_size = screen_size  # Save the initial screen size
+
         # Initialize music
         pygame.mixer.init()
         try:
             self.music = pygame.mixer.Sound("haojun/music.mp3")  # Replace with your music file
-            self.music_volume = 0.5  # Default volume (0.0 to 1.0)
-            self.music.play(-1)  # Loop indefinitely
+            self.music_volume = 0.5
+            self.music.play(-1)
             self.music.set_volume(self.music_volume)
         except:
             self.music = None
             print("Could not load music file")
-        
-        # Create buttons
-        self.create_buttons()
+
+        # Create buttons using the current screen size
+        self.create_buttons(self.screen_size)
     
-    def create_buttons(self):
-        # Quit button
+    def create_buttons(self, screen_size):
+        self.buttons.clear()
+        w, h = screen_size
+
         quit_button = Button(
-            window_size[0]//2 - 100, window_size[1]//2 + 60,
+            w // 2 - 100, h // 2 + 60,
             200, 40, "Quit Game",
             (200, 50, 50), (250, 100, 100), (255, 255, 255)
         )
         self.buttons.append(quit_button)
-        
-        # Back button
+
         back_button = Button(
-            window_size[0]//2 - 100, window_size[1]//2 + 10,
+            w // 2 - 100, h // 2 + 10,
             200, 40, "Back to Game",
             (50, 50, 200), (100, 100, 250), (255, 255, 255)
         )
@@ -599,31 +684,25 @@ class SettingsMenu:
             self.music.set_volume(self.music_volume)
     
     def draw(self, screen):
-        # Darken the background
-        overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
+        w, h = screen.get_size()
+
+        overlay = pygame.Surface((w, h), pygame.SRCALPHA)
         overlay.fill((0, 0, 0, 180))
         screen.blit(overlay, (0, 0))
-        
-        # Draw menu box
-        menu_rect = pygame.Rect(
-            window_size[0]//2 - 200, window_size[1]//2 - 150,
-            400, 300
-        )
+
+        menu_rect = pygame.Rect(w // 2 - 200, h // 2 - 150, 400, 300)
         pygame.draw.rect(screen, (100, 100, 100), menu_rect, border_radius=10)
         pygame.draw.rect(screen, (255, 255, 255), menu_rect, 2, border_radius=10)
-        
-        # Draw title
+
         title = self.font.render("Settings", True, (255, 255, 255))
-        screen.blit(title, (window_size[0]//2 - title.get_width()//2, window_size[1]//2 - 120))
-        
-        # Draw volume controls
+        screen.blit(title, (w // 2 - title.get_width() // 2, h // 2 - 120))
+
         vol_text = self.font.render(f"Music Volume: {int(self.music_volume * 100)}%", True, (255, 255, 255))
-        screen.blit(vol_text, (window_size[0]//2 - vol_text.get_width()//2, window_size[1]//2 - 60))
-        
+        screen.blit(vol_text, (w // 2 - vol_text.get_width() // 2, h // 2 - 60))
+
         controls_text = self.small_font.render("Use LEFT/RIGHT arrows to adjust", True, (200, 200, 200))
-        screen.blit(controls_text, (window_size[0]//2 - controls_text.get_width()//2, window_size[1]//2 - 30))
-        
-        # Draw buttons
+        screen.blit(controls_text, (w // 2 - controls_text.get_width() // 2, h // 2 - 30))
+
         for button in self.buttons:
             button.draw(screen)
 
@@ -656,11 +735,11 @@ class Button:
         return False
     
 class Player:
-    def __init__(self, position, speed, username):
+    def __init__(self, position, speed, username,level,exp):
         self.username = username
         self.user_system = UserSystem()
-        self.health, self.position, self.inventory = self.user_system.get_player_data(self.username)
-        print(f"Loaded player data for {self.username}: health={self.health}, position={self.position}, inventory={self.inventory}")
+        self.health, self.position, self.inventory, self.level, self.exp = self.user_system.get_player_data(self.username)
+        print(f"Loaded player data for {self.username}: health={self.health}, position={self.position}, inventory={self.inventory},level={self.level}, exp={self.exp}")
 
         self.position = pygame.Vector2(self.position[0], self.position[1])
         self.speed = speed 
@@ -682,7 +761,11 @@ class Player:
         self.current_weapon = 'hand'
         self.last_update = pygame.time.get_ticks()
         self.animation_cooldown = 100
-        
+        self.level = level
+        self.exp = exp
+        self.exp_to_next_level = self.calculate_exp_needed(self.level)
+        self.max_health= 100*self.level
+
         self.current_attack_targets = []
 
         self.weapon_icons = {
@@ -718,6 +801,14 @@ class Player:
             20: pygame.image.load("haojun/image/hp.20.png").convert_alpha(),
             10: pygame.image.load("haojun/image/hp.10.png").convert_alpha(),
             0 : pygame.image.load("haojun/image/hp.0.png").convert_alpha(),
+        }
+        self.exp_bar_frames = {
+            0: pygame.image.load("haojun/image/exp 0.png").convert_alpha(),
+            20: pygame.image.load("haojun/image/exp 20.png").convert_alpha(),
+            40: pygame.image.load("haojun/image/exp 40.png").convert_alpha(),
+            60: pygame.image.load("haojun/image/exp 60.png").convert_alpha(),
+            80: pygame.image.load("haojun/image/exp 80.png").convert_alpha(),
+            100: pygame.image.load("haojun/image/exp 100.png").convert_alpha(),
         }
 
         self.walk_sheet = pygame.image.load("minting/character.png").convert_alpha()
@@ -920,7 +1011,7 @@ class Player:
             self.time_of_death = pygame.time.get_ticks()
 
     def respawn(self):
-        self.health = 100
+        self.health = self.max_health
         self.dead = False
         self.attacking = False
         self.attack_frame = 0
@@ -947,8 +1038,13 @@ class Player:
 
 
         # Round to nearest 10
-        hp_level = max(0, min(100, int(round(self.health / 10) * 10)))
-        current_frame = self.hp_frames.get(hp_level, self.hp_frames[0])
+        hp_percent = int((self.health / self.max_health) * 100)
+        hp_percent = min(max(hp_percent, 0), 100)
+
+        # Optional: round down to nearest 10 if you only have images per 10%
+        hp_frame_level = (hp_percent // 10) * 10
+
+        current_frame = self.hp_frames.get(hp_frame_level, self.hp_frames[0])
 
         # No need to scale unless needed
         # If too small visually, you can still scale like this:
@@ -963,7 +1059,7 @@ class Player:
         surface.blit(scaled_frame, (x, y))
 
         # HP number
-        health_text = font.render(f"{int(self.health)}/100", True, (255, 255, 255))
+        health_text = font.render(f"{int(self.health)}/{(self.max_health)}", True, (255, 255, 255))
         text_x = x + scaled_frame.get_width() + 10
         text_y = y + (scaled_frame.get_height() - health_text.get_height()) // 2
         surface.blit(health_text, (text_x, text_y))
@@ -1007,12 +1103,80 @@ class Player:
             frame = self.frames[self.current_frame]
             scaled_frame = pygame.transform.scale(frame, screen.get_size())
             screen.blit(scaled_frame, (0, 0))
+    def calculate_exp_needed(self, level):
+        # You can tweak the formula for difficulty scaling
+        return 50 * level
+
+    def add_exp(self, amount):
+        self.exp += amount
+        while self.exp >= self.exp_to_next_level:
+            self.exp -= self.exp_to_next_level
+            self.level += 1
+            self.exp_to_next_level = self.calculate_exp_needed(self.level)
+            print(f"{self.username} leveled up to level {self.level}!")  # optional: restore HP on level-up
+            self.max_health = 100 * self.level  # or any formula you like
+            self.health = self.max_health       # optionally heal to full on level up
+    
+    def draw_exp_bar(self, surface):
+        if self.dead:
+            return
+
+        percent = int((self.exp / self.exp_to_next_level) * 100)
+        percent = max(0, min(100, (percent // 10) * 10))  # Round to nearest 10%
+
+        rounded_percent = min(self.exp_bar_frames.keys(), key=lambda k: abs(k - percent))
+        bar_img = self.exp_bar_frames[rounded_percent]
+
+        scale_factor = 2
+        scaled_img = pygame.transform.scale(bar_img, (
+            bar_img.get_width() * scale_factor,
+            bar_img.get_height() * scale_factor
+        ))
+
+        x = (surface.get_width() - scaled_img.get_width()) // 2
+        y = surface.get_height() - scaled_img.get_height() + 30
+        surface.blit(scaled_img, (x, y))
+
+        # Level text
+        level_text = font.render(f"Level {self.level}", True, (255, 255, 0))
+        surface.blit(level_text, (x + scaled_img.get_width() + 10, y))
 
 user_system = UserSystem()  # Create UserSystem instance
 speed = 2.5  # Adjust as needed
 player_position = pygame.Vector2(1500, 125)
 
+class HouseUI:
+    def __init__(self):
+        self.elements = []
+        self.background = house_image
+    
+    def add_button(self, rect, text, action):
+        self.elements.append({
+            "type": "button",
+            "rect": rect,
+            "text": text,
+            "action": action
+        })
+    
+    def draw(self, surface):
+        surface.blit(self.background, (0, 0))
+        for element in self.elements:
+            if element["type"] == "button":
+                pygame.draw.rect(surface, (200, 200, 200), element["rect"])
+                text = font.render(element["text"], True, (0, 0, 0))
+                text_rect = text.get_rect(center=element["rect"].center)
+                surface.blit(text, text_rect)
+    
+    def handle_click(self, pos):
+        for element in self.elements:
+            if element["type"] == "button" and element["rect"].collidepoint(pos):
+                element["action"]()
+                return True
+        return False
 
+# Initialize
+house_ui = HouseUI()
+house_ui.add_button(pygame.Rect(100, 100, 200, 50), "Exit House", lambda: globals().update({"in_house": False}))
 
 class Tree:
     def __init__(self, position, frames):
@@ -1286,6 +1450,8 @@ class Zombie(pygame.sprite.Sprite):
             self.animation_index = 0
             self.is_dead = True
             self.death_time = time.time()
+            self.player.add_exp(25)
+
     def draw_health_bar(self, surface, camera):
         if self.hp <= 0:  # Do not draw health bar if the zombie is dead
             return
@@ -1726,18 +1892,20 @@ while not in_game:
 
     pygame.display.flip()
 
-player_instance = Player(player_position, speed, current_user)  # Create Player instance
+health, position, inventory_data, level, exp = user_system.get_player_data(current_user)
+player_instance = Player(player_position, speed, current_user, level, exp)  # Create Player instance
 # Sprite groups
 all_sprites = pygame.sprite.Group()
 zombie_group = pygame.sprite.Group()
 boss_area = pygame.Rect(240, 144, 342, 129)  # x, y, width, height
 boss = Boss(399, 145, player_instance, boss_area)
 all_sprites.add(boss)
-settings_menu = SettingsMenu()
 game_state = "game"
-
 spawn_delay = 3
 last_spawn_time = time.time()
+screen_width, screen_height = screen.get_size() 
+screen_size=screen.get_size()
+settings_menu = SettingsMenu(screen_size)
 
 # Function to spawn zombies (limit to 10)
 def spawn_zombie():
@@ -1774,15 +1942,14 @@ def draw_settings_menu(screen):
     screen.blit(quit_text, (100, 250))
 
 
-#Load saved data
-health, position, inventory_data = user_system.get_player_data(current_user)
 
 #Create and fill inventory
 inventory = Inventory()
 inventory.set_items(inventory_data)  #Load saved items
+inventory_menu = InventoryMenu(inventory, window_size)
 
 #Create player and assign the filled inventory
-player = Player(position, speed, current_user)
+player = Player(position, speed, current_user,level,exp)
 player.inventory = inventory  #Assign filled inventory
 
 # Main loop
@@ -1797,17 +1964,21 @@ while running:
             progress_data = {
                 "position": [player_instance.position.x, player_instance.position.y],
                 "health": player_instance.health,
-                "inventory":inventory_dict
+                "inventory":inventory_dict,
+                "level": player_instance.level,
+                "exp":player_instance.exp
+                
             }
             # Save the progress
             user_system.save_progress(
                     player_instance.username,
                     player_instance.health,
                     [player_instance.position.x, player_instance.position.y],
-                    inventory_dict
+                    inventory_dict,
+                    player_instance.level,
+                    player_instance.exp
                 )
             running = False        
-            quit_game()
    
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
@@ -1828,12 +1999,16 @@ while running:
                 if is_fullscreen:
                     screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
                     character_scale = fullscreen_scale  # Increase size
+                    screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+                    settings_menu.create_buttons(screen.get_size())
                 else:
                     screen = pygame.display.set_mode(window_size)
                     character_scale = 1.0  # Normal size
+                    screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+                    settings_menu.create_buttons(screen.get_size())
                 overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
             elif event.key == pygame.K_b:
-                inventory.toggle_inventory()
+                inventory_menu.toggle()
 
         elif event.type == pygame.KEYUP:
             if event.key == pygame.K_SPACE:
@@ -1843,11 +2018,26 @@ while running:
         if game_state == "settings":
             result = settings_menu.handle_events(event)
             if result == "quit":
-                quit_game()
+                inventory_dict = inventory.get_inventory_dict()
+                progress_data = {
+                    "position": [player_instance.position.x, player_instance.position.y],
+                    "health": player_instance.health,
+                    "inventory":inventory_dict
+                }
+                # Save the progress
+                user_system.save_progress(
+                        player_instance.username,
+                        player_instance.health,
+                        [player_instance.position.x, player_instance.position.y],
+                        inventory_dict,
+                        player_instance.level,
+                        player_instance.exp
+                    )
+                running = False
             elif result == "back":
                 game_state = "game"
                 settings_menu.visible = False
-
+                         
     # ========== GAME LOGIC ONLY WHEN IN "GAME" STATE ==========
     if game_state == "game":
         keys = pygame.key.get_pressed()
@@ -1925,6 +2115,8 @@ while running:
     sprite_y = screen.get_height() // 2 - scaled_sprite.get_height() // 2
     screen.blit(scaled_sprite, (sprite_x, sprite_y))
     player_instance.draw_health_bar(screen)#player hp bar
+    player_instance.draw_health_bar(screen)
+    player_instance.draw_exp_bar(screen)
 
     # Minimap
     minimap_surface = pygame.Surface((minimap_radius * 2, minimap_radius * 2), pygame.SRCALPHA)
@@ -1987,7 +2179,96 @@ while running:
         screen.fill((10, 10, 10))  # Optional: dim background
         settings_menu.draw(screen)
 
+    if inventory_menu.visible:
+        inventory_menu.draw(screen)
+    if show_house_prompt and not in_house:
+        text = font.render("Press J to enter house", True, (255, 255, 255))
+        text_rect = text.get_rect(center=(screen.get_width()//2, screen.get_height()-100))
+        screen.blit(text, text_rect)
+    
+    if not in_house:  # Only process these if player is outside
+    # Check if player is in house area
+        player_rect = pygame.Rect(player_position.x-20, player_position.y-20, 40, 40)
+        show_house_prompt = False
+    for zone in house_area:
+        if zone["type"] == "rect" and zone["rect"].colliderect(player_rect):
+            show_house_prompt = True
+            if keys[pygame.K_j]:
+                in_house = True
+                # Pause game state
+                paused_world_state = {
+                    "player_pos": player_position.copy(),
+                    "time_counter": time_counter,
+                    # Add any other state you want to preserve
+                }
+            break
+        
+    if in_house:
+        # Get screen size
+        screen_width, screen_height = screen.get_size()
+        
+        # Scale the house background to fit the screen
+        scaled_house = pygame.transform.scale(house_image, (screen_width, screen_height))
 
+        # Draw house interior
+        screen.blit(scaled_house, (0, 0))
+        
+        # Handle mouse events for house UI
+        mouse_pos = pygame.mouse.get_pos()
+        mouse_x, mouse_y = mouse_pos  # Unpack once
+        mouse_clicked = False
+        for event in pygame.event.get():
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                mouse_clicked = True
+                
+        # UI elements in house
+        button_width, button_height = 120, 40
+
+        # Top-center anchor
+        button_x = screen_width // 2 - button_width // 2
+        button_y = 36  
+        
+        # Draw the button
+        button_rect = pygame.Rect(button_x, button_y, button_width, button_height)
+        pygame.draw.rect(screen, (200, 200, 200), (button_x, button_y, button_width, button_height))
+
+        # Render and center the text
+        button_text = font.render("Exit House", True, (0, 0, 0))
+        text_rect = button_text.get_rect(center=(button_x + button_width // 2, button_y + button_height // 2))
+        screen.blit(button_text, text_rect)
+        
+        if button_rect.collidepoint(mouse_x, mouse_y) and mouse_clicked:
+            in_house = False
+            player_position = paused_world_state["player_pos"]
+            time_counter = paused_world_state["time_counter"]
+            
+        #  Paper Zone (clickable wall area)
+        paper_zone_rect = pygame.Rect(25, 95, 81, 50)  # Adjust coords and size
+        if paper_zone_rect.collidepoint(mouse_x, mouse_y) and mouse_clicked and not paper_visible:
+            paper_visible = True
+
+        #  Paper UI
+        if paper_visible:
+            scaled_paper = pygame.transform.scale(paper_image, (screen_width, screen_height))
+            screen.blit(scaled_paper, (0, 0))
+
+            close_width, close_height = 100, 40
+            close_x = screen_width // 2 - close_width // 2
+            close_y = 400
+            close_button_rect = pygame.Rect(260, 400, 100, 25)
+            pygame.draw.rect(screen, (220, 220, 220), (close_x, close_y, close_width, close_height))
+            close_text = font.render("Close", True, (0, 0, 0))
+            close_text_rect = close_text.get_rect(center=(close_x + close_width // 2, close_y + close_height // 2))
+            screen.blit(close_text, close_text_rect)
+
+            if close_button_rect.collidepoint(mouse_x, mouse_y) and mouse_clicked:
+                paper_visible = False
+                
+        # Show mouse position on screen
+        mouse_pos_text = font.render(f"Mouse: {mouse_x}, {mouse_y}", True, (255, 255, 255))
+        screen.blit(mouse_pos_text, (10, 10))
+    
+            
     pygame.display.update()
     pygame.display.flip()
 pygame.quit()
