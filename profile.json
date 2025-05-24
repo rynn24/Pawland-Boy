@@ -24,20 +24,24 @@
   "lee": {
     "health": 0,
     "position": [
-      1500.0,
-      213.45
+      1416.4299999999996,
+      432.13500000000096
     ],
     "inventory": {
       "sword": 1
-    }
+    },
+    "level": 1,
+    "exp": 0
   },
   "hi": {
     "health": 100,
     "position": [
-      1500,
-      125
+      1500.0,
+      125.0
     ],
-    "inventory": {}
+    "inventory": {},
+    "level": 1,
+    "exp": 0
   },
   "bye": {
     "health": 200,
@@ -86,5 +90,18 @@
       125.0
     ],
     "inventory": {}
+  },
+  "666": {
+    "health": 100,
+    "position": [
+      872.1574999999998,
+      448.45250000000107
+    ],
+    "inventory": {
+      "Wood": 4,
+      "Fruit": 2
+    },
+    "level": 1,
+    "exp": 0
   }
 }
