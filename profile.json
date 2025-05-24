@@ -7,7 +7,9 @@
     ],
     "inventory": {
       "sword": 1
-    }
+    },
+    "level": 1,
+    "exp": 0
   },
   "h": {
     "health": 100,
@@ -22,20 +24,26 @@
   "lee": {
     "health": 0,
     "position": [
-      1500.0,
-      213.45
+      1699.5550000000007,
+      388.69750000000147
     ],
     "inventory": {
-      "sword": 1
-    }
+      "sword": 1,
+      "Wood": 4,
+      "Fruit": 2
+    },
+    "level": 1,
+    "exp": 0
   },
   "hi": {
     "health": 100,
     "position": [
-      1500,
-      125
+      1500.0,
+      383.48750000000075
     ],
-    "inventory": {}
+    "inventory": {},
+    "level": 1,
+    "exp": 0
   },
   "bye": {
     "health": 200,
@@ -52,10 +60,10 @@
     "exp": 50
   },
   "hj2": {
-    "health": 300,
+    "health": 290,
     "position": [
-      1502.8974999999998,
-      150.4675
+      1500.0,
+      125.0
     ],
     "inventory": {
       "Big Fish": 3,
@@ -83,6 +91,21 @@
       1500.0,
       125.0
     ],
-    "inventory": {}
+    "inventory": {},
+    "level": 1,
+    "exp": 0
+  },
+  "666\r": {
+    "health": 100,
+    "position": [
+      1221.992499999999,
+      481.7925000000018
+    ],
+    "inventory": {
+      "Fish": 1,
+      "Wood": 2
+    },
+    "level": 1,
+    "exp": 0
   }
 }
