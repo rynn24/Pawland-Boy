@@ -190,6 +190,17 @@ class Inventory:
         self.visible_slots_x = (800 - 5 * (self.slot_size + self.slot_margin)) // 2  # Centered on top
         self.visible_slots_y = 50  # Start y position for visible slots
         self.generate_slot_rects()
+        self.selected_slot_index = None  # Track which item is clicked
+        self.item_descriptions = {
+                "Wood": "Used for crafting basic tools.",
+                "Fruit": "Fruits that looks yummy.",
+                "Fish": "A common catch. Can be cooked.",
+                "Big Fish": "A rare fish with high nutrition.",
+                "Crystal": "A mysterious rare gem.",
+                "Boat": "Used to travel across water.",
+                "Firefly": "It glows at night."
+            }
+
 
     def generate_slot_rects(self):
         """Generate the positions for all the inventory slots"""
