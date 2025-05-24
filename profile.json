@@ -1,23 +1,31 @@
 {
   "2": {
-    "health": 70,
+    "health": 400,
     "position": [
-      726.5150000000028,
-      801.842499999998
+      1372.789999999999,
+      903.804999999996
     ],
     "inventory": {
-      "sword": 1
-    }
+      "sword": 1,
+      "Wood": 36,
+      "Fruit": 22
+    },
+    "level": 4,
+    "exp": 55
   },
   "h": {
     "health": 100,
     "position": [
-      1500.0,
-      125.0
+      1392.4249999999977,
+      610.3725000000001
     ],
     "inventory": {
-      "sword": 1
-    }
+      "sword": 1,
+      "Wood": 6,
+      "Fruit": 2
+    },
+    "level": 1,
+    "exp": 30
   },
   "lee": {
     "health": 0,
@@ -40,58 +48,94 @@
     "inventory": {}
   },
   "bye": {
-    "health": 200,
+    "health": 500,
     "position": [
-      487.26000000000573,
-      1173.054999999995
+      1402.7825000000007,
+      518.8750000000032
     ],
     "inventory": {
-      "Fish": 3,
-      "Wood": 2,
-      "Fruit": 2
+      "Fish": 8,
+      "Wood": 34,
+      "Fruit": 20
+    },
+    "level": 5,
+    "exp": 208
+  },
+  "hj2": {
+    "health": 100,
+    "position": [
+      476.725000000008,
+      1227.2699999999986
+    ],
+    "inventory": {
+      "Big Fish": 13,
+      "Wood": 39,
+      "Fruit": 27,
+      "Fish": 18,
+      "Crystal": 2
     },
     "level": 2,
     "exp": 50
   },
-  "hj2": {
-    "health": 130,
-    "position": [
-      372.01000000000306,
-      1318.3124999999952
-    ],
-    "inventory": {
-      "Big Fish": 3,
-      "Wood": 27,
-      "Fruit": 17
-    },
-    "level": 3,
-    "exp": 75
-  },
   "hj3": {
-    "health": 180,
+    "health": 80,
     "position": [
-      1170.4474999999993,
-      1272.0924999999952
+      1054.7000000000032,
+      1286.8974999999953
     ],
     "inventory": {
-      "Wood": 4,
+      "Wood": 6,
       "Fruit": 2,
       "Fish": 1
     },
-    "level": 2,
-    "exp": 50
+    "level": 1,
+    "exp": 25
   },
   "hj1": {
-    "health": 200,
+    "health": 500,
     "position": [
-      282.38250000000346,
-      1273.9174999999964
+      957.3199999999996,
+      829.164999999999
     ],
     "inventory": {
-      "Wood": 9,
-      "Fruit": 6
+      "Wood": 38,
+      "Fruit": 20,
+      "Fish": 1
     },
-    "level": 3,
+    "level": 5,
+    "exp": 20
+  },
+  "4": {
+    "health": 80,
+    "position": [
+      1052.2599999999973,
+      974.7299999999946
+    ],
+    "inventory": {
+      "Wood": 5,
+      "Fruit": 3
+    },
+    "level": 1,
     "exp": 25
+  },
+  "hj": {
+    "health": 140,
+    "position": [
+      1029.9249999999986,
+      1228.1849999999945
+    ],
+    "inventory": {},
+    "level": 2,
+    "exp": 25
+  },
+  "123": {
+    "health": 100,
+    "position": [
+      1500.0,
+      125.0
+    ],
+    "inventory": {},
+    "level": 1,
+    "exp": 0
   }
 }
