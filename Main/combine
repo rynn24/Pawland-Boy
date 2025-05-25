@@ -324,6 +324,16 @@ class Inventory:
                 self.slots[index] = (name, count)
                 index += 1
 
+    def remove_item(self, index, amount=1):
+        if self.slots[index]:
+            name, count = self.slots[index]
+            count -= amount
+            if count <= 0:
+                self.slots[index] = None
+            else:
+                self.slots[index] = (name, count)
+
+
 
 class UserSystem:
     def __init__(self, filename="profile.json"):
@@ -566,7 +576,8 @@ class RegisterPage:
         pygame.display.flip()
 
 class InventoryMenu:
-    def __init__(self, inventory, window_size):
+    def __init__(self, inventory, window_size, player):
+        self.player_instance = player_instance
         self.visible = False
         self.inventory = inventory  # Reference to your Inventory instance
         self.window_size = window_size
@@ -587,12 +598,12 @@ class InventoryMenu:
                 {"label": "Drop", "action": "drop"},
             ],
             "Wood": [
-                {"label": "Burn", "action": "burn"},
-                {"label": "Craft", "action": "craft"},
+                {"label": "Use", "action": "use"},
+                {"label": "Drop", "action": "drop"},
             ],
             "Fish": [
-                {"label": "Grill", "action": "grill"},
                 {"label": "Eat", "action": "eat"},
+                {"label": "Drop", "action": "drop"},
             ],
             # Default fallback if item is not listed
             "default": [
@@ -616,7 +627,6 @@ class InventoryMenu:
         self.visible = not self.visible
         
     def draw(self, screen):
-        print(self.inventory.slots)
         if not self.visible:
             return
         
@@ -680,24 +690,24 @@ class InventoryMenu:
                     screen.blit(line_surf, (info_x + 10, info_y + 40 + j * 20))
 
 
-            # Get the selected item and its buttons
-            item = self.inventory.slots[self.selected_index]
-            name, count = item
-            buttons = self.item_buttons.get(name, self.item_buttons["default"])
+                # Get the selected item and its buttons
+                buttons = self.item_buttons.get(name, self.item_buttons["default"])
 
-            # Calculate where to start placing buttons
-            button_start_y = info_y + 40 + len(wrapped_lines) * 20 + 10
+                # Calculate where to start placing buttons
+                button_start_y = info_y + 40 + len(wrapped_lines) * 20 + 10
 
-            for i, btn in enumerate(buttons):
-                btn_rect = pygame.Rect(info_x + 10, button_start_y + i * 45, 130, 35)
+                for i, btn in enumerate(buttons):
+                    btn_rect = pygame.Rect(info_x + 10, button_start_y + i * 45, 130, 35)
 
-                pygame.draw.rect(screen, (100, 100, 130), btn_rect, border_radius=5)
-                label = self.button_font.render(btn["label"], True, (255, 255, 255))
-                screen.blit(label, (btn_rect.centerx - label.get_width() // 2, btn_rect.centery - label.get_height() // 2))
-                btn["rect"] = btn_rect  # Store the rect for click detection
+                    pygame.draw.rect(screen, (100, 100, 130), btn_rect, border_radius=5)
+                    label = self.button_font.render(btn["label"], True, (255, 255, 255))
+                    screen.blit(label, (btn_rect.centerx - label.get_width() // 2, btn_rect.centery - label.get_height() // 2))
+                    btn["rect"] = btn_rect  # Store the rect for click detection
 
-            # Update buttons list for click detection
-            self.buttons = buttons
+                # Update buttons list for click detection
+                self.buttons = buttons
+            else: 
+                self.buttons = []
 
     def wrap_text(self, text, font, max_width):
         """Split long description text into multiple lines if needed."""
@@ -718,6 +728,7 @@ class InventoryMenu:
         return lines
 
     def handle_click(self, pos):
+        print(f"Click at {pos}, selected_index before: {self.selected_index}")
         # Check item slots
         start_x = self.window_rect.left + 30
         start_y = self.window_rect.top + 70
@@ -745,8 +756,35 @@ class InventoryMenu:
         if self.selected_index is not None:
             for btn in self.buttons:
                 if "rect" in btn and btn["rect"].collidepoint(pos):
-                    print(f"Clicked: {btn['label']} on item {self.selected_index}")
-                    # Here you can call a method like: self.inventory.use_item(self.selected_index)
+                    action = btn["action"]
+                    self.perform_action(action, self.selected_index)
+    
+    def perform_action(self, action, index):
+        item = self.inventory.slots[index]
+        if not item:
+            print("No item in slot!")
+            return
+
+        name, count = item
+        print(f"Performing action '{action}' on item '{name}' at slot {index}")
+
+        if name == "Fruit" and action == "eat":
+            print(f"Eating {name}")
+            self.player_instance.gain_health(5)
+            self.inventory.remove_item(index, 1)
+
+        elif action == "drop":
+            print(f"Dropping {name}")
+            self.inventory.remove_item(index, 1)
+
+        elif action == "use":
+            print(f"Using {name}")
+            self.inventory.remove_item(index, 1)
+            # Add general use logic
+
+        else:
+            print(f"No action implemented for: {action}")
+
 
 
 class SettingsMenu:
@@ -1158,7 +1196,7 @@ class Player:
             if current_time - self.time_of_death >= self.respawn_delay:
                 self.respawn()
 
-    def draw_health_bar(self, surface):
+    def draw_health_bar(self, surface): 
         if self.dead:
             return
         bar_width = 200
@@ -1270,6 +1308,12 @@ class Player:
         # Level text
         level_text = font.render(f"Level {self.level}", True, (255, 255, 0))
         surface.blit(level_text, (x + scaled_img.get_width() + 10, y))
+
+    def gain_health(self, amount):
+        self.health += amount
+        if self.health > self.max_health:
+            self.health = self.max_health
+        print(f"Health restored! Current health: {self.health}")
 
 user_system = UserSystem()  # Create UserSystem instance
 speed = 2.5  # Adjust as needed
@@ -2075,12 +2119,14 @@ def draw_settings_menu(screen):
 
 #Create and fill inventory
 inventory = Inventory()
-inventory.set_items(inventory_data)  #Load saved items
-inventory_menu = InventoryMenu(inventory, window_size)
+inventory.set_items(inventory_data)  # Load saved items
 
-#Create player and assign the filled inventory
-player = Player(position, speed, current_user,level,exp)
-player.inventory = inventory  #Assign filled inventory
+# Create player first
+player = Player(position, speed, current_user, level, exp)
+player.inventory = inventory  # Assign filled inventory
+
+# Now create inventory_menu with player
+inventory_menu = InventoryMenu(inventory, window_size, player)
 
 # Main loop
 running = True
@@ -2100,6 +2146,7 @@ while running:
                 
             }
             # Save the progress
+            print(f"[SAVE] Health being saved: {player_instance.health}")
             user_system.save_progress(
                     player_instance.username,
                     player_instance.health,
