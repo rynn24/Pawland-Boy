@@ -1210,7 +1210,7 @@ class Player:
 
         # Level text
         level_text = font.render(f"Level {self.level}", True, (255, 255, 0))
-        surface.blit(level_text, (x + scaled_img.get_width() + 10, y))
+        surface.blit(level_text, (x + scaled_img.get_width() - 120, y + 50))
     
     def update_weapon_damage(self):
         level = self.level
