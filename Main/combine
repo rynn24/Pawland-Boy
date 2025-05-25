@@ -194,7 +194,7 @@ boss_ult_frames = load_frames_from_sheet("haojun/image/boss ult.png", 76, 76, 1,
 
 
 class Inventory:
-    def __init__(self, max_slots=20):
+    def __init__(self, max_slots=16):
         self.items = {}
         self.max_slots = max_slots
         self.slots = [None] * self.max_slots  # Initial empty slots
@@ -323,6 +323,16 @@ class Inventory:
             if index < self.max_slots:
                 self.slots[index] = (name, count)
                 index += 1
+
+    def remove_item(self, index, amount=1):
+        if self.slots[index]:
+            name, count = self.slots[index]
+            count -= amount
+            if count <= 0:
+                self.slots[index] = None
+            else:
+                self.slots[index] = (name, count)
+
 
 
 class UserSystem:
@@ -602,8 +612,10 @@ class RegisterPage:
             self.screen.blit(msg, (self.window_size[0] // 2 - msg.get_width() // 2, 280))
 
         pygame.display.flip()
+
 class InventoryMenu:
-    def __init__(self, inventory, window_size):
+    def __init__(self, inventory, window_size, player):
+        self.player_instance = player_instance
         self.visible = False
         self.inventory = inventory  # Reference to your Inventory instance
         self.window_size = window_size
@@ -615,6 +627,39 @@ class InventoryMenu:
             500, 400
         )
         self.bg_color = (50, 50, 70)
+        self.selected_index = None
+        self.button_font = pygame.font.SysFont("Arial", 20)
+
+        self.item_buttons = {
+            "Fruit": [
+                {"label": "Eat", "action": "eat"},
+                {"label": "Drop", "action": "drop"},
+            ],
+            "Wood": [
+                {"label": "Use", "action": "use"},
+                {"label": "Drop", "action": "drop"},
+            ],
+            "Fish": [
+                {"label": "Eat", "action": "eat"},
+                {"label": "Drop", "action": "drop"},
+            ],
+            # Default fallback if item is not listed
+            "default": [
+                {"label": "Use", "action": "use"},
+                {"label": "Drop", "action": "drop"},
+            ]
+        }
+        self.item_descriptions = {
+            "Wood": "Can be used to build things.",
+            "Fruit": "Restores a small amount of health.",
+            "Fish": "A basic fish.",
+            "Big Fish": "A bigger and longer fish , maybe can unlock some dishes ?",
+            "Crystal": "Looks valuable.",
+            "Boat": "Used for traveling across water.",
+            "Firefly": "Cute bugs that glows in the dark.",
+            
+        }
+
         
     def toggle(self):
         self.visible = not self.visible
@@ -622,65 +667,170 @@ class InventoryMenu:
     def draw(self, screen):
         if not self.visible:
             return
-
-        # Get screen size dynamically
-        w, h = screen.get_size()
-        self.window_size = (w, h)
-
-        # Dimmed background
-        overlay = pygame.Surface((w, h), pygame.SRCALPHA)
+        
+        # Darken background like settings menu
+        overlay = pygame.Surface(self.window_size, pygame.SRCALPHA)
         overlay.fill((0, 0, 0, 180))
         screen.blit(overlay, (0, 0))
-
-        # Inventory window dimensions
-        window_width = 460
-        window_height = 400
-        self.window_rect = pygame.Rect(
-            w // 2 - window_width // 2,
-            h // 2 - window_height // 2,
-            window_width,
-            window_height
-        )
-
-        # Draw inventory window background
-        pygame.draw.rect(screen, self.bg_color, self.window_rect, border_radius=16)
-        pygame.draw.rect(screen, (255, 255, 255), self.window_rect, 2, border_radius=16)
-
+        
+        # Draw the bag window background
+        pygame.draw.rect(screen, self.bg_color, self.window_rect, border_radius=10)
+        pygame.draw.rect(screen, (255, 255, 255), self.window_rect, 2, border_radius=10)
+        
         # Title
         title = self.font.render("Inventory", True, (255, 255, 255))
-        screen.blit(
-            title,
-            (self.window_rect.centerx - title.get_width() // 2, self.window_rect.top + 25)
-        )
-
-        # Slot grid layout
-        cols = 5
-        rows = 4
+        screen.blit(title, (self.window_rect.centerx - title.get_width() // 2, self.window_rect.top + 20))
+        
+        # Draw all the inventory slots inside the window_rect area
+        # We'll draw them in a grid, e.g. 5 columns x 4 rows, similar to your Inventory
+        start_x = self.window_rect.left + 30  
+        start_y = self.window_rect.top + 70
         slot_size = 60
-        slot_margin = 15
+        slot_margin = 10
+        slots_per_row = 4   
 
-        total_grid_width = cols * slot_size + (cols - 1) * slot_margin
-        total_grid_height = rows * slot_size + (rows - 1) * slot_margin
-
-        # Padding inside the window
-        top_padding = 80  # space below title
-        left_padding = (window_width - total_grid_width) // 2
-        start_x = self.window_rect.left + left_padding
-        start_y = self.window_rect.top + top_padding
-
+        
         for i in range(self.inventory.max_slots):
-            x = start_x + (i % cols) * (slot_size + slot_margin)
-            y = start_y + (i // cols) * (slot_size + slot_margin)
+            x = start_x + (i % slots_per_row) * (slot_size + slot_margin)
+            y = start_y + (i // slots_per_row) * (slot_size + slot_margin)
             slot_rect = pygame.Rect(x, y, slot_size, slot_size)
-
+            
             # Draw slot box
-            pygame.draw.rect(screen, (150, 150, 150), slot_rect, border_radius=6)
-
-            # Draw item if present
+            pygame.draw.rect(screen, (150, 150, 150), slot_rect)
+            
+            # Draw item icon + count if present
             item = self.inventory.slots[i]
             if item:
                 name, count = item
                 self.inventory.draw_item_icon(screen, name, count, slot_rect)
+        
+        # Right panel area (inside window_rect)
+        info_x = self.window_rect.right - 180
+        info_y = self.window_rect.top + 70
+        pygame.draw.rect(screen, (70, 70, 90), (info_x, info_y, 150, 250), border_radius=8)
+        pygame.draw.rect(screen, (200, 200, 200), (info_x, info_y, 150, 250), 2, border_radius=8)
+
+        # Show description
+        if self.selected_index is not None:
+            item = self.inventory.slots[self.selected_index]
+            if item:
+                name, count = item
+                # Show item name
+                name_text = self.font.render(name, True, (255, 255, 255))
+                screen.blit(name_text, (info_x + 10, info_y + 10))
+
+                # Show item description below name
+                description = self.item_descriptions.get(name, "No description.")
+                desc_font = pygame.font.SysFont("Arial", 18)
+                wrapped_lines = self.wrap_text(description, desc_font, 130)
+                for j, line in enumerate(wrapped_lines):
+                    line_surf = desc_font.render(line, True, (200, 200, 200))
+                    screen.blit(line_surf, (info_x + 10, info_y + 40 + j * 20))
+
+
+                # Get the selected item and its buttons
+                buttons = self.item_buttons.get(name, self.item_buttons["default"])
+
+                # Calculate where to start placing buttons
+                button_start_y = info_y + 40 + len(wrapped_lines) * 20 + 10
+
+                for i, btn in enumerate(buttons):
+                    btn_rect = pygame.Rect(info_x + 10, button_start_y + i * 45, 130, 35)
+
+                    pygame.draw.rect(screen, (100, 100, 130), btn_rect, border_radius=5)
+                    label = self.button_font.render(btn["label"], True, (255, 255, 255))
+                    screen.blit(label, (btn_rect.centerx - label.get_width() // 2, btn_rect.centery - label.get_height() // 2))
+                    btn["rect"] = btn_rect  # Store the rect for click detection
+
+                # Update buttons list for click detection
+                self.buttons = buttons
+            else: 
+                self.buttons = []
+
+    def wrap_text(self, text, font, max_width):
+        """Split long description text into multiple lines if needed."""
+        words = text.split(" ")
+        lines = []
+        current_line = ""
+
+        for word in words:
+            test_line = current_line + word + " "
+            if font.size(test_line)[0] <= max_width:
+                current_line = test_line
+            else:
+                lines.append(current_line.strip())
+                current_line = word + " "
+        if current_line:
+            lines.append(current_line.strip())
+
+        return lines
+
+    def handle_click(self, pos):
+        print(f"Click at {pos}, selected_index before: {self.selected_index}")
+        # Check item slots
+        start_x = self.window_rect.left + 30
+        start_y = self.window_rect.top + 70
+        slot_size = 60
+        slot_margin = 10
+        slots_per_row = 4   
+
+        for i in range(self.inventory.max_slots):
+            x = start_x + (i % slots_per_row) * (slot_size + slot_margin)
+            y = start_y + (i // slots_per_row) * (slot_size + slot_margin)
+            slot_rect = pygame.Rect(x, y, slot_size, slot_size)
+            if slot_rect.collidepoint(pos):
+                self.selected_index = i
+                return
+
+            for i in range(self.inventory.max_slots):
+                x = start_x + (i % 5) * (slot_size + slot_margin)
+                y = start_y + (i // 5) * (slot_size + slot_margin)
+                slot_rect = pygame.Rect(x, y, slot_size, slot_size)
+                if slot_rect.collidepoint(pos):
+                    self.selected_index = i
+                    return
+
+        # Check button clicks (if any selected)
+        if self.selected_index is not None:
+            for btn in self.buttons:
+                if "rect" in btn and btn["rect"].collidepoint(pos):
+                    action = btn["action"]
+                    self.perform_action(action, self.selected_index)
+    
+    def perform_action(self, action, index):
+        item = self.inventory.slots[index]
+        if not item:
+            print("No item in slot!")
+            return
+
+        name, count = item
+        print(f"Performing action '{action}' on item '{name}' at slot {index}")
+
+        if name == "Fruit" and action == "eat":
+            print(f"Eating {name}")
+            self.player_instance.gain_health(5)
+            self.inventory.remove_item(index, 1)
+
+        elif action == "drop":
+            print(f"Dropping {name}")
+            self.inventory.remove_item(index, 1)
+
+        elif action == "use":
+            print(f"Using {name}")
+            self.inventory.remove_item(index, 1)
+            # Add general use logic
+
+        else:
+            print(f"No action implemented for: {action}")
+    def update_layout(self, window_size):
+        self.window_size = window_size
+        self.window_rect = pygame.Rect(
+            self.window_size[0] // 2 - 250,
+            self.window_size[1] // 2 - 200,
+            500, 400
+        )
+
+
 
 class SettingsMenu:
     def __init__(self, screen_size):
@@ -1097,7 +1247,7 @@ class Player:
             if current_time - self.time_of_death >= self.respawn_delay:
                 self.respawn()
 
-    def draw_health_bar(self, surface):
+    def draw_health_bar(self, surface): 
         if self.dead:
             return
         bar_width = 200
@@ -1178,6 +1328,9 @@ class Player:
         return 50 * level
 
     def add_exp(self, amount):
+        if self.level >= 20:
+            return  # Stop gaining experience at level 20
+        
         self.exp += amount
         while self.exp >= self.exp_to_next_level:
             self.exp -= self.exp_to_next_level
@@ -1219,6 +1372,12 @@ class Player:
         for weapon in self.weapon_damage:
             base_damage = self.base_weapon_damage[weapon]
             self.weapon_damage[weapon] = int(base_damage * multiplier)
+
+    def gain_health(self, amount):
+        self.health += amount
+        if self.health > self.max_health:
+            self.health = self.max_health
+        print(f"Health restored! Current health: {self.health}")
 
 user_system = UserSystem()  # Create UserSystem instance
 speed = 2.5  # Adjust as needed
@@ -2029,12 +2188,14 @@ def draw_settings_menu(screen):
 
 #Create and fill inventory
 inventory = Inventory()
-inventory.set_items(inventory_data)  #Load saved items
-inventory_menu = InventoryMenu(inventory, window_size)
+inventory.set_items(inventory_data)  # Load saved items
 
-#Create player and assign the filled inventory
-player = Player(position, speed, current_user,level,exp)
-player.inventory = inventory  #Assign filled inventory
+# Create player first
+player = Player(position, speed, current_user, level, exp)
+player.inventory = inventory  # Assign filled inventory
+
+# Now create inventory_menu with player
+inventory_menu = InventoryMenu(inventory, window_size, player)
 
 # Main loop
 running = True
@@ -2054,6 +2215,7 @@ while running:
                 
             }
             # Save the progress
+            print(f"[SAVE] Health being saved: {player_instance.health}")
             user_system.save_progress(
                     player_instance.username,
                     player_instance.health,
@@ -2090,12 +2252,17 @@ while running:
                     character_scale = 1.0  # Normal sizee
                     settings_menu.create_buttons(screen.get_size())
                 overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
+                inventory_menu.update_layout(screen.get_size())
             elif event.key == pygame.K_b:
                 inventory_menu.toggle()
 
         elif event.type == pygame.KEYUP:
             if event.key == pygame.K_SPACE:
                 player_instance.attacking = True
+        
+        elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            if inventory_menu.visible:
+                inventory_menu.handle_click(event.pos)
 
         # Handle settings menu events
         if game_state == "settings":
