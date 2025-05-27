@@ -2301,7 +2301,8 @@ class CookingUI:
     def update_ingredient_slots(self):
         self.ingredient_slots = []
         ingredients = [item for item in self.inventory.slots 
-                       if item and self.inventory.item_icons[item[0]].get("category") == "ingredient"]
+                    if item and "ingredient" in self.inventory.item_icons[item[0]].get("categories", [])]
+
         
         start_x = self.ingredients_panel.x + 20
         start_y = self.ingredients_panel.y + 20
