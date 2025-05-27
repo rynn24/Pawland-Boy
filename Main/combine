@@ -92,6 +92,7 @@ house_area = [
     }   
 ] 
 in_house = False
+cooking_ui_visible = False
 house_image = pygame.image.load("rynn/inside-house.png").convert()
 house_rect = house_image.get_rect()
 show_house_prompt = False
@@ -2746,10 +2747,17 @@ while running:
                             break
     
         if mouse_clicked and cooking_ui.cooking_area.collidepoint(mouse_pos):
+            print("cooking clicked")
             cooking_ui.toggle()
             # Draw cooking UI if active
             cooking_ui.draw(screen)
-                
+            close_button_rect = pygame.Rect(600, 100, 80, 30)
+            pygame.draw.rect(screen, (200, 200, 200), close_button_rect)
+            close_text = font.render("Close", True, (0, 0, 0))
+            screen.blit(close_text, close_button_rect.move(10, 5))
+
+            if close_button_rect.collidepoint(mouse_pos) and mouse_clicked:
+                cooking_ui_visible = False        
         # UI elements in house
         button_width, button_height = 120, 40
 
