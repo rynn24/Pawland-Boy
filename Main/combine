@@ -207,7 +207,6 @@ class Inventory:
                 "Big Fish": pygame.image.load("minting/Fish_2.png").convert_alpha(),
                 "Crystal": pygame.image.load("minting/Crystal.png").convert_alpha(),
                 "Boat": pygame.image.load("minting/Boat.png").convert_alpha(),
-                "Mushroom": pygame.image.load("rynn/mushroom.png").convert_alpha(),
                 "Firefly": pygame.image.load("minting/Firefly.jpg").convert_alpha(),
             }
         self.slot_size = 60
@@ -259,8 +258,7 @@ class Inventory:
 
             item = self.slots[i]
             if item:
-                name = item['name']
-                count = item['count']
+                name, count = item
                 self.draw_item_icon(surface, name, count, rect)  # 🎯 Draw icon + count
 
 
@@ -277,27 +275,23 @@ class Inventory:
                     name, count = item
                     self.draw_item_icon(surface, name, count, rect)
 
-    def add_item(self, name, count, effect=None):
-        # 1. Try to find and combine with existing item of same name AND effect
+    def add_item(self, name, count):
+        # 1. Try to find and combine with existing item of same name
         for i in range(self.max_slots):
             item = self.slots[i]
-            if item is not None and item['name'] == name and item.get('effect') == effect:
-                item['count'] += count
+            if item is not None and item[0] == name:
+                current_name, current_count = item
+                self.slots[i] = (current_name, current_count + count)
                 return True
 
         # 2. If not found, find an empty slot to insert
         for i in range(self.max_slots):
             if self.slots[i] is None:
-                self.slots[i] = {
-                    'name': name,
-                    'count': count,
-                    'effect': effect
-                }
+                self.slots[i] = (name, count)
                 return True
 
         # 3. Inventory full
         return False
-
 
     def draw_item_icon(self, surface, name, count, rect):
         if name in self.item_icons:
@@ -332,12 +326,13 @@ class Inventory:
 
     def remove_item(self, index, amount=1):
         if self.slots[index]:
-            item = self.slots[index]
-            item['count'] -= amount
-            if item['count'] <= 0:
+            name, count = self.slots[index]
+            count -= amount
+            if count <= 0:
                 self.slots[index] = None
             else:
-                self.slots[index] = item
+                self.slots[index] = (name, count)
+
 
 
 class UserSystem:
@@ -648,10 +643,6 @@ class InventoryMenu:
                 {"label": "Eat", "action": "eat"},
                 {"label": "Drop", "action": "drop"},
             ],
-            "Mushroom": [
-                {"label": "Eat", "action": "eat"},
-                {"label": "Drop", "action": "drop"},
-            ],
             # Default fallback if item is not listed
             "default": [
                 {"label": "Use", "action": "use"},
@@ -710,8 +701,7 @@ class InventoryMenu:
             # Draw item icon + count if present
             item = self.inventory.slots[i]
             if item:
-                name = item['name']
-                count = item['count']
+                name, count = item
                 self.inventory.draw_item_icon(screen, name, count, slot_rect)
         
         # Right panel area (inside window_rect)
@@ -724,8 +714,7 @@ class InventoryMenu:
         if self.selected_index is not None:
             item = self.inventory.slots[self.selected_index]
             if item:
-                name = item['name']
-                count = item['count']
+                name, count = item
                 # Show item name
                 name_text = self.font.render(name, True, (255, 255, 255))
                 screen.blit(name_text, (info_x + 10, info_y + 10))
@@ -814,9 +803,7 @@ class InventoryMenu:
             print("No item in slot!")
             return
 
-        name = item['name']
-        count = item['count']
-
+        name, count = item
         print(f"Performing action '{action}' on item '{name}' at slot {index}")
 
         if name == "Fruit" and action == "eat":
@@ -824,22 +811,6 @@ class InventoryMenu:
             self.player_instance.gain_health(5)
             self.inventory.remove_item(index, 1)
 
-        elif name == "Mushroom" and action == "eat":
-            effect = item.get("effect", "none")
-            print(f"Eating {effect} mushroom")
-            print(f"DEBUG: Player consumed mushroom with effect: {item.get('effect')}")
-
-            if effect == "heal":
-                self.player_instance.gain_health(20)
-
-            elif effect == "poison":
-                self.player_instance.gain_health(-15)
-
-            elif effect == "speed":
-                self.player_instance.speed_boost_timer = time.time()
-
-            self.inventory.remove_item(index, 1)
-     
         elif action == "drop":
             print(f"Dropping {name}")
             self.inventory.remove_item(index, 1)
@@ -1541,55 +1512,6 @@ for _ in range(20):
             valid_position = True
         attempts += 1
 
-class Mushroom:
-    def __init__(self, pos, effect, inventory):
-        self.position = pygame.Vector2(pos)
-        self.effect = effect  # e.g., "heal", "poison", "speed", etc.
-        self.inventory = inventory
-
-        self.harvested = False
-        self.harvest_time = None
-
-        self.image_original = pygame.image.load("rynn/mushroom.png").convert_alpha()
-        self.image = self.image_original.copy()
-        self.rect = self.image.get_rect(topleft=self.position)
-
-        # Color tint based on effect
-        self.color_mod = {
-            "heal": (100, 255, 100),
-            "poison": (255, 100, 100),
-            "speed": (100, 100, 255)
-        }.get(effect, (200, 200, 200))  # Default tint if unknown effect
-
-        self.apply_color_tint()
-
-    def apply_color_tint(self):
-        self.image = self.image_original.copy()
-        tint_surface = pygame.Surface(self.image.get_size(), pygame.SRCALPHA)
-        tint_surface.fill(self.color_mod + (0,))  # No alpha change
-        self.image.blit(tint_surface, (0, 0), special_flags=pygame.BLEND_RGBA_ADD)
-
-    def update(self):
-        if self.harvested and time.time() - self.harvest_time >= 180:
-            self.harvested = False
-            self.harvest_time = None
-
-    def draw(self, surface, camera):
-        if not self.harvested:
-            screen_pos = self.position - pygame.Vector2(camera.topleft)
-            surface.blit(self.image, screen_pos)
-
-    def get_hit(self, player):
-        if self.harvested or player.current_weapon != "hand":
-            return None
-
-        self.harvested = True
-        self.harvest_time = time.time()
-
-        # Add to inventory with metadata (effect)
-        self.inventory.add_item("Mushroom", 1, effect=self.effect)
-        return f"You harvested a {self.effect} mushroom!"
-
 class Zombie(pygame.sprite.Sprite):
     def __init__(self, x, y, player):
         super().__init__()
@@ -2267,49 +2189,11 @@ def draw_settings_menu(screen):
 #Create and fill inventory
 inventory = Inventory()
 inventory.set_items(inventory_data)  # Load saved items
-mushrooms = [
-    Mushroom((500, 300), "heal", inventory),
-    Mushroom((600, 400), "poison", inventory),
-    Mushroom((700, 500), "speed", inventory),
-]
-
 
 # Create player first
 player = Player(position, speed, current_user, level, exp)
 player.inventory = inventory  # Assign filled inventory
 
-
-def is_valid_mushroom_position(point, restricted_zones):
-    for zone in restricted_zones:
-        if zone["type"] == "rect":
-            if zone["rect"].collidepoint(point):
-                return False
-        elif zone["type"] == "ellipse":
-            cx, cy = zone["center"]
-            rx, ry = zone["radius_x"], zone["radius_y"]
-            px, py = point
-            if ((px - cx) ** 2) / (rx ** 2) + ((py - cy) ** 2) / (ry ** 2) <= 1:
-                return False
-    return True
-
-# Define 5 effects you want to randomly assign
-mushroom_effects = ["heal", "poison", "speed"]
-
-# List to hold mushroom instances
-mushrooms = []
-
-# Generate 5 mushrooms
-for _ in range(5):
-    for _ in range(100):  # Max 100 attempts per mushroom to find valid position
-        x = random.randint(0, map_image.get_width() - 50)
-        y = random.randint(0, map_image.get_height() - 50)
-        mushroom_center = (x + 25, y + 25)  # Assume mushroom is 50x50 in size
-
-        if is_valid_mushroom_position(mushroom_center, tree_restricted_zones):
-            effect = random.choice(mushroom_effects)
-            mushrooms.append(Mushroom((x, y), effect, player.inventory))
-            break  # Only spawn one per loop
-        
 # Now create inventory_menu with player
 inventory_menu = InventoryMenu(inventory, window_size, player)
 
@@ -2536,17 +2420,9 @@ while running:
     #Draw pond
     pond.draw(screen, player_position, font, reward_font)
 
+
     #Draw inventory
     inventory.draw(screen)
-    
-    #Mushrooms
-    for mushroom in mushrooms:
-        mushroom.update()
-        mushroom.draw(zoom_surface, camera)
-
-    # When attacking
-    if mushroom.rect.colliderect(player.rect):
-        mushroom.get_hit(player)
 
     # ========== DRAW SETTINGS MENU WHEN ACTIVE ==========
     if game_state == "settings":
