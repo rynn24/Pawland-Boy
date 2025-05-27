@@ -2274,13 +2274,13 @@ class CookingUI:
         self.cooking_area = pygame.Rect(398, 256, 85, 80)
         
         # UI elements
-        self.ingredients_panel = pygame.Rect(50, 100, 300, 400)
-        self.cooking_pot_panel = pygame.Rect(400, 150, 200, 200)
+        self.ingredients_panel = pygame.Rect(40, 100, 300, 200)
+        self.cooking_pot_panel = pygame.Rect(370, 150, 200, 200)
         self.slot_size = 60
         self.slot_margin = 10
         self.ingredient_slots = []
         self.cooking_slots = [None, None]  # Two slots for ingredients
-        self.cook_button = pygame.Rect(450, 400, 100, 40)
+        self.cook_button = pygame.Rect(400, 500, 100, 40)
         
         # Load pot image
         self.pot_image = pygame.image.load("rynn/pot.png").convert_alpha()
@@ -2288,6 +2288,9 @@ class CookingUI:
         
         # Font
         self.font = pygame.font.SysFont("Arial", 24)
+        
+        # Close button
+        self.close_button_rect = pygame.Rect(370, 100, 80, 30)
     
     def toggle(self):
         self.visible = not self.visible
@@ -2332,6 +2335,11 @@ class CookingUI:
                 # Check if clicking on cook button
                 if self.cook_button.collidepoint(mouse_pos):
                     self.cook()
+                    return True
+                
+                # Check if clicking close button
+                if self.close_button_rect.collidepoint(mouse_pos):
+                    self.visible = False
                     return True
                 
         elif event.type == pygame.MOUSEBUTTONUP:
@@ -2442,6 +2450,12 @@ class CookingUI:
         screen.blit(cook_text, (self.cook_button.centerx - cook_text.get_width()//2,
                                self.cook_button.centery - cook_text.get_height()//2))
         
+        # Draw close button
+        pygame.draw.rect(screen, (200, 50, 50), self.close_button_rect, border_radius=5)
+        close_text = self.font.render("Close", True, (255, 255, 255))
+        screen.blit(close_text, (self.close_button_rect.centerx - close_text.get_width()//2,
+                                self.close_button_rect.centery - close_text.get_height()//2))
+        
         # Draw dragging item if any
         if self.dragging_item:
             mouse_pos = pygame.mouse.get_pos()
@@ -2450,7 +2464,13 @@ class CookingUI:
             icon = pygame.transform.scale(icon, (self.slot_size - 10, self.slot_size - 10))
             screen.blit(icon, (mouse_pos[0] - self.drag_offset[0] + 5, 
                              mouse_pos[1] - self.drag_offset[1] + 5))
-
+    
+    def draw_cooking_area_hint(self, screen):
+        """Draw the cooking area highlight when UI is not visible"""
+        if not self.visible:
+            pygame.draw.rect(screen, (255, 255, 255), self.cooking_area, 2)
+            cook_text = self.font.render("Cooking Area", True, (255, 255, 255))
+            screen.blit(cook_text, (self.cooking_area.x, self.cooking_area.y - 20))
 
 # Main loop
 running = True
@@ -2708,6 +2728,9 @@ while running:
                 }
             break
         
+    # Cooking
+    cooking_ui = CookingUI(inventory, screen.get_width(), screen.get_height())
+      
     if in_house:
         # Get screen size
         screen_width, screen_height = screen.get_size()
@@ -2728,36 +2751,7 @@ while running:
                 for event in pygame.event.get():
                     if event.type == pygame.MOUSEBUTTONDOWN:
                         mouse_clicked = True
-                        if cooking_ui.cooking_area.collidepoint(event.pos):
-                            cooking_ui.toggle()
-                    
-                    # Let cooking UI handle its own events when visible
-                    if cooking_ui.visible:
-                        cooking_ui.handle_event(event)
-                    # Draw cooking area highlight (optional)
-                    if not cooking_ui.visible:
-                        pygame.draw.rect(screen, (255, 255, 255), cooking_ui.cooking_area, 2)
-                        cook_text = font.render("Cooking Area", True, (255, 255, 255))
-                        screen.blit(cook_text, (cooking_ui.cooking_area.x, cooking_ui.cooking_area.y - 20))
-                    mouse_clicked = False       
-                    mouse_pos = pygame.mouse.get_pos()
-                    for event in pygame.event.get():
-                        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                            mouse_clicked = True
-                            break
-    
-        if mouse_clicked and cooking_ui.cooking_area.collidepoint(mouse_pos):
-            print("cooking clicked")
-            cooking_ui.toggle()
-            # Draw cooking UI if active
-            cooking_ui.draw(screen)
-            close_button_rect = pygame.Rect(600, 100, 80, 30)
-            pygame.draw.rect(screen, (200, 200, 200), close_button_rect)
-            close_text = font.render("Close", True, (0, 0, 0))
-            screen.blit(close_text, close_button_rect.move(10, 5))
-
-            if close_button_rect.collidepoint(mouse_pos) and mouse_clicked:
-                cooking_ui_visible = False        
+                         
         # UI elements in house
         button_width, button_height = 120, 40
 
@@ -2804,10 +2798,20 @@ while running:
         # Show mouse position on screen
         mouse_pos_text = font.render(f"Mouse: {mouse_x}, {mouse_y}", True, (255, 255, 255))
         screen.blit(mouse_pos_text, (10, 10))
-
-        # Cooking
-        cooking_ui = CookingUI(inventory, screen.get_width(), screen.get_height())
+        
+        # Check if clicking cooking area
+        if cooking_ui.cooking_area.collidepoint(mouse_pos):
+            cooking_ui.toggle() 
             
+            # Let cooking UI handle its own events
+            cooking_ui.handle_event(event)
+    
+            # Draw cooking area hint when UI is closed
+            cooking_ui.draw_cooking_area_hint(screen)
+            
+            # Draw cooking UI if open
+            cooking_ui.draw(screen)  
+                      
     pygame.display.update()
     pygame.display.flip()
 pygame.quit()
