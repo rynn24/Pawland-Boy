@@ -379,7 +379,8 @@ class UserSystem:
             "inventory": { 
             },
             "level": 1,
-            "exp": 0
+            "exp": 0,
+            "achievements": {}  # ✅ Add this line
         }
         self.save_users()
         return True
@@ -428,7 +429,7 @@ class UserSystem:
 
         return inventory_dict
 
-    def save_progress(self, username, health, position, inventory_dict, level, exp):
+    def save_progress(self, username, health, position, inventory_dict, level, exp, achievements=None, shown_achievements=None, stats=None):
         print(f"[DEBUG] save_progress called for username: {username}")
         if username in self.users:
             # Convert position to list if it's a Vector2
@@ -443,7 +444,15 @@ class UserSystem:
                 "inventory": inventory_dict,
                 "level": level,
                 "exp": exp
+
             }
+            if achievements is not None:
+                self.users[username]["achievements"] = achievements
+            if shown_achievements is not None:
+                self.users[username]["shown_achievements"] = list(shown_achievements)  # Save set as list
+            if stats is not None:
+                self.users[username]["stats"] = stats  # ⬅ Save player progress stats
+
             print(f"Saving data for {username}: {self.users[username]}")  # Debug print
             self.save_users()
         else:
@@ -948,7 +957,7 @@ class Button:
         return False
     
 class Player:
-    def __init__(self, position, speed, username, level, exp, achievement_system=None):
+    def __init__(self, position, speed, username, level, exp, achievement_system=None, ):
         self.username = username
         self.user_system = UserSystem()
         self.health, self.position, self.inventory, self.level, self.exp = self.user_system.get_player_data(self.username)
@@ -1003,7 +1012,9 @@ class Player:
             "zombie_kills": 0,
             "wood_collected": 0,
             "fruit_collected": 0,
-            "days_survived": 0
+            "days_survived": 0,
+            "fish_collected": 0,
+            "crystals_collected": 0
         }
 
 
@@ -1157,10 +1168,16 @@ class Player:
                         # Add wood to inventory
                         self.add_exp(5)
                         inventory.add_item("Wood", 1)
+                        self.stats["wood_collected"] += 1
+                        print("Wood collected:", self.stats["wood_collected"])
+                        self.achievement_system.check_achievements(self, self.stats)
                         
                         # If it's from trees_2
                         if tree in trees_2:
                             inventory.add_item("Fruit", 1)
+                            self.stats["fruit_collected"] += 1
+                            print("Fruit collected:", self.stats["fruit_collected"])
+                            self.achievement_system.check_achievements(self, self.stats)
 
                         tree.update(pygame.time.get_ticks() / 1000)
 
@@ -1403,7 +1420,10 @@ class AchievementSystem:
             "Wood Collector (10 wood)": False,
             "Fruit Picker (5 fruit)": False,
             "Survivor (3 days)": False,
+            "Lumberjack (10 wood)": False,
+            "Crystal Hunter (1 crystal)": False
         }
+        self.shown_achievements = set()
         self.on_unlock_callback = on_unlock_callback
         print(f"[DEBUG] AchievementSystem created with callback: {self.on_unlock_callback}")
 
@@ -1415,25 +1435,33 @@ class AchievementSystem:
         if not self.achievements["Level 5 Achieved"] and player.level >= 5:
             self.unlock("Level 5 Achieved")
         if not self.achievements["Wood Collector (10 wood)"] and stats["wood_collected"] >= 10:
-            self.unlock("Wood Collector (10 wood)")
+            self.unlock("Lumberjack (10 wood)")
         if not self.achievements["Fruit Picker (5 fruit)"] and stats["fruit_collected"] >= 5:
             self.unlock("Fruit Picker (5 fruit)")
         if not self.achievements["Survivor (3 days)"] and stats["days_survived"] >= 3:
             self.unlock("Survivor (3 days)")
+            
 
     def unlock(self, name):
-        self.achievements[name] = True
-        print(f"[DEBUG] Trying to unlock: {name}")
-        print(f"[DEBUG] Callback: {self.on_unlock_callback}")
+        # If already unlocked and already shown, skip entirely
+        if self.achievements.get(name) and name in self.shown_achievements:
+            return  # ✅ Prevent re-triggering the callback
         
-        if self.on_unlock_callback:
-            try:
-                self.on_unlock_callback(name)
-                print(f"🎉 Achievement Unlocked: {name}")
-            except Exception as e:
-                print(f"[ERROR] Callback failed: {e}")
-        else:
-            print("[WARNING] No unlock callback assigned!")
+        # Mark as unlocked
+        self.achievements[name] = True
+
+        # Only trigger display if it hasn't been shown yet
+        if name not in self.shown_achievements:
+            if self.on_unlock_callback:
+                try:
+                    self.on_unlock_callback(name)
+                    self.shown_achievements.add(name)  # ✅ Mark as shown
+                    print(f"🎉 Achievement Unlocked: {name}")
+                except Exception as e:
+                    print(f"[ERROR] Callback failed: {e}")
+            else:
+                print("[WARNING] No unlock callback assigned!")
+
 
 class AchievementDisplay:
     def __init__(self, font, screen):
@@ -2106,6 +2134,15 @@ class PondArea:
         if result["id"] != "nothing":
             inventory.add_item(result["name"], 1)
             self.player.add_exp(25) 
+            if result["id"] in ["fish_1", "fish_2"]:
+                self.player.stats["fish_collected"] += 1
+                print("Fish collected:", self.player.stats["fish_collected"])
+                self.player.achievement_system.check_achievements(self.player, self.player.stats)
+
+            elif result["id"] == "crystal":
+                self.player.stats["crystals_collected"] += 1
+                print("Crystals collected:", self.player.stats["crystals_collected"])
+                self.player.achievement_system.check_achievements(self.player, self.player.stats)
 
                     
     def draw(self, screen, player_position, font, reward_font):
@@ -2157,7 +2194,12 @@ def quit_game():
         player_instance.username,
         player_instance.health,
         [player_instance.position.x, player_instance.position.y],
-        inventory_dict
+        inventory_dict,
+        player_instance.level,
+        player_instance.exp,
+        achievement_system.achievements,
+        achievement_system.shown_achievements,
+        stats=player_instance.stats
     )
     pygame.quit()
     sys.exit()
@@ -2168,7 +2210,16 @@ register_page = RegisterPage(screen, user_system, window_size)
 current_screen = "main_menu"
 current_user = None
 in_game = False
-
+default_achievements = {
+    "First Kill": False,
+    "Zombie Slayer (10 kills)": False,
+    "Level 5 Achieved": False,
+    "Wood Collector (10 wood)": False,
+    "Fruit Picker (5 fruit)": False,
+    "Survivor (3 days)": False,
+    "Lumberjack (10 wood)": False,
+    "Crystal Hunter (1 crystal)": False
+}
 while not in_game:
     events = pygame.event.get()
     for event in events:
@@ -2187,6 +2238,18 @@ while not in_game:
         if result:
             if isinstance(result, tuple) and result[0] == "game":
                 current_user = result[1]
+                # ✅ Initialize achievements system
+                saved_achievements = user_system.users[current_user].get("achievements", {})
+                # Create a new dict merging default keys with saved values, prioritizing saved values
+                achievements = default_achievements.copy()
+                achievements.update(saved_achievements)
+                shown_achievements = set(user_system.users[current_user].get("shown_achievements", []))
+                achievement_display = AchievementDisplay(font, screen)
+                achievement_system = AchievementSystem(on_unlock_callback=achievement_display.show)
+
+                # Load saved achievements and shown ones
+                achievement_system.achievements = achievements
+                achievement_system.shown_achievements = shown_achievements
                 in_game = True  # EXIT this loop and start game
             else:
                 current_screen = result
@@ -2197,16 +2260,32 @@ while not in_game:
         if result:
             if isinstance(result, tuple) and result[0] == "game":
                 current_user = result[1]
+                # ✅ Initialize achievements system
+                saved_achievements = user_system.users[current_user].get("achievements", {})
+                # Create a new dict merging default keys with saved values, prioritizing saved values
+                achievements = default_achievements.copy()
+                achievements.update(saved_achievements)
+                achievement_display = AchievementDisplay(font, screen)
+                achievement_system = AchievementSystem(on_unlock_callback=achievement_display.show)
+
+                # Load saved achievements and shown ones
+                achievement_system.achievements = achievements
+                shown_achievements = user_system.users[current_user].get("shown_achievements", [])
+                achievement_system.shown_achievements = shown_achievements
                 in_game = True  # EXIT this loop and start game
             else:
                 current_screen = result
         register_page.draw()
 
     pygame.display.flip()
-    
-achievement_display = AchievementDisplay(font, screen)
-achievement_system = AchievementSystem(on_unlock_callback=achievement_display.show)
+
 health, position, inventory_data, level, exp = user_system.get_player_data(current_user)
+saved_stats = user_system.users[current_user].get("stats", {
+    "zombie_kills": 0,
+    "wood_collected": 0,
+    "fruit_collected": 0,
+    "days_survived": 0,
+})
 player_instance = Player(player_position, speed, current_user, level, exp, achievement_system=achievement_system)  # Create Player instance
 # Sprite groups
 all_sprites = pygame.sprite.Group()
@@ -2220,13 +2299,16 @@ last_spawn_time = time.time()
 screen_width, screen_height = screen.get_size() 
 screen_size=screen.get_size()
 settings_menu = SettingsMenu(screen_size)
-player_stats = {
-    "zombie_kills": 0,
-    "wood_collected": 0,
-    "fruit_collected": 0,
-    "days_survived": 0,
-}
-
+saved_stats = user_system.users[current_user].get("stats", None)
+if saved_stats:
+    player_instance.stats = saved_stats
+else:
+    player_instance.stats = {
+        "zombie_kills": 0,
+        "wood_collected": 0,
+        "fruit_collected": 0,
+        "days_survived": 0,
+    }
 pond = PondArea(
     center=(1554, 585),
     radius_x=165,
@@ -2301,7 +2383,10 @@ while running:
                 "health": player_instance.health,
                 "inventory":inventory_dict,
                 "level": player_instance.level,
-                "exp":player_instance.exp
+                "exp":player_instance.exp,
+                "achievements": achievement_system.achievements,
+                "shown_achievements": list(achievement_system.shown_achievements),
+                "stats": player_instance.stats
                 
             }
             # Save the progress
@@ -2313,7 +2398,9 @@ while running:
                     inventory_dict,
                     player_instance.level,
                     player_instance.exp,
-                    
+                    achievement_system.achievements,
+                    achievement_system.shown_achievements,
+                    stats=player_instance.stats
                 )
             running = False        
    
@@ -2371,7 +2458,10 @@ while running:
                         [player_instance.position.x, player_instance.position.y],
                         inventory_dict,
                         player_instance.level,
-                        player_instance.exp
+                        player_instance.exp,
+                        achievement_system.achievements,
+                        achievement_system.shown_achievements,
+                        stats=player_instance.stats
                     )
                 running = False
             elif result == "back":
@@ -2408,7 +2498,7 @@ while running:
                     if direction == "a": proposed_position.x -= move_distance; player_instance.direction = "left"
                     if direction == "d": proposed_position.x += move_distance; player_instance.direction = "right"
 
-    achievement_system.check_achievements(player_instance, player_stats)
+    achievement_system.check_achievements(player_instance, player_instance.stats)
 
     proposed_position.x = max(0, min(proposed_position.x, map_image.get_width()))
     proposed_position.y = max(0, min(proposed_position.y, map_image.get_height()))
