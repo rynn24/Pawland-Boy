@@ -2274,23 +2274,23 @@ class CookingUI:
         self.cooking_area = pygame.Rect(398, 256, 85, 80)
         
         # UI elements
-        self.ingredients_panel = pygame.Rect(40, 100, 300, 200)
-        self.cooking_pot_panel = pygame.Rect(370, 150, 200, 200)
+        self.ingredients_panel = pygame.Rect(40, 120, 350, 250) #Ingredients box
+        self.cooking_pot_panel = pygame.Rect(420, 180, 150, 150) #Pot box
         self.slot_size = 60
         self.slot_margin = 10
         self.ingredient_slots = []
         self.cooking_slots = [None, None]  # Two slots for ingredients
-        self.cook_button = pygame.Rect(400, 500, 100, 40)
+        self.cook_button = pygame.Rect(445, 350, 100, 40) #Cook button
         
         # Load pot image
-        self.pot_image = pygame.image.load("rynn/pot.png").convert_alpha()
+        self.pot_image = pygame.image.load("rynn/pot.png").convert_alpha() 
         self.pot_image = pygame.transform.scale(self.pot_image, (150, 150))
         
         # Font
-        self.font = pygame.font.SysFont("Arial", 24)
+        self.font = pygame.font.SysFont("Times New Roman", 24)
         
         # Close button
-        self.close_button_rect = pygame.Rect(370, 100, 80, 30)
+        self.close_button_rect = pygame.Rect(40, 35, 80, 30) #Close button
     
     def toggle(self):
         self.visible = not self.visible
@@ -2412,7 +2412,7 @@ class CookingUI:
         
         # Draw title
         title = self.font.render("Ingredients", True, (255, 255, 255))
-        screen.blit(title, (self.ingredients_panel.x + 20, self.ingredients_panel.y - 30))
+        screen.blit(title, (self.ingredients_panel.x + 10, self.ingredients_panel.y - 35))
         
         # Draw ingredient slots
         for slot in self.ingredient_slots:
