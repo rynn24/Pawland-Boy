@@ -69,18 +69,6 @@
     "exp": 0
   },
   "bye": {
-    "health": 300,
-    "position": [
-      1489.67,
-      189.6875000000003
-    ],
-    "inventory": {
-      "Wood": 12,
-      "Fish": 2,
-      "Fruit": 4
-    },
-    "level": 3,
-    "exp": 60
     "health": 670,
     "position": [
       1136.2924999999993,
