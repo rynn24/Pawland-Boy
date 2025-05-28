@@ -202,15 +202,18 @@ class Inventory:
         self.slot_rects = []
         self.font = pygame.font.SysFont("Arial", 20)
         self.item_icons = {
-                "Wood": pygame.image.load("minting/Wood.png").convert_alpha(),
-                "Fruit": pygame.image.load("minting/Fruit.png").convert_alpha(),
-                "Fish": pygame.image.load("minting/fish_1.png").convert_alpha(),
-                "Big Fish": pygame.image.load("minting/Fish_2.png").convert_alpha(),
-                "Crystal": pygame.image.load("minting/Crystal.png").convert_alpha(),
-                "Boat": pygame.image.load("minting/Boat.png").convert_alpha(),
-                "Firefly": pygame.image.load("minting/Firefly.jpg").convert_alpha(),
-                "FishBone_Clip": pygame.image.load("minting/FishBoneClip.png").convert_alpha(),
-                }
+            "Wood": {"image": pygame.image.load("minting/Wood.png").convert_alpha(), "categories": ["material"]},
+            "Fruit": {"image": pygame.image.load("minting/Fruit.png").convert_alpha(), "categories": ["ingredient", "food"]},
+            "Fish": {"image": pygame.image.load("minting/fish_1.png").convert_alpha(), "categories": ["ingredient"]},
+            "Big Fish": {"image": pygame.image.load("minting/Fish_2.png").convert_alpha(), "categories": ["ingredient"]},
+            "Crystal": {"image": pygame.image.load("minting/Crystal.png").convert_alpha(), "categories": ["material"]},
+            "Boat": {"image": pygame.image.load("minting/Boat.png").convert_alpha(), "categories": ["tool"]},
+            "Firefly": {"image": pygame.image.load("minting/Firefly.jpg").convert_alpha(), "categories": ["material"]},
+            "Armor(Iron)" :pygame.image.load("haojun/image/armor(iron).png").convert_alpha(),
+            "Armor(Gold)" :pygame.image.load("haojun/image/armor(gold).png").convert_alpha(),
+            "Armor(Diamond)" :pygame.image.load("haojun/image/armor(diamond).png").convert_alpha(),
+            "FishBone_Clip": pygame.image.load("minting/FishBoneClip.png").convert_alpha(),
+        }
 
         self.recipes = {
         "Fish Soup": {"ingredients": [("Fish", 1), ("Fruit", 1)], "result": ("Fish Soup", 1)},
@@ -220,9 +223,10 @@ class Inventory:
     }
 
         # Add images for the new food items
-        self.item_icons["Fish Soup"] = {"image": pygame.image.load("rynn/fish-soup.png").convert_alpha(), "category": "food"}
-        self.item_icons["Grilled Fish"] = {"image": pygame.image.load("rynn/grill-fish.png").convert_alpha(), "category": "food"}
-        self.item_icons["Special Dish"] = {"image": pygame.image.load("rynn/sweet-sailor.png").convert_alpha(), "category": "food"}
+        self.item_icons["Fish Soup"] = {"image": pygame.image.load("rynn/fish-soup.png").convert_alpha(), "categories": "food"}
+        self.item_icons["Grilled Fish"] = {"image": pygame.image.load("rynn/grill-fish.png").convert_alpha(), "categories": "food"}
+        self.item_icons["Sweet Sailor"] = {"image": pygame.image.load("rynn/sweet-sailor.png").convert_alpha(), "categories": "food"}
+        self.item_icons["Fruit Jam"] = {"image": pygame.image.load("rynn/jam.png").convert_alpha(), "categories": "food"}
             
         self.slot_size = 60
         self.slot_margin = 10
@@ -348,7 +352,6 @@ class Inventory:
                 self.slots[index] = None
             else:
                 self.slots[index] = (name, count)
-
 
 
 class UserSystem:
@@ -687,12 +690,12 @@ class InventoryMenu:
             # Default fallback if item is not listed
             "default": [
                 {"label": "Use", "action": "use"},
-                {"label": "Drop", "action": "drop"},  
+                {"label": "Drop", "action": "drop"},
             ],
             "FishBone_Clip": [
                 {"label": "Equip", "action": "equip"},
                 {"label": "Unequip", "action": "unequip"},
-            ]
+            ],
         }
         self.item_descriptions = {
             "Wood": "Can be used to build things.",
@@ -706,7 +709,7 @@ class InventoryMenu:
             "Fish Soup": "A delicious soup made from fish and fruit. Restores 30 health.",
             "Grilled Fish": "Perfectly cooked fish. Restores 20 health.",
             "Sweet Sailor": "A gourmet meal. Restores 50 health and gives temporary buffs.",
-            "Fruit Jam": "Sweet fruit jam. Increases movement speed for 20 seconds. "            
+            "Fruit Jam": "Sweet fruit jam. Increases movement speed for 20 seconds. "               
         }
 
         
@@ -859,6 +862,7 @@ class InventoryMenu:
             print(f"Eating {name}")
             self.player_instance.gain_health(5)
             self.inventory.remove_item(index, 1)
+
         elif action == "eat" and self.inventory.item_icons[name]["categories"] == "food":
             if name == "Fish Soup":
                 self.gain_health(30)
@@ -868,6 +872,7 @@ class InventoryMenu:
                 self.gain_health(50)
                 # Could add temporary buffs here
             self.inventory.remove_item(index, 1)
+
         elif action == "drop":
             print(f"Dropping {name}")
             self.inventory.remove_item(index, 1)
@@ -887,7 +892,7 @@ class InventoryMenu:
             if name == "FishBone_Clip":
                 self.player_instance.unequip_hairclip ()
  
-        
+
         else:
             print(f"No action implemented for: {action}")
     def update_layout(self, window_size):
@@ -923,20 +928,64 @@ class SettingsMenu:
     def create_buttons(self, screen_size):
         self.buttons.clear()
         w, h = screen_size
+        
+        button_width = 200
+        button_height = 40
+        spacing = 20  # space between buttons
+        
+        buttons_text = [
+            ("View Achievements", (50, 200, 50), (100, 250, 100)),
+            ("Back to Game", (50, 50, 200), (100, 100, 250)),
+            ("Quit Game", (200, 50, 50), (250, 100, 100))
+        ]
+        
+        # Reserve vertical space for title + volume + controls text
+        text_block_height = 36 + 36 + 24 + 20  # font sizes + some padding
+        
+        total_height = len(buttons_text) * button_height + (len(buttons_text) - 1) * spacing
+        start_y = (h // 2 - total_height // 2) + text_block_height // 2 - 20  # Push buttons below texts
+        
+        for i, (text, color_normal, color_hover) in enumerate(buttons_text):
+            x = w // 2 - button_width // 2
+            y = start_y + i * (button_height + spacing)
+            btn = Button(x, y, button_width, button_height, text, color_normal, color_hover, (255, 255, 255))
+            self.buttons.append(btn)
 
-        quit_button = Button(
-            w // 2 - 100, h // 2 + 60,
-            200, 40, "Quit Game",
-            (200, 50, 50), (250, 100, 100), (255, 255, 255)
-        )
-        self.buttons.append(quit_button)
+    def draw(self, screen):
+        w, h = screen.get_size()
 
-        back_button = Button(
-            w // 2 - 100, h // 2 + 10,
-            200, 40, "Back to Game",
-            (50, 50, 200), (100, 100, 250), (255, 255, 255)
-        )
-        self.buttons.append(back_button)
+        overlay = pygame.Surface((w, h), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 180))
+        screen.blit(overlay, (0, 0))
+        
+        # Calculate the full menu height dynamically
+        buttons_height = len(self.buttons) * 40 + (len(self.buttons) - 1) * 20
+        text_block_height = 36 + 36 + 24 + 20  # title + volume + controls + padding
+        menu_height = buttons_height + text_block_height + 60  # extra padding
+        
+        menu_rect = pygame.Rect(w // 2 - 200, h // 2 - menu_height // 2, 400, menu_height)
+        pygame.draw.rect(screen, (100, 100, 100), menu_rect, border_radius=10)
+        pygame.draw.rect(screen, (255, 255, 255), menu_rect, 2, border_radius=10)
+
+        # Draw texts
+        y_text = menu_rect.top + 20
+        
+        title = self.font.render("Settings", True, (255, 255, 255))
+        screen.blit(title, (w // 2 - title.get_width() // 2, y_text))
+        
+        y_text += title.get_height() + 10
+
+        vol_text = self.font.render(f"Music Volume: {int(self.music_volume * 100)}%", True, (255, 255, 255))
+        screen.blit(vol_text, (w // 2 - vol_text.get_width() // 2, y_text))
+
+        y_text += vol_text.get_height() + 5
+
+        controls_text = self.small_font.render("Use LEFT/RIGHT arrows to adjust", True, (200, 200, 200))
+        screen.blit(controls_text, (w // 2 - controls_text.get_width() // 2, y_text))
+
+        # Draw buttons
+        for button in self.buttons:
+            button.draw(screen)
     
     def handle_events(self, event):
         mouse_pos = pygame.mouse.get_pos()
@@ -949,7 +998,9 @@ class SettingsMenu:
                 elif button.text == "Back to Game":
                     self.visible = False
                     return "back"
-        
+                elif button.text == "View Achievements":
+                    return "achievements"  # 🔁 NEW: Trigger achievements screen
+
         # Handle volume keys
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_LEFT:
@@ -962,28 +1013,6 @@ class SettingsMenu:
         if self.music:
             self.music.set_volume(self.music_volume)
     
-    def draw(self, screen):
-        w, h = screen.get_size()
-
-        overlay = pygame.Surface((w, h), pygame.SRCALPHA)
-        overlay.fill((0, 0, 0, 180))
-        screen.blit(overlay, (0, 0))
-
-        menu_rect = pygame.Rect(w // 2 - 200, h // 2 - 150, 400, 300)
-        pygame.draw.rect(screen, (100, 100, 100), menu_rect, border_radius=10)
-        pygame.draw.rect(screen, (255, 255, 255), menu_rect, 2, border_radius=10)
-
-        title = self.font.render("Settings", True, (255, 255, 255))
-        screen.blit(title, (w // 2 - title.get_width() // 2, h // 2 - 120))
-
-        vol_text = self.font.render(f"Music Volume: {int(self.music_volume * 100)}%", True, (255, 255, 255))
-        screen.blit(vol_text, (w // 2 - vol_text.get_width() // 2, h // 2 - 60))
-
-        controls_text = self.small_font.render("Use LEFT/RIGHT arrows to adjust", True, (200, 200, 200))
-        screen.blit(controls_text, (w // 2 - controls_text.get_width() // 2, h // 2 - 30))
-
-        for button in self.buttons:
-            button.draw(screen)
 
 class Button:
     def __init__(self, x, y, width, height, text, color, hover_color, text_color, font_size=24):
@@ -1028,15 +1057,13 @@ class Player:
         self.image = pygame.image.load("minting/character.png").convert_alpha()
         self.rect = self.image.get_rect(center=(self.position.x, self.position.y))
         self.direction = 'down'
+        self.attacking = False
         self.frame = 0
+        self.attack_frame = 0
         self.last_frame_time = 0
         self.frame_speed = 0.1
-
-        self.attacking = False
-        self.attack_frame = 0
         self.attack_frame_delay = 3
         self.attack_frame_counter = 0
-
         self.weapons = ['hand', 'axe', 'sword']
         self.current_weapon = 'hand'
         self.last_update = pygame.time.get_ticks()
@@ -1108,7 +1135,7 @@ class Player:
         self.walk_up = load_frames(self.walk_sheet, FRAME_WIDTH, FRAME_HEIGHT, 1, 4)
         self.walk_left = load_frames(self.walk_sheet, FRAME_WIDTH, FRAME_HEIGHT, 2, 4)
         self.walk_right = load_frames(self.walk_sheet, FRAME_WIDTH, FRAME_HEIGHT, 3, 4)
-
+       
         self.hairclip_walk_sheet = pygame.image.load("minting/fishbonewalk.png").convert_alpha()
         self.hairclip_walk_down = load_frames(self.hairclip_walk_sheet, FRAME_WIDTH, FRAME_HEIGHT, 0, 3)
         self.hairclip_walk_up = load_frames(self.hairclip_walk_sheet, FRAME_WIDTH, FRAME_HEIGHT, 1, 4)
@@ -1120,7 +1147,7 @@ class Player:
             'axe': pygame.image.load("minting/axe_attack.png").convert_alpha(),
             'sword': pygame.image.load("minting/sword_attack.png").convert_alpha()
         }
-
+        
         self.attack_frames = {
             'hand': {
                 'right': load_frames(self.attack_sheets['hand'], FRAME_WIDTH, FRAME_HEIGHT, 0, 2),
@@ -1136,6 +1163,7 @@ class Player:
             }
         }
 
+        
         self.hairclip_attack_sheets = {
             'hand': pygame.image.load("minting/hairclip_hand_attack.png").convert_alpha(),
             'axe': pygame.image.load("minting/hairclip_axe_attack.png").convert_alpha(),
@@ -1156,8 +1184,7 @@ class Player:
                 'left': load_frames(self.hairclip_attack_sheets['sword'], FRAME_WIDTH, FRAME_HEIGHT, 1, 4)
             }
         }
-        
-        
+         
         self.dead = False
         self.death_frame_index = 0
         self.death_frame_timer = 0
@@ -1172,7 +1199,7 @@ class Player:
         # Load death animation (you can change the image path and frame count as needed)
         death_sheet = pygame.image.load("minting/die.png").convert_alpha()
         self.death_frames = load_frames(death_sheet, FRAME_WIDTH, FRAME_HEIGHT, 0, 25)
-    
+
     def equip_hairclip(self, name):
         self.equipped_hairclip = name
 
@@ -1240,11 +1267,8 @@ class Player:
             hairclip_sprite = self.hairclip_walk_down[0] if self.equipped_hairclip else None
             print(type(self.hairclip_walk_down), len(self.hairclip_walk_down))
 
-
-        self.rect.center = (self.position.x, self.position.y)
-        return self.position, current_sprite, hairclip_sprite
-        
-            
+            self.rect.center = (self.position.x, self.position.y)
+            return self.position, current_sprite, hairclip_sprite
     
     def switch_weapon(self, key):
         if key == pygame.K_TAB:
@@ -1289,6 +1313,7 @@ class Player:
                         # Add wood to inventory
                         self.add_exp(5)
                         inventory.add_item("Wood", 1)
+                        print(f"[DEBUG] inventory id in axe code: {id(inventory)}")
                         self.stats["wood_collected"] += 1
                         print("Wood collected:", self.stats["wood_collected"])
                         self.achievement_system.check_achievements(self, self.stats)
@@ -1469,6 +1494,10 @@ class Player:
                 if self.current_frame >= len(self.frames):
                     self.current_frame = 0
                     self.show_animation = False  # Stop after one loop
+                    
+        if self.speed_timer and time.time() > self.speed_timer:
+            self.speed = self.original_speed
+            self.speed_timer = 0
 
     def draw(self, screen, offset):
         # get base sprite (player)
@@ -1540,10 +1569,6 @@ class Player:
         if self.health > self.max_health:
             self.health = self.max_health
         print(f"Health restored! Current health: {self.health}")
-    
-    def gain_speed(self, amount):
-        self.speed += amount
-        self.speed_timer = time.time() + duration
 
     def get_hairclip_frame(self):
         if not self.equipped_hairclip:
@@ -1584,6 +1609,11 @@ class Player:
             frame_index = self.frame % len(frames)
             return frames[frame_index]
         
+    
+    def gain_speed(self, amount):
+        self.speed += amount
+        self.speed_timer = time.time() + duration
+
     # In the Player class, modify the perform_action method in InventoryMenu:
     def perform_action(self, action, index):
         item = self.inventory.slots[index]
@@ -1615,7 +1645,7 @@ class Player:
             self.inventory.remove_item(index, 1)
 
 class AchievementSystem:
-    def __init__(self, on_unlock_callback=None):
+    def __init__(self, on_unlock_callback=None, inventory=None):
         self.achievements = {
             "First Kill": False,
             "Zombie Slayer (10 kills)": False,
@@ -1628,6 +1658,7 @@ class AchievementSystem:
         }
         self.shown_achievements = set()
         self.on_unlock_callback = on_unlock_callback
+        self.inventory = inventory
         print(f"[DEBUG] AchievementSystem created with callback: {self.on_unlock_callback}")
 
     def check_achievements(self, player, stats):
@@ -1646,25 +1677,43 @@ class AchievementSystem:
             
 
     def unlock(self, name):
-        # If already unlocked and already shown, skip entirely
         if self.achievements.get(name) and name in self.shown_achievements:
-            return  # ✅ Prevent re-triggering the callback
-        
-        # Mark as unlocked
+            return
+
         self.achievements[name] = True
 
-        # Only trigger display if it hasn't been shown yet
+        # 🎁 Add inventory reward for "First Kill"
+        if name == "First Kill" and self.inventory:
+            added = self.inventory.add_item("Armor(Iron)", 1)
+            print(f"[DEBUG] inventory id in achievement unlock: {id(self.inventory)}")
+
+            # Minimal debug: print all inventory slots after adding
+            print("[DEBUG] Full inventory slots after adding Armor(Iron):")
+            for i, slot in enumerate(self.inventory.slots):
+                if slot:
+                    print(f"  Slot {i}: {slot[0]} x{slot[1]}")
+                else:
+                    print(f"  Slot {i}: EMPTY")
+
+            # Also print the first 5 visible slots (slots 0 to 4)
+            print("[DEBUG] Visible inventory slots (0-4):")
+            for i in range(5):
+                slot = self.inventory.slots[i]
+                if slot:
+                    print(f"  Visible slot {i}: {slot[0]} x{slot[1]}")
+                else:
+                    print(f"  Visible slot {i}: EMPTY")
+
         if name not in self.shown_achievements:
             if self.on_unlock_callback:
                 try:
                     self.on_unlock_callback(name)
-                    self.shown_achievements.add(name)  # ✅ Mark as shown
+                    self.shown_achievements.add(name)
                     print(f"🎉 Achievement Unlocked: {name}")
                 except Exception as e:
                     print(f"[ERROR] Callback failed: {e}")
             else:
                 print("[WARNING] No unlock callback assigned!")
-
 
 class AchievementDisplay:
     def __init__(self, font, screen):
@@ -1685,9 +1734,48 @@ class AchievementDisplay:
             if current_time - self.display_start_time < self.display_duration:
                 text = f"Achievement Unlocked: {self.current_achievement}"
                 text_surface = self.font.render(text, True, (255, 215, 0))  # gold color
-                self.screen.blit(text_surface, (20, 20))
+                
+                # Get screen size
+                screen_width, screen_height = self.screen.get_size()
+                
+                # Center the text
+                text_rect = text_surface.get_rect(center=(screen_width // 2, screen_height // 2))
+                self.screen.blit(text_surface, text_rect)
             else:
                 self.current_achievement = None
+
+class AchievementPage:
+    def __init__(self, screen_size, achievement_system, font=None):
+        self.visible = False
+        self.achievement_system = achievement_system
+        self.screen_size = screen_size
+        self.font = font or pygame.font.SysFont(None, 28)
+        self.title_font = pygame.font.SysFont(None, 40)
+
+    def draw(self, screen):
+        w, h = self.screen_size
+
+        # Background overlay
+        overlay = pygame.Surface((w, h), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 180))
+        screen.blit(overlay, (0, 0))
+
+        # Draw title
+        title = self.title_font.render("Achievements", True, (255, 255, 255))
+        screen.blit(title, (w // 2 - title.get_width() // 2, 50))
+
+        # List only unlocked achievements
+        start_y = 120
+        spacing = 35
+        y_offset = 0  # track vertical position for only unlocked
+
+        for name, unlocked in self.achievement_system.achievements.items():
+            if unlocked:  # only draw unlocked achievements
+                color = (0, 255, 0)
+                status_text = "[✔]"
+                text = self.font.render(f"{status_text} {name}", True, color)
+                screen.blit(text, (100, start_y + y_offset * spacing))
+                y_offset += 1
 
 user_system = UserSystem()  # Create UserSystem instance
 speed = 2.5  # Adjust as needed
@@ -2416,6 +2504,7 @@ register_page = RegisterPage(screen, user_system, window_size)
 current_screen = "main_menu"
 current_user = None
 in_game = False
+inventory = Inventory() 
 default_achievements = {
     "First Kill": False,
     "Zombie Slayer (10 kills)": False,
@@ -2451,7 +2540,7 @@ while not in_game:
                 achievements.update(saved_achievements)
                 shown_achievements = set(user_system.users[current_user].get("shown_achievements", []))
                 achievement_display = AchievementDisplay(font, screen)
-                achievement_system = AchievementSystem(on_unlock_callback=achievement_display.show)
+                achievement_system = AchievementSystem(on_unlock_callback=achievement_display.show, inventory=inventory)
 
                 # Load saved achievements and shown ones
                 achievement_system.achievements = achievements
@@ -2472,7 +2561,7 @@ while not in_game:
                 achievements = default_achievements.copy()
                 achievements.update(saved_achievements)
                 achievement_display = AchievementDisplay(font, screen)
-                achievement_system = AchievementSystem(on_unlock_callback=achievement_display.show)
+                achievement_system = AchievementSystem(on_unlock_callback=achievement_display.show, inventory=inventory)
 
                 # Load saved achievements and shown ones
                 achievement_system.achievements = achievements
@@ -2506,6 +2595,10 @@ screen_width, screen_height = screen.get_size()
 screen_size=screen.get_size()
 settings_menu = SettingsMenu(screen_size)
 saved_stats = user_system.users[current_user].get("stats", None)
+showing_achievements = False
+achievement_page = AchievementPage(screen_size, achievement_system)
+
+
 if saved_stats:
     player_instance.stats = saved_stats
 else:
@@ -2566,7 +2659,6 @@ def draw_settings_menu(screen):
 
 
 #Create and fill inventory
-inventory = Inventory()
 inventory.set_items(inventory_data)  # Load saved items
 
 # Create player first
@@ -2836,7 +2928,11 @@ while running:
                     stats=player_instance.stats
                 )
             running = False        
-   
+            # Event handling for achievements screen:
+        if game_state == "achievements":
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                game_state = "settings"
+                achievement_page.visible = False
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 if game_state == "game":
@@ -2859,7 +2955,7 @@ while running:
                     settings_menu.create_buttons(screen.get_size())
                 else:
                     screen = pygame.display.set_mode(window_size)
-                    character_scale = 1.0  # Normal size
+                    character_scale = 1.0  # Normal sizee
                     settings_menu.create_buttons(screen.get_size())
                 overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
                 inventory_menu.update_layout(screen.get_size())
@@ -2907,6 +3003,8 @@ while running:
             elif result == "back":
                 game_state = "game"
                 settings_menu.visible = False
+            elif result == "achievements":  # 🆕 Add this
+                game_state = "achievements"  # ⬅ Change the state to show achievements
                          
     # ========== GAME LOGIC ONLY WHEN IN "GAME" STATE ==========
     if game_state == "game":
@@ -2986,7 +3084,7 @@ while running:
     sprite_x = screen.get_width() // 2 - scaled_sprite.get_width() // 2
     sprite_y = screen.get_height() // 2 - scaled_sprite.get_height() // 2
     screen.blit(scaled_sprite, (sprite_x, sprite_y))
-    
+    player_instance.draw_health_bar(screen)#player hp bar
     player_instance.draw_health_bar(screen)
     player_instance.draw_exp_bar(screen)
 
@@ -2994,7 +3092,7 @@ while running:
         scaled_hairclip = scale_sprite(hairclip_sprite, character_scale)
         screen.blit(scaled_hairclip, (sprite_x, sprite_y))
 
-     
+
     # Minimap
     minimap_surface = pygame.Surface((minimap_radius * 2, minimap_radius * 2), pygame.SRCALPHA)
     mini_camera_size = minimap_radius * 2 / minimap_zoom_factor
@@ -3027,11 +3125,11 @@ while running:
         night_progress = (cycle_time - day_duration) / night_duration
         alpha = int(night_progress * 180)
         pond.update_time_of_day(is_daytime=False)  # Set to night for fishing sprite
-
+    
     offset = pygame.math.Vector2(0, 0)
 
     overlay.fill((0, 0, 50, alpha))
-    screen.blit(overlay, (0, 0)) 
+    screen.blit(overlay, (0, 0))
 
     pos_text = f"X: {int(player_position.x)}  Y: {int(player_position.y)}"
     text_surface = font.render(pos_text, True, (255, 255, 255))
@@ -3112,13 +3210,6 @@ while running:
         if cooking_ui.visible:
             cooking_ui.draw(screen)
                     
-        for event in events:
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                mouse_clicked = True
-                for event in pygame.event.get():
-                    if event.type == pygame.MOUSEBUTTONDOWN:
-                        mouse_clicked = True
-                         
         # UI elements in house
         button_width, button_height = 120, 40
 
@@ -3166,9 +3257,13 @@ while running:
         # Show mouse position on screen
         mouse_pos_text = font.render(f"Mouse: {mouse_x}, {mouse_y}", True, (255, 255, 255))
         screen.blit(mouse_pos_text, (10, 10))
-                      
-    achievement_display.update()        
-
+    
+    if game_state == "achievements":
+        achievement_page.visible = True
+        achievement_page.draw(screen)
+    else:
+        achievement_page.visible = False     
+    achievement_display.update()
     pygame.display.update()
     pygame.display.flip()
 pygame.quit()
