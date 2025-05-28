@@ -92,6 +92,7 @@ house_area = [
     }   
 ] 
 in_house = False
+cooking_ui_visible = False
 house_image = pygame.image.load("rynn/inside-house.png").convert()
 house_rect = house_image.get_rect()
 show_house_prompt = False
@@ -209,7 +210,19 @@ class Inventory:
                 "Boat": pygame.image.load("minting/Boat.png").convert_alpha(),
                 "Firefly": pygame.image.load("minting/Firefly.jpg").convert_alpha(),
                 "FishBone_Clip": pygame.image.load("minting/FishBoneClip.png").convert_alpha(),
-            }
+                }
+
+        self.recipes = {
+    "Fish Soup": {"ingredients": [("Fish", 1), ("Fruit", 1)], "result": ("Fish Soup", 1)},
+    "Grilled Fish": {"ingredients": [("Fish", 2)], "result": ("Grilled Fish", 1)},
+    "Sweet Sailor": {"ingredients": [("Big Fish", 1), ("Fruit", 2)], "result": ("Special Dish", 1)}
+}
+
+        # Add images for the new food items
+        self.item_icons["Fish Soup"] = {"image": pygame.image.load("rynn/fish-soup.png").convert_alpha(), "category": "food"}
+        self.item_icons["Grilled Fish"] = {"image": pygame.image.load("rynn/grill-fish.png").convert_alpha(), "category": "food"}
+        self.item_icons["Special Dish"] = {"image": pygame.image.load("rynn/sweet-sailor.png").convert_alpha(), "category": "food"}
+            
         self.slot_size = 60
         self.slot_margin = 10
         self.is_inventory_open = False  # Track whether inventory is open
@@ -296,7 +309,8 @@ class Inventory:
 
     def draw_item_icon(self, surface, name, count, rect):
         if name in self.item_icons:
-            icon = self.item_icons[name]
+            icon_data = self.item_icons[name]
+            icon = icon_data["image"]
             icon = pygame.transform.smoothscale(icon, (self.slot_size - 10, self.slot_size - 10))  # Auto resize
             icon_rect = icon.get_rect(center=rect.center)
             surface.blit(icon, icon_rect)
@@ -380,7 +394,8 @@ class UserSystem:
             "inventory": { 
             },
             "level": 1,
-            "exp": 0
+            "exp": 0,
+            "achievements": {}  # ✅ Add this line
         }
         self.save_users()
         return True
@@ -429,7 +444,7 @@ class UserSystem:
 
         return inventory_dict
 
-    def save_progress(self, username, health, position, inventory_dict, level, exp):
+    def save_progress(self, username, health, position, inventory_dict, level, exp, achievements=None, shown_achievements=None, stats=None):
         print(f"[DEBUG] save_progress called for username: {username}")
         if username in self.users:
             # Convert position to list if it's a Vector2
@@ -444,7 +459,15 @@ class UserSystem:
                 "inventory": inventory_dict,
                 "level": level,
                 "exp": exp
+
             }
+            if achievements is not None:
+                self.users[username]["achievements"] = achievements
+            if shown_achievements is not None:
+                self.users[username]["shown_achievements"] = list(shown_achievements)  # Save set as list
+            if stats is not None:
+                self.users[username]["stats"] = stats  # ⬅ Save player progress stats
+
             print(f"Saving data for {username}: {self.users[username]}")  # Debug print
             self.save_users()
         else:
@@ -484,31 +507,69 @@ class LoginPage:
         self.font = pygame.font.SysFont(None, 36)
         self.back_button = Button(20, 20, 100, 40, "Back",
                                   (100, 100, 100), (150, 150, 150), (255, 255, 255))
+        self.username_rects = []  # Store clickable rects
 
     def handle_events(self, events):
         for event in events:
             if self.back_button.is_clicked(pygame.mouse.get_pos(), event):
                 return "main_menu"
+
             if event.type == pygame.MOUSEBUTTONDOWN:
-                mouse_y = event.pos[1]
-                index = (mouse_y - 140) // 40
-                usernames = list(self.user_system.users.keys())
-                if 0 <= index < len(usernames):
-                    username = usernames[index]
-                    self.user_system.current_user = username
-                    return "game", username
+                pos = event.pos
+                for rect, username in self.username_rects:
+                    if rect.collidepoint(pos):
+                        self.user_system.current_user = username
+                        return "game", username
+
         return None
 
     def draw(self):
         self.screen.fill((20, 20, 20))
+        self.username_rects.clear()
+
         title = self.font.render("Select Profile", True, (255, 255, 255))
         self.screen.blit(title, (self.window_size[0] // 2 - title.get_width() // 2, 60))
-        for i, username in enumerate(self.user_system.users.keys()):
-            label = self.font.render(f"{username}", True, (200, 200, 200))
-            self.screen.blit(label, (100, 140 + i * 40))
+
+        # Grid layout config
+        usernames = list(self.user_system.users.keys())
+        cols = 3
+        button_width = 160
+        button_height = 40
+        col_spacing = 200
+        row_spacing = 60
+        start_x = 40
+        start_y = 140
+
+        mouse_pos = pygame.mouse.get_pos()
+
+        for i, username in enumerate(usernames):
+            col = i % cols
+            row = i // cols
+            x = start_x + col * col_spacing
+            y = start_y + row * row_spacing
+
+            # Button rect
+            rect = pygame.Rect(x, y, button_width, button_height)
+            color = (100, 100, 100)
+
+            # Hover effect
+            if rect.collidepoint(mouse_pos):
+                color = (150, 150, 150)
+
+            # Draw button background
+            pygame.draw.rect(self.screen, color, rect, border_radius=8)
+            pygame.draw.rect(self.screen, (255, 255, 255), rect, 2, border_radius=8)
+
+            # Render username centered in the button
+            label = self.font.render(username, True, (255, 255, 255))
+            label_x = rect.centerx - label.get_width() // 2
+            label_y = rect.centery - label.get_height() // 2
+            self.screen.blit(label, (label_x, label_y))
+
+            self.username_rects.append((rect, username))
+
         self.back_button.draw(self.screen)
         pygame.display.flip()
-
 
 class RegisterPage:
     def __init__(self, screen, user_system, window_size):
@@ -606,6 +667,18 @@ class InventoryMenu:
                 {"label": "Eat", "action": "eat"},
                 {"label": "Drop", "action": "drop"},
             ],
+            "Sweet Sailor": [
+                {"label": "Eat", "action": "eat"},
+                {"label": "Drop", "action": "drop"},
+            ],
+            "Fish Soup": [
+                {"label": "Eat", "action": "eat"},
+                {"label": "Drop", "action": "drop"},
+            ],
+            "Grilled Fish": [
+                {"label": "Eat", "action": "eat"},
+                {"label": "Drop", "action": "drop"},
+            ],
             # Default fallback if item is not listed
             "default": [
                 {"label": "Use", "action": "use"},
@@ -625,6 +698,9 @@ class InventoryMenu:
             "Boat": "Used for traveling across water.",
             "Firefly": "Cute bugs that glows in the dark.",
             "FishBone_Clip":"A stylish clip. Might smell fishy.",
+            "Fish Soup": "A delicious soup made from fish and fruit. Restores 30 health.",
+            "Grilled Fish": "Perfectly cooked fish. Restores 20 health.",
+            "Sweet Sailor": "A gourmet meal. Restores 50 health and gives temporary buffs."
         }
 
         
@@ -777,7 +853,15 @@ class InventoryMenu:
             print(f"Eating {name}")
             self.player_instance.gain_health(5)
             self.inventory.remove_item(index, 1)
-
+        elif action == "eat" and self.inventory.item_icons[name]["category"] == "food":
+            if name == "Fish Soup":
+                self.gain_health(30)
+            elif name == "Grilled Fish":
+                self.gain_health(20)
+            elif name == "Special Dish":
+                self.gain_health(50)
+                # Could add temporary buffs here
+            self.inventory.remove_item(index, 1)
         elif action == "drop":
             print(f"Dropping {name}")
             self.inventory.remove_item(index, 1)
@@ -800,6 +884,13 @@ class InventoryMenu:
         
         else:
             print(f"No action implemented for: {action}")
+    def update_layout(self, window_size):
+        self.window_size = window_size
+        self.window_rect = pygame.Rect(
+            self.window_size[0] // 2 - 250,
+            self.window_size[1] // 2 - 200,
+            500, 400
+        )
 
 
 
@@ -919,7 +1010,7 @@ class Button:
         return False
     
 class Player:
-    def __init__(self, position, speed, username,level,exp):
+    def __init__(self, position, speed, username, level, exp, achievement_system=None, ):
         self.username = username
         self.user_system = UserSystem()
         self.health, self.position, self.inventory, self.level, self.exp = self.user_system.get_player_data(self.username)
@@ -932,7 +1023,6 @@ class Player:
 
         self.image = pygame.image.load("minting/character.png").convert_alpha()
         self.rect = self.image.get_rect(center=(self.position.x, self.position.y))
-        
         self.direction = 'down'
         self.frame = 0
         self.last_frame_time = 0
@@ -951,25 +1041,35 @@ class Player:
         self.exp = exp
         self.exp_to_next_level = self.calculate_exp_needed(self.level)
         self.max_health= 100*self.level
+        self.achievement_system = achievement_system
 
         self.current_attack_targets = []
-
+        self.attack_multipliers = [0, 1, 1.5, 1.8, 2.0, 2.5, 3.0, 4.0, 6.0]  # Index = level
         self.weapon_icons = {
             "sword": pygame.image.load("minting/sword.png").convert_alpha(),
             "axe": pygame.image.load("minting/axe.png").convert_alpha(),
             "hand": pygame.image.load("minting/hand.png").convert_alpha()
         }
 
-        self.weapon_damage = {
+        self.base_weapon_damage = {
             'hand': 5,
             'axe': 15,
             'sword': 10
         }
-        
+        self.weapon_damage = self.base_weapon_damage.copy()
+        self.update_weapon_damage()
         self.weapon_range = {
             'hand': 30,
             'axe': 40,
             'sword': 50
+        }
+        self.stats = {
+            "zombie_kills": 0,
+            "wood_collected": 0,
+            "fruit_collected": 0,
+            "days_survived": 0,
+            "fish_collected": 0,
+            "crystals_collected": 0
         }
 
 
@@ -1181,11 +1281,18 @@ class Player:
                         tree.start_animation()
                         tree.was_hit = True
                         # Add wood to inventory
+                        self.add_exp(5)
                         inventory.add_item("Wood", 1)
+                        self.stats["wood_collected"] += 1
+                        print("Wood collected:", self.stats["wood_collected"])
+                        self.achievement_system.check_achievements(self, self.stats)
                         
                         # If it's from trees_2
                         if tree in trees_2:
                             inventory.add_item("Fruit", 1)
+                            self.stats["fruit_collected"] += 1
+                            print("Fruit collected:", self.stats["fruit_collected"])
+                            self.achievement_system.check_achievements(self, self.stats)
 
                         tree.update(pygame.time.get_ticks() / 1000)
 
@@ -1193,14 +1300,22 @@ class Player:
                 for zombie in zombies:
                     if attack_rect.colliderect(zombie.rect) and zombie not in self.current_attack_targets:
                         damage = self.weapon_damage[self.current_weapon]
-                        zombie.take_damage(damage, self.position)
+                        killed = zombie.take_damage(damage, self.position)
+                        if killed:
+                            self.stats["zombie_kills"] += 1
+                            self.achievement_system.check_achievements(self, self.stats)
+                            print("Zombie kills:", self.stats["zombie_kills"])
                         self.current_attack_targets.append(zombie)
             else:
                 if not self.current_attack_targets:
                     for zombie in zombies:
                         if attack_rect.colliderect(zombie.rect):
                             damage = self.weapon_damage[self.current_weapon]
-                            zombie.take_damage(damage, self.position)
+                            killed = zombie.take_damage(damage, self.position)
+                            if killed:
+                                self.stats["zombie_kills"] += 1
+                                self.achievement_system.check_achievements(self, self.stats)
+                                print("Zombie kills:", self.stats["zombie_kills"])
                             self.current_attack_targets.append(zombie)
                             break
 
@@ -1257,12 +1372,17 @@ class Player:
             self.time_of_death = pygame.time.get_ticks()
 
     def respawn(self):
-        self.health = self.max_health
+        self.max_health = 100
+        self.health = 100
+        self.exp = 0
         self.dead = False
         self.attacking = False
         self.attack_frame = 0
         self.frame = 0
         self.position = pygame.Vector2(1500, 125)  
+        self.level = 1
+        self.exp_to_next_level = 50
+        self.update_weapon_damage()  # Add this line to reset weapon damage
         
     def update_death(self):
         current_time = pygame.time.get_ticks()
@@ -1364,6 +1484,9 @@ class Player:
         return 50 * level
 
     def add_exp(self, amount):
+        if self.level >= 20:
+            return  # Stop gaining experience at level 20
+        
         self.exp += amount
         while self.exp >= self.exp_to_next_level:
             self.exp -= self.exp_to_next_level
@@ -1372,6 +1495,7 @@ class Player:
             print(f"{self.username} leveled up to level {self.level}!")  # optional: restore HP on level-up
             self.max_health = 100 * self.level  # or any formula you like
             self.health = self.max_health       # optionally heal to full on level up
+            self.update_weapon_damage()  
     
     def draw_exp_bar(self, surface):
         if self.dead:
@@ -1395,7 +1519,15 @@ class Player:
 
         # Level text
         level_text = font.render(f"Level {self.level}", True, (255, 255, 0))
-        surface.blit(level_text, (x + scaled_img.get_width() + 10, y))
+        surface.blit(level_text, (x + scaled_img.get_width() - 120, y + 50))
+    
+    def update_weapon_damage(self):
+        level = self.level
+        multiplier = self.attack_multipliers[min(level, len(self.attack_multipliers)-1)]
+
+        for weapon in self.weapon_damage:
+            base_damage = self.base_weapon_damage[weapon]
+            self.weapon_damage[weapon] = int(base_damage * multiplier)
 
     def gain_health(self, amount):
         self.health += amount
@@ -1442,6 +1574,108 @@ class Player:
             frame_index = self.frame % len(frames)
             return frames[frame_index]
         
+    # In the Player class, modify the perform_action method in InventoryMenu:
+    def perform_action(self, action, index):
+        item = self.inventory.slots[index]
+        if not item:
+            print("No item in slot!")
+            return
+
+        name, count = item
+        
+        if action == "eat" and self.inventory.item_icons[name]["category"] == "food":
+            if name == "Fish Soup":
+                self.gain_health(30)
+            elif name == "Grilled Fish":
+                self.gain_health(20)
+            elif name == "Special Dish":
+                self.gain_health(50)
+                # Could add temporary buffs here
+            self.inventory.remove_item(index, 1)
+        elif name == "Fruit" and action == "eat":
+            self.gain_health(5)
+            self.inventory.remove_item(index, 1)
+        elif action == "drop":
+            self.inventory.remove_item(index, 1)
+        elif action == "use":
+            print(f"Using {name}")
+            self.inventory.remove_item(index, 1)
+
+class AchievementSystem:
+    def __init__(self, on_unlock_callback=None):
+        self.achievements = {
+            "First Kill": False,
+            "Zombie Slayer (10 kills)": False,
+            "Level 5 Achieved": False,
+            "Wood Collector (10 wood)": False,
+            "Fruit Picker (5 fruit)": False,
+            "Survivor (3 days)": False,
+            "Lumberjack (10 wood)": False,
+            "Crystal Hunter (1 crystal)": False
+        }
+        self.shown_achievements = set()
+        self.on_unlock_callback = on_unlock_callback
+        print(f"[DEBUG] AchievementSystem created with callback: {self.on_unlock_callback}")
+
+    def check_achievements(self, player, stats):
+        if not self.achievements["First Kill"] and stats["zombie_kills"] >= 1:
+            self.unlock("First Kill")
+        if not self.achievements["Zombie Slayer (10 kills)"] and stats["zombie_kills"] >= 10:
+            self.unlock("Zombie Slayer (10 kills)")
+        if not self.achievements["Level 5 Achieved"] and player.level >= 5:
+            self.unlock("Level 5 Achieved")
+        if not self.achievements["Wood Collector (10 wood)"] and stats["wood_collected"] >= 10:
+            self.unlock("Lumberjack (10 wood)")
+        if not self.achievements["Fruit Picker (5 fruit)"] and stats["fruit_collected"] >= 5:
+            self.unlock("Fruit Picker (5 fruit)")
+        if not self.achievements["Survivor (3 days)"] and stats["days_survived"] >= 3:
+            self.unlock("Survivor (3 days)")
+            
+
+    def unlock(self, name):
+        # If already unlocked and already shown, skip entirely
+        if self.achievements.get(name) and name in self.shown_achievements:
+            return  # ✅ Prevent re-triggering the callback
+        
+        # Mark as unlocked
+        self.achievements[name] = True
+
+        # Only trigger display if it hasn't been shown yet
+        if name not in self.shown_achievements:
+            if self.on_unlock_callback:
+                try:
+                    self.on_unlock_callback(name)
+                    self.shown_achievements.add(name)  # ✅ Mark as shown
+                    print(f"🎉 Achievement Unlocked: {name}")
+                except Exception as e:
+                    print(f"[ERROR] Callback failed: {e}")
+            else:
+                print("[WARNING] No unlock callback assigned!")
+
+
+class AchievementDisplay:
+    def __init__(self, font, screen):
+        self.font = font
+        self.screen = screen
+        self.current_achievement = None
+        self.display_start_time = 0
+        self.display_duration = 3  # seconds to show
+
+    def show(self, achievement_name):
+        self.current_achievement = achievement_name
+        self.display_start_time = pygame.time.get_ticks() / 1000
+        print(f"Showing achievement: {achievement_name}")
+
+    def update(self):
+        if self.current_achievement:
+            current_time = pygame.time.get_ticks() / 1000
+            if current_time - self.display_start_time < self.display_duration:
+                text = f"Achievement Unlocked: {self.current_achievement}"
+                text_surface = self.font.render(text, True, (255, 215, 0))  # gold color
+                self.screen.blit(text_surface, (20, 20))
+            else:
+                self.current_achievement = None
+
 user_system = UserSystem()  # Create UserSystem instance
 speed = 2.5  # Adjust as needed
 player_position = pygame.Vector2(1500, 125)
@@ -1731,8 +1965,8 @@ class Zombie(pygame.sprite.Sprite):
             print("Attack missed — player moved out of range.")
 
     def take_damage(self, amount, attacker_pos=None):
-        if self.is_dead:  # Prevent further damage if the zombie is dead
-            return
+        if self.is_dead:
+            return False  # Already dead, no kill counted
 
         self.hp -= amount
         print(f"Zombie HP: {self.hp}")
@@ -1743,7 +1977,7 @@ class Zombie(pygame.sprite.Sprite):
                 direction = direction.normalize()
                 knockback_distance = 20
                 self.position += direction * knockback_distance
-                self.rect.center = (round(self.position.x), round(self.position.y))#keep using this to let the rect.center have the current position of zombie
+                self.rect.center = (round(self.position.x), round(self.position.y))
 
         if self.hp <= 0 and not self.is_dead:
             print("Zombie died!")
@@ -1752,6 +1986,9 @@ class Zombie(pygame.sprite.Sprite):
             self.is_dead = True
             self.death_time = time.time()
             self.player.add_exp(25)
+            return True  # ✅ Killed!
+
+        return False  # Still alive
 
     def draw_health_bar(self, surface, camera):
         if self.hp <= 0:  # Do not draw health bar if the zombie is dead
@@ -1790,11 +2027,11 @@ class Boss(pygame.sprite.Sprite):
         self.area_rect = area_rect
         self.speed = 1.75
         self.attack_range = 60
-        self.attack_damage = 20
+        self.attack_damage = 100
         self.last_attack_time = 0
         self.attack_cooldown = 1.2
-        self.hp = 200
-        self.max_hp = 200
+        self.hp = 2000
+        self.max_hp = 2000
         self.attack_duration = 0.5
         self.attack_animation_end_time = 0
         self.state = "idle"
@@ -1980,12 +2217,14 @@ class Boss(pygame.sprite.Sprite):
 
 # Fishing
 class PondArea:
-    def __init__(self, center, radius_x, radius_y, day_spritesheet_path, night_spritesheet_path, rows, cols, detection_scale=1.5):
+    def __init__(self, center, radius_x, radius_y, day_spritesheet_path, night_spritesheet_path, rows, cols, player, detection_scale=1.5):
         self.center = center
         self.visual_radius_x = radius_x
         self.visual_radius_y = radius_y
         self.detection_radius_x = radius_x * detection_scale
         self.detection_radius_y = radius_y * detection_scale
+        self.player = player
+        
 
         self.rect = pygame.Rect(
             center[0] - self.visual_radius_x,
@@ -2084,6 +2323,16 @@ class PondArea:
 
         if result["id"] != "nothing":
             inventory.add_item(result["name"], 1)
+            self.player.add_exp(25) 
+            if result["id"] in ["fish_1", "fish_2"]:
+                self.player.stats["fish_collected"] += 1
+                print("Fish collected:", self.player.stats["fish_collected"])
+                self.player.achievement_system.check_achievements(self.player, self.player.stats)
+
+            elif result["id"] == "crystal":
+                self.player.stats["crystals_collected"] += 1
+                print("Crystals collected:", self.player.stats["crystals_collected"])
+                self.player.achievement_system.check_achievements(self.player, self.player.stats)
 
                     
     def draw(self, screen, player_position, font, reward_font):
@@ -2122,17 +2371,6 @@ class PondArea:
             self.spritesheet = self.night_spritesheet
         self.frames = self.load_frames()  # Reload frames for the new spritesheet 
                   
-pond = PondArea(
-    center=(1554, 585),
-    radius_x=165,
-    radius_y=162,
-    day_spritesheet_path="rynn/new-fish-sprite.png",
-    night_spritesheet_path="rynn/night-fish-sprite.png",
-
-    rows=1,  
-    cols=17,
-    detection_scale=1.1
-)
 
 def quit_game():
     print("[DEBUG] Quit triggered")
@@ -2146,7 +2384,12 @@ def quit_game():
         player_instance.username,
         player_instance.health,
         [player_instance.position.x, player_instance.position.y],
-        inventory_dict
+        inventory_dict,
+        player_instance.level,
+        player_instance.exp,
+        achievement_system.achievements,
+        achievement_system.shown_achievements,
+        stats=player_instance.stats
     )
     pygame.quit()
     sys.exit()
@@ -2157,7 +2400,16 @@ register_page = RegisterPage(screen, user_system, window_size)
 current_screen = "main_menu"
 current_user = None
 in_game = False
-
+default_achievements = {
+    "First Kill": False,
+    "Zombie Slayer (10 kills)": False,
+    "Level 5 Achieved": False,
+    "Wood Collector (10 wood)": False,
+    "Fruit Picker (5 fruit)": False,
+    "Survivor (3 days)": False,
+    "Lumberjack (10 wood)": False,
+    "Crystal Hunter (1 crystal)": False
+}
 while not in_game:
     events = pygame.event.get()
     for event in events:
@@ -2176,6 +2428,18 @@ while not in_game:
         if result:
             if isinstance(result, tuple) and result[0] == "game":
                 current_user = result[1]
+                # ✅ Initialize achievements system
+                saved_achievements = user_system.users[current_user].get("achievements", {})
+                # Create a new dict merging default keys with saved values, prioritizing saved values
+                achievements = default_achievements.copy()
+                achievements.update(saved_achievements)
+                shown_achievements = set(user_system.users[current_user].get("shown_achievements", []))
+                achievement_display = AchievementDisplay(font, screen)
+                achievement_system = AchievementSystem(on_unlock_callback=achievement_display.show)
+
+                # Load saved achievements and shown ones
+                achievement_system.achievements = achievements
+                achievement_system.shown_achievements = shown_achievements
                 in_game = True  # EXIT this loop and start game
             else:
                 current_screen = result
@@ -2186,6 +2450,18 @@ while not in_game:
         if result:
             if isinstance(result, tuple) and result[0] == "game":
                 current_user = result[1]
+                # ✅ Initialize achievements system
+                saved_achievements = user_system.users[current_user].get("achievements", {})
+                # Create a new dict merging default keys with saved values, prioritizing saved values
+                achievements = default_achievements.copy()
+                achievements.update(saved_achievements)
+                achievement_display = AchievementDisplay(font, screen)
+                achievement_system = AchievementSystem(on_unlock_callback=achievement_display.show)
+
+                # Load saved achievements and shown ones
+                achievement_system.achievements = achievements
+                shown_achievements = user_system.users[current_user].get("shown_achievements", [])
+                achievement_system.shown_achievements = shown_achievements
                 in_game = True  # EXIT this loop and start game
             else:
                 current_screen = result
@@ -2194,7 +2470,13 @@ while not in_game:
     pygame.display.flip()
 
 health, position, inventory_data, level, exp = user_system.get_player_data(current_user)
-player_instance = Player(player_position, speed, current_user, level, exp)  # Create Player instance
+saved_stats = user_system.users[current_user].get("stats", {
+    "zombie_kills": 0,
+    "wood_collected": 0,
+    "fruit_collected": 0,
+    "days_survived": 0,
+})
+player_instance = Player(player_position, speed, current_user, level, exp, achievement_system=achievement_system)  # Create Player instance
 # Sprite groups
 all_sprites = pygame.sprite.Group()
 zombie_group = pygame.sprite.Group()
@@ -2207,6 +2489,28 @@ last_spawn_time = time.time()
 screen_width, screen_height = screen.get_size() 
 screen_size=screen.get_size()
 settings_menu = SettingsMenu(screen_size)
+saved_stats = user_system.users[current_user].get("stats", None)
+if saved_stats:
+    player_instance.stats = saved_stats
+else:
+    player_instance.stats = {
+        "zombie_kills": 0,
+        "wood_collected": 0,
+        "fruit_collected": 0,
+        "days_survived": 0,
+    }
+pond = PondArea(
+    center=(1554, 585),
+    radius_x=165,
+    radius_y=162,
+    day_spritesheet_path="rynn/new-fish-sprite.png",
+    night_spritesheet_path="rynn/night-fish-sprite.png",
+
+    rows=1,  
+    cols=17,
+    detection_scale=1.1,
+    player=player_instance
+)
 
 # Function to spawn zombies (limit to 10)
 def spawn_zombie():
@@ -2256,6 +2560,219 @@ player_instance = player
 # Now create inventory_menu with player
 inventory_menu = InventoryMenu(inventory, window_size, player)
 
+class CookingUI:
+    def __init__(self, inventory, screen_width, screen_height):
+        self.inventory = inventory
+        self.screen_width = screen_width
+        self.screen_height = screen_height
+        self.visible = False
+        self.selected_ingredients = []
+        self.dragging_item = None
+        self.drag_offset = (0, 0)
+        
+        # Cooking area dimensions
+        self.cooking_area = pygame.Rect(398, 256, 85, 80)
+        
+        # UI elements
+        self.ingredients_panel = pygame.Rect(40, 120, 350, 250) #Ingredients box
+        self.cooking_pot_panel = pygame.Rect(420, 180, 150, 150) #Pot box
+        self.slot_size = 60
+        self.slot_margin = 10
+        self.ingredient_slots = []
+        self.cooking_slots = [None, None]  # Two slots for ingredients
+        self.cook_button = pygame.Rect(445, 350, 100, 40) #Cook button
+        
+        # Load pot image
+        self.pot_image = pygame.image.load("rynn/pot.png").convert_alpha() 
+        self.pot_image = pygame.transform.scale(self.pot_image, (150, 150))
+        
+        # Font
+        self.font = pygame.font.SysFont("Times New Roman", 24)
+        
+        # Close button
+        self.close_button_rect = pygame.Rect(40, 35, 80, 30) #Close button
+    
+    def toggle(self):
+        self.visible = not self.visible
+        if self.visible:
+            self.selected_ingredients = []
+            self.update_ingredient_slots()
+    
+    def update_ingredient_slots(self):
+        self.ingredient_slots = []
+        ingredients = [item for item in self.inventory.slots 
+                    if item and "ingredient" in self.inventory.item_icons[item[0]].get("categories", [])]
+
+        
+        start_x = self.ingredients_panel.x + 20
+        start_y = self.ingredients_panel.y + 20
+        
+        for i, item in enumerate(ingredients):
+            row = i // 4
+            col = i % 4
+            x = start_x + col * (self.slot_size + self.slot_margin)
+            y = start_y + row * (self.slot_size + self.slot_margin)
+            self.ingredient_slots.append({
+                "rect": pygame.Rect(x, y, self.slot_size, self.slot_size),
+                "item": item
+            })
+    
+    def handle_event(self, event):
+        if not self.visible:
+            return False
+            
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if event.button == 1:  # Left click
+                mouse_pos = pygame.mouse.get_pos()
+                
+                # Check if clicking on an ingredient
+                for slot in self.ingredient_slots:
+                    if slot["rect"].collidepoint(mouse_pos):
+                        self.dragging_item = slot["item"]
+                        self.drag_offset = (mouse_pos[0] - slot["rect"].x, 
+                                           mouse_pos[1] - slot["rect"].y)
+                        return True
+                
+                # Check if clicking on cook button
+                if self.cook_button.collidepoint(mouse_pos):
+                    self.cook()
+                    return True
+                
+                # Check if clicking close button
+                if self.close_button_rect.collidepoint(mouse_pos):
+                    self.visible = False
+                    return True
+                
+        elif event.type == pygame.MOUSEBUTTONUP:
+            if event.button == 1 and self.dragging_item:
+                mouse_pos = pygame.mouse.get_pos()
+                
+                # Check if dropping on a cooking slot
+                for i, slot_rect in enumerate(self.get_cooking_slot_rects()):
+                    if slot_rect.collidepoint(mouse_pos):
+                        if not self.cooking_slots[i]:  # Slot is empty
+                            self.cooking_slots[i] = (self.dragging_item[0], 1)
+                            # Remove 1 from inventory
+                            self.inventory.remove_item(
+                                self.inventory.slots.index(self.dragging_item), 1)
+                            self.update_ingredient_slots()
+                
+                self.dragging_item = None
+                return True
+                
+        elif event.type == pygame.MOUSEMOTION and self.dragging_item:
+            return True
+            
+        return False
+    
+    def get_cooking_slot_rects(self):
+        # Returns rects for the two cooking slots above the pot
+        pot_center = self.cooking_pot_panel.centerx
+        return [
+            pygame.Rect(pot_center - self.slot_size - 10, 
+                       self.cooking_pot_panel.y - self.slot_size - 20,
+                       self.slot_size, self.slot_size),
+            pygame.Rect(pot_center + 10, 
+                       self.cooking_pot_panel.y - self.slot_size - 20,
+                       self.slot_size, self.slot_size)
+        ]
+    
+    def cook(self):
+        # Check if we have a valid recipe
+        ingredients = [item for item in self.cooking_slots if item]
+        
+        for recipe_name, recipe in self.inventory.recipes.items():
+            recipe_ingredients = sorted([ing[0] for ing in recipe["ingredients"]])
+            current_ingredients = sorted([ing[0] for ing in ingredients])
+            
+            if recipe_ingredients == current_ingredients:
+                # We have a match!
+                result_item, result_count = recipe["result"]
+                self.inventory.add_item(result_item, result_count)
+                
+                # Clear cooking slots
+                self.cooking_slots = [None, None]
+                return True
+                
+        # No recipe matched
+        print("No matching recipe found!")
+        return False
+    
+    def draw(self, screen):
+        if not self.visible:
+            return
+            
+        # Darken background
+        overlay = pygame.Surface((self.screen_width, self.screen_height), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 180))
+        screen.blit(overlay, (0, 0))
+        
+        # Draw ingredients panel
+        pygame.draw.rect(screen, (139, 69, 19), self.ingredients_panel, border_radius=10)
+        pygame.draw.rect(screen, (255, 255, 255), self.ingredients_panel, 2, border_radius=10)
+        
+        # Draw title
+        title = self.font.render("Ingredients", True, (255, 255, 255))
+        screen.blit(title, (self.ingredients_panel.x + 10, self.ingredients_panel.y - 35))
+        
+        # Draw ingredient slots
+        for slot in self.ingredient_slots:
+            pygame.draw.rect(screen, (200, 200, 200), slot["rect"])
+            item_name, item_count = slot["item"]
+            icon = self.inventory.item_icons[item_name]["image"]
+            icon = pygame.transform.scale(icon, (self.slot_size - 10, self.slot_size - 10))
+            screen.blit(icon, (slot["rect"].x + 5, slot["rect"].y + 5))
+            
+            count_text = self.font.render(f"x{item_count}", True, (0, 0, 0))
+            screen.blit(count_text, (slot["rect"].right - 25, slot["rect"].bottom - 20))
+        
+        # Draw cooking panel
+        pygame.draw.rect(screen, (100, 100, 100), self.cooking_pot_panel, border_radius=10)
+        pygame.draw.rect(screen, (255, 255, 255), self.cooking_pot_panel, 2, border_radius=10)
+        
+        # Draw pot image
+        screen.blit(self.pot_image, 
+                   (self.cooking_pot_panel.centerx - self.pot_image.get_width()//2,
+                    self.cooking_pot_panel.centery - self.pot_image.get_height()//2))
+        
+        # Draw cooking slots above pot
+        slot_rects = self.get_cooking_slot_rects()
+        for i, rect in enumerate(slot_rects):
+            pygame.draw.rect(screen, (200, 200, 200), rect)
+            if self.cooking_slots[i]:
+                item_name = self.cooking_slots[i][0]
+                icon = self.inventory.item_icons[item_name]["image"]
+                icon = pygame.transform.scale(icon, (self.slot_size - 10, self.slot_size - 10))
+                screen.blit(icon, (rect.x + 5, rect.y + 5))
+        
+        # Draw cook button
+        pygame.draw.rect(screen, (50, 150, 50), self.cook_button, border_radius=5)
+        cook_text = self.font.render("Cook", True, (255, 255, 255))
+        screen.blit(cook_text, (self.cook_button.centerx - cook_text.get_width()//2,
+                               self.cook_button.centery - cook_text.get_height()//2))
+        
+        # Draw close button
+        pygame.draw.rect(screen, (200, 50, 50), self.close_button_rect, border_radius=5)
+        close_text = self.font.render("Close", True, (255, 255, 255))
+        screen.blit(close_text, (self.close_button_rect.centerx - close_text.get_width()//2,
+                                self.close_button_rect.centery - close_text.get_height()//2))
+        
+        # Draw dragging item if any
+        if self.dragging_item:
+            mouse_pos = pygame.mouse.get_pos()
+            item_name = self.dragging_item[0]
+            icon = self.inventory.item_icons[item_name]["image"]
+            icon = pygame.transform.scale(icon, (self.slot_size - 10, self.slot_size - 10))
+            screen.blit(icon, (mouse_pos[0] - self.drag_offset[0] + 5, 
+                             mouse_pos[1] - self.drag_offset[1] + 5))
+    
+    def draw_cooking_area_hint(self, screen):
+        """Draw the cooking area highlight when UI is not visible"""
+        if not self.visible:
+            pygame.draw.rect(screen, (255, 255, 255), self.cooking_area, 2)
+            cook_text = self.font.render("Cooking Area", True, (255, 255, 255))
+            screen.blit(cook_text, (self.cooking_area.x, self.cooking_area.y - 20))
+
 # Main loop
 running = True
 while running:
@@ -2271,7 +2788,10 @@ while running:
                 "health": player_instance.health,
                 "inventory":inventory_dict,
                 "level": player_instance.level,
-                "exp":player_instance.exp
+                "exp":player_instance.exp,
+                "achievements": achievement_system.achievements,
+                "shown_achievements": list(achievement_system.shown_achievements),
+                "stats": player_instance.stats
                 
             }
             # Save the progress
@@ -2282,7 +2802,10 @@ while running:
                     [player_instance.position.x, player_instance.position.y],
                     inventory_dict,
                     player_instance.level,
-                    player_instance.exp
+                    player_instance.exp,
+                    achievement_system.achievements,
+                    achievement_system.shown_achievements,
+                    stats=player_instance.stats
                 )
             running = False        
    
@@ -2311,6 +2834,7 @@ while running:
                     character_scale = 1.0  # Normal size
                     settings_menu.create_buttons(screen.get_size())
                 overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
+                inventory_menu.update_layout(screen.get_size())
             elif event.key == pygame.K_b:
                 inventory_menu.toggle()
 
@@ -2339,7 +2863,10 @@ while running:
                         [player_instance.position.x, player_instance.position.y],
                         inventory_dict,
                         player_instance.level,
-                        player_instance.exp
+                        player_instance.exp,
+                        achievement_system.achievements,
+                        achievement_system.shown_achievements,
+                        stats=player_instance.stats
                     )
                 running = False
             elif result == "back":
@@ -2375,6 +2902,8 @@ while running:
                     if direction == "s": proposed_position.y += move_distance; player_instance.direction = "down"
                     if direction == "a": proposed_position.x -= move_distance; player_instance.direction = "left"
                     if direction == "d": proposed_position.x += move_distance; player_instance.direction = "right"
+
+    achievement_system.check_achievements(player_instance, player_instance.stats)
 
     proposed_position.x = max(0, min(proposed_position.x, map_image.get_width()))
     proposed_position.y = max(0, min(proposed_position.y, map_image.get_height()))
@@ -2518,6 +3047,9 @@ while running:
                 }
             break
         
+    # Cooking
+    cooking_ui = CookingUI(inventory, screen.get_width(), screen.get_height())
+      
     if in_house:
         # Get screen size
         screen_width, screen_height = screen.get_size()
@@ -2535,7 +3067,10 @@ while running:
         for event in events:
             if event.type == pygame.MOUSEBUTTONDOWN:
                 mouse_clicked = True
-                
+                for event in pygame.event.get():
+                    if event.type == pygame.MOUSEBUTTONDOWN:
+                        mouse_clicked = True
+                         
         # UI elements in house
         button_width, button_height = 120, 40
 
@@ -2582,8 +3117,23 @@ while running:
         # Show mouse position on screen
         mouse_pos_text = font.render(f"Mouse: {mouse_x}, {mouse_y}", True, (255, 255, 255))
         screen.blit(mouse_pos_text, (10, 10))
-    
+        
+        # Check if clicking cooking area
+        if cooking_ui.cooking_area.collidepoint(mouse_pos):
+            cooking_ui.toggle() 
             
+            # Let cooking UI handle its own events
+            cooking_ui.handle_event(event)
+    
+            # Draw cooking area hint when UI is closed
+            cooking_ui.draw_cooking_area_hint(screen)
+            
+            # Draw cooking UI if open
+            cooking_ui.draw(screen)  
+                      
+
+    achievement_display.update()        
+
     pygame.display.update()
     pygame.display.flip()
 pygame.quit()
