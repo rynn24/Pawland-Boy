@@ -142,8 +142,29 @@
       "FishBone_Clip": 1,
       "Fruit": 3
     },
-    "level": 1,
-    "exp": 0
+    "level": 2,
+    "exp": 85,
+    "achievements": {
+      "First Kill": true,
+      "Zombie Slayer (10 kills)": false,
+      "Level 5 Achieved": false,
+      "Wood Collector (10 wood)": false,
+      "Fruit Picker (5 fruit)": true,
+      "Survivor (3 days)": false,
+      "Lumberjack (10 wood)": true,
+      "Crystal Hunter (1 crystal)": false
+    },
+    "shown_achievements": [
+      "First Kill",
+      "Lumberjack (10 wood)",
+      "Fruit Picker (5 fruit)"
+    ],
+    "stats": {
+      "zombie_kills": 1,
+      "wood_collected": 22,
+      "fruit_collected": 10,
+      "days_survived": 0
+    }
   },
   "hj": {
     "health": 100,
