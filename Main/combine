@@ -208,6 +208,7 @@ class Inventory:
                 "Crystal": pygame.image.load("minting/Crystal.png").convert_alpha(),
                 "Boat": pygame.image.load("minting/Boat.png").convert_alpha(),
                 "Firefly": pygame.image.load("minting/Firefly.jpg").convert_alpha(),
+                "FishBone_Clip": pygame.image.load("minting/FishBoneClip.png").convert_alpha(),
             }
         self.slot_size = 60
         self.slot_margin = 10
@@ -577,7 +578,7 @@ class RegisterPage:
 
 class InventoryMenu:
     def __init__(self, inventory, window_size, player):
-        self.player_instance = player_instance
+        self.player_instance = player
         self.visible = False
         self.inventory = inventory  # Reference to your Inventory instance
         self.window_size = window_size
@@ -608,7 +609,11 @@ class InventoryMenu:
             # Default fallback if item is not listed
             "default": [
                 {"label": "Use", "action": "use"},
-                {"label": "Drop", "action": "drop"},
+                {"label": "Drop", "action": "drop"},  
+            ],
+            "FishBone_Clip": [
+                {"label": "Equip", "action": "equip"},
+                {"label": "Unequip", "action": "unequip"},
             ]
         }
         self.item_descriptions = {
@@ -619,7 +624,7 @@ class InventoryMenu:
             "Crystal": "Looks valuable.",
             "Boat": "Used for traveling across water.",
             "Firefly": "Cute bugs that glows in the dark.",
-            
+            "FishBone_Clip":"A stylish clip. Might smell fishy.",
         }
 
         
@@ -782,6 +787,17 @@ class InventoryMenu:
             self.inventory.remove_item(index, 1)
             # Add general use logic
 
+        elif action == "equip":
+            print(f"Equipping {name}")
+            if name == "FishBone_Clip":
+                self.player_instance.equip_hairclip(name)
+                
+        elif action == "unequip":
+            print(f"Unequipping {name}")
+            if name == "FishBone_Clip":
+                self.player_instance.unequip_hairclip ()
+ 
+        
         else:
             print(f"No action implemented for: {action}")
 
@@ -918,13 +934,15 @@ class Player:
         self.rect = self.image.get_rect(center=(self.position.x, self.position.y))
         
         self.direction = 'down'
-        self.attacking = False
         self.frame = 0
-        self.attack_frame = 0
         self.last_frame_time = 0
         self.frame_speed = 0.1
+
+        self.attacking = False
+        self.attack_frame = 0
         self.attack_frame_delay = 3
         self.attack_frame_counter = 0
+
         self.weapons = ['hand', 'axe', 'sword']
         self.current_weapon = 'hand'
         self.last_update = pygame.time.get_ticks()
@@ -984,13 +1002,19 @@ class Player:
         self.walk_up = load_frames(self.walk_sheet, FRAME_WIDTH, FRAME_HEIGHT, 1, 4)
         self.walk_left = load_frames(self.walk_sheet, FRAME_WIDTH, FRAME_HEIGHT, 2, 4)
         self.walk_right = load_frames(self.walk_sheet, FRAME_WIDTH, FRAME_HEIGHT, 3, 4)
-       
+
+        self.hairclip_walk_sheet = pygame.image.load("minting/fishbonewalk.png").convert_alpha()
+        self.hairclip_walk_down = load_frames(self.hairclip_walk_sheet, FRAME_WIDTH, FRAME_HEIGHT, 0, 3)
+        self.hairclip_walk_up = load_frames(self.hairclip_walk_sheet, FRAME_WIDTH, FRAME_HEIGHT, 1, 4)
+        self.hairclip_walk_left = load_frames(self.hairclip_walk_sheet, FRAME_WIDTH, FRAME_HEIGHT, 2, 4)
+        self.hairclip_walk_right = load_frames(self.hairclip_walk_sheet, FRAME_WIDTH, FRAME_HEIGHT, 3, 4)
+
         self.attack_sheets = {
             'hand': pygame.image.load("minting/hand_attack.png").convert_alpha(),
             'axe': pygame.image.load("minting/axe_attack.png").convert_alpha(),
             'sword': pygame.image.load("minting/sword_attack.png").convert_alpha()
         }
-        
+
         self.attack_frames = {
             'hand': {
                 'right': load_frames(self.attack_sheets['hand'], FRAME_WIDTH, FRAME_HEIGHT, 0, 2),
@@ -1006,16 +1030,62 @@ class Player:
             }
         }
 
+        self.hairclip_attack_sheets = {
+            'hand': pygame.image.load("minting/hairclip_hand_attack.png").convert_alpha(),
+            'axe': pygame.image.load("minting/hairclip_axe_attack.png").convert_alpha(),
+            'sword': pygame.image.load("minting/hairclip_sword_attack.png").convert_alpha()
+        }
+
+        self.hairclip_attack_frames = {
+            'hand': {
+                'right': load_frames(self.hairclip_attack_sheets['hand'], FRAME_WIDTH, FRAME_HEIGHT, 0, 2),
+                'left': load_frames(self.hairclip_attack_sheets['hand'], FRAME_WIDTH, FRAME_HEIGHT, 1, 2)
+            },
+            'axe': {
+                'right': load_frames(self.hairclip_attack_sheets['axe'], FRAME_WIDTH, FRAME_HEIGHT, 0, 2),
+                'left': load_frames(self.hairclip_attack_sheets['axe'], FRAME_WIDTH, FRAME_HEIGHT, 1, 2)
+            },
+            'sword': {
+                'right': load_frames(self.hairclip_attack_sheets['sword'], FRAME_WIDTH, FRAME_HEIGHT, 0, 4),
+                'left': load_frames(self.hairclip_attack_sheets['sword'], FRAME_WIDTH, FRAME_HEIGHT, 1, 4)
+            }
+        }
+        
+        
         self.dead = False
         self.death_frame_index = 0
         self.death_frame_timer = 0
         self.time_of_death = 0
         self.respawn_delay = 3000  # 3 seconds
 
+        # Load hairclip spritesheet and extract one frame to stick on head
+        self.equipped_hairclip = None  # nothing equipped by default
+        self.show_animation = False 
+        
+
         # Load death animation (you can change the image path and frame count as needed)
         death_sheet = pygame.image.load("minting/die.png").convert_alpha()
         self.death_frames = load_frames(death_sheet, FRAME_WIDTH, FRAME_HEIGHT, 0, 25)
+    
+    def equip_hairclip(self, name):
+        self.equipped_hairclip = name
 
+    def unequip_hairclip(self):
+        print("Removing hairclip from character")
+        self.equipped_hairclip = None
+
+    def get_current_hairclip_sprite(self):
+        if not self.equipped_hairclip:
+            return None
+        
+        if self.attacking:
+            idx = min(self.attack_frame, len(self.hairclip_attack_frames[self.current_weapon]['right']) - 1)
+            side = 'left' if self.direction == 'left' else 'right'
+            return self.hairclip_attack_frames[self.current_weapon][side][idx]
+        else:
+            frames = self.hairclip_walk_frames[self.direction]
+            frame_idx = self.frame % len(frames)
+            return frames[frame_idx]
 
     def move(self, keys, dt):
         move_distance = self.speed * dt 
@@ -1031,7 +1101,7 @@ class Player:
 
         if self.attacking:
             self.rect.center = (self.position.x, self.position.y)
-            return self.position, self.get_attack_sprite()
+            return self.position, self.get_attack_sprite(), self.get_hairclip_frame() if self.equipped_hairclip else None
 
         if keys[pygame.K_w]:
             self.position.y -= move_distance
@@ -1057,10 +1127,18 @@ class Player:
                 self.last_frame_time = current_time
             
             current_sprite = self.get_current_sprite()
+            hairclip_sprite = self.get_hairclip_frame()if self.equipped_hairclip else None
         else:
+            self.frame = 0  # Reset animation frame
             current_sprite = self.walk_down[0]
+            hairclip_sprite = self.hairclip_walk_down[0] if self.equipped_hairclip else None
+            print(type(self.hairclip_walk_down), len(self.hairclip_walk_down))
+
+
         self.rect.center = (self.position.x, self.position.y)
-        return self.position, current_sprite
+        return self.position, current_sprite, hairclip_sprite
+        
+            
     
     def switch_weapon(self, key):
         if key == pygame.K_TAB:
@@ -1266,11 +1344,21 @@ class Player:
                     self.current_frame = 0
                     self.show_animation = False  # Stop after one loop
 
-    def draw(self, screen):
-        if self.show_animation:
-            frame = self.frames[self.current_frame]
-            scaled_frame = pygame.transform.scale(frame, screen.get_size())
-            screen.blit(scaled_frame, (0, 0))
+    def draw(self, screen, offset):
+        # get base sprite (player)
+        player_sprite = self.get_current_sprite()  # You have this method
+        
+        # get hairclip sprite
+        hairclip_sprite = self.get_hairclip_frame()
+
+        # Draw player
+        screen.blit(player_sprite, self.rect.topleft - offset)
+        # Draw hairclip if equipped
+        if hairclip_sprite:
+            screen.blit(hairclip_sprite, self.rect.topleft - offset)
+
+
+
     def calculate_exp_needed(self, level):
         # You can tweak the formula for difficulty scaling
         return 50 * level
@@ -1315,6 +1403,45 @@ class Player:
             self.health = self.max_health
         print(f"Health restored! Current health: {self.health}")
 
+    def get_hairclip_frame(self):
+        if not self.equipped_hairclip:
+            return None
+
+        if self.attacking:
+            frame_index = self.attack_frame
+
+            # Get frames for current weapon
+            weapon_clips = self.hairclip_attack_frames.get(self.current_weapon, {})
+            
+            # Only 'left' and 'right' are supported
+            if self.direction in weapon_clips:
+                frames = weapon_clips[self.direction]
+            else:
+                # Fallback if direction is up/down
+                fallback_direction = 'right' if 'right' in weapon_clips else 'left'
+                frames = weapon_clips.get(fallback_direction, [])
+            
+            if not frames:
+                print(f"[WARNING] No hairclip attack frames found for weapon '{self.current_weapon}', direction '{self.direction}'")
+                return None
+
+            frame_index %= len(frames)
+            return frames[frame_index]
+        else:
+            if self.direction == 'up':
+                frames = self.hairclip_walk_up
+            elif self.direction == 'down':
+                frames = self.hairclip_walk_down
+            elif self.direction == 'left':
+                frames = self.hairclip_walk_left
+            elif self.direction == 'right':
+                frames = self.hairclip_walk_right
+            else:
+                return None
+
+            frame_index = self.frame % len(frames)
+            return frames[frame_index]
+        
 user_system = UserSystem()  # Create UserSystem instance
 speed = 2.5  # Adjust as needed
 player_position = pygame.Vector2(1500, 125)
@@ -2124,6 +2251,7 @@ inventory.set_items(inventory_data)  # Load saved items
 # Create player first
 player = Player(position, speed, current_user, level, exp)
 player.inventory = inventory  # Assign filled inventory
+player_instance = player
 
 # Now create inventory_menu with player
 inventory_menu = InventoryMenu(inventory, window_size, player)
@@ -2133,7 +2261,8 @@ running = True
 while running:
     dt = clock.tick(60) / 1000
     current_time = pygame.time.get_ticks() / 1000
-    for event in pygame.event.get():
+    events = pygame.event.get()
+    for event in events:
         if event.type == pygame.QUIT:
             # Save progress before exiting
             inventory_dict = inventory.get_inventory_dict()
@@ -2176,12 +2305,10 @@ while running:
                 if is_fullscreen:
                     screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
                     character_scale = fullscreen_scale  # Increase size
-                    screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
                     settings_menu.create_buttons(screen.get_size())
                 else:
                     screen = pygame.display.set_mode(window_size)
                     character_scale = 1.0  # Normal size
-                    screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
                     settings_menu.create_buttons(screen.get_size())
                 overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
             elif event.key == pygame.K_b:
@@ -2222,7 +2349,7 @@ while running:
     # ========== GAME LOGIC ONLY WHEN IN "GAME" STATE ==========
     if game_state == "game":
         keys = pygame.key.get_pressed()
-        new_position, current_sprite = player_instance.move(keys, dt)
+        new_position, current_sprite, hairclip_sprite = player_instance.move(keys, dt)
         move_distance = speed * dt * 60
 
         current_time = time.time()
@@ -2295,10 +2422,15 @@ while running:
     sprite_x = screen.get_width() // 2 - scaled_sprite.get_width() // 2
     sprite_y = screen.get_height() // 2 - scaled_sprite.get_height() // 2
     screen.blit(scaled_sprite, (sprite_x, sprite_y))
-    player_instance.draw_health_bar(screen)#player hp bar
+    
     player_instance.draw_health_bar(screen)
     player_instance.draw_exp_bar(screen)
 
+    if hairclip_sprite:
+        scaled_hairclip = scale_sprite(hairclip_sprite, character_scale)
+        screen.blit(scaled_hairclip, (sprite_x, sprite_y))
+
+     
     # Minimap
     minimap_surface = pygame.Surface((minimap_radius * 2, minimap_radius * 2), pygame.SRCALPHA)
     mini_camera_size = minimap_radius * 2 / minimap_zoom_factor
@@ -2332,8 +2464,10 @@ while running:
         alpha = int(night_progress * 180)
         pond.update_time_of_day(is_daytime=False)  # Set to night for fishing sprite
 
+    offset = pygame.math.Vector2(0, 0)
+
     overlay.fill((0, 0, 50, alpha))
-    screen.blit(overlay, (0, 0))
+    screen.blit(overlay, (0, 0)) 
 
     pos_text = f"X: {int(player_position.x)}  Y: {int(player_position.y)}"
     text_surface = font.render(pos_text, True, (255, 255, 255))
@@ -2398,7 +2532,7 @@ while running:
         mouse_pos = pygame.mouse.get_pos()
         mouse_x, mouse_y = mouse_pos  # Unpack once
         mouse_clicked = False
-        for event in pygame.event.get():
+        for event in events:
             if event.type == pygame.MOUSEBUTTONDOWN:
                 mouse_clicked = True
                 
