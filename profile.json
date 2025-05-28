@@ -12,13 +12,36 @@
     "exp": 0
   },
   "h": {
-    "health": 100,
+    "health": 200,
     "position": [
-      1500.0,
-      125.0
+      1178.3650000000002,
+      1101.7774999999938
     ],
     "inventory": {
-      "sword": 1
+      "sword": 1,
+      "Wood": 12,
+      "Fruit": 3
+    },
+    "level": 2,
+    "exp": 10,
+    "achievements": {
+      "First Kill": false,
+      "Zombie Slayer (10 kills)": false,
+      "Level 5 Achieved": false,
+      "Wood Collector (10 wood)": false,
+      "Fruit Picker (5 fruit)": false,
+      "Survivor (3 days)": false,
+      "Lumberjack (10 wood)": true,
+      "Crystal Hunter (1 crystal)": false
+    },
+    "shown_achievements": [
+      "Lumberjack (10 wood)"
+    ],
+    "stats": {
+      "zombie_kills": 0,
+      "wood_collected": 12,
+      "fruit_collected": 3,
+      "days_survived": 0
     }
   },
   "lee": {
@@ -58,6 +81,42 @@
     },
     "level": 3,
     "exp": 60
+    "health": 670,
+    "position": [
+      1136.2924999999993,
+      434.307500000009
+    ],
+    "inventory": {
+      "Wood": 132,
+      "Fruit": 72
+    },
+    "level": 7,
+    "exp": 335,
+    "achievements": {
+      "First Kill": true,
+      "Zombie Slayer (10 kills)": true,
+      "Level 5 Achieved": true,
+      "Wood Collector (10 wood)": false,
+      "Fruit Picker (5 fruit)": true,
+      "Survivor (3 days)": false,
+      "Lumberjack (10 wood)": true,
+      "Crystal Hunter (1 crystal)": false
+    },
+    "shown_achievements": [
+      "Lumberjack (10 wood)",
+      "First Kill",
+      "Level 5 Achieved",
+      "Zombie Slayer (10 kills)",
+      "Fruit Picker (5 fruit)"
+    ],
+    "stats": {
+      "zombie_kills": 10,
+      "wood_collected": 37,
+      "fruit_collected": 22,
+      "days_survived": 0,
+      "fish_collected": 0,
+      "crystals_collected": 0
+    }
   },
   "hj2": {
     "health": 290,
@@ -106,5 +165,49 @@
     },
     "level": 1,
     "exp": 0
+  },
+  "hj": {
+    "health": 100,
+    "position": [
+      1500,
+      125
+    ],
+    "inventory": {},
+    "level": 1,
+    "exp": 0,
+    "achievements": {}
+  },
+  "33": {
+    "health": 100,
+    "position": [
+      1500,
+      125
+    ],
+    "inventory": {},
+    "level": 1,
+    "exp": 0,
+    "achievements": {}
+  },
+  "34": {
+    "health": 100,
+    "position": [
+      1500,
+      125
+    ],
+    "inventory": {},
+    "level": 1,
+    "exp": 0,
+    "achievements": {}
+  },
+  "35": {
+    "health": 100,
+    "position": [
+      1500,
+      125
+    ],
+    "inventory": {},
+    "level": 1,
+    "exp": 0,
+    "achievements": {}
   }
 }
