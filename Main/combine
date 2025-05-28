@@ -2736,7 +2736,6 @@ class CookingUI:
         self.ingredient_slots = []
         ingredients = [item for item in self.inventory.slots 
                     if item and "ingredient" in self.inventory.item_icons[item[0]].get("categories", [])]
-
         
         start_x = self.ingredients_panel.x + 20
         start_y = self.ingredients_panel.y + 20
@@ -2931,7 +2930,7 @@ class CookingUI:
                 text = self.font.render(f"You have cooked {cooked_name}!", True, WHITE)
                 screen.blit(text, (
                     box_x + box_width // 2 - text.get_width() // 2,
-                    box_y + 1
+                    box_y + 150
                 ))
             else:
                 self.cooked_item = None
