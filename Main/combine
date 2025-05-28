@@ -216,8 +216,6 @@ class Inventory:
         "Grilled Fish": {"ingredients": [("Fish", 1),("Fish", 1)], "result": ("Grilled Fish", 1)},
         "Sweet Sailor": {"ingredients": [("Big Fish", 1), ("Fruit", 1)], "result": ("Sweet Sailor", 1)},
         "Fruit Jam": {"ingredients": [("Fruit", 1), ("Fruit", 1)], "result": ("Fruit Jam", 1)},
-        "Sweet Sailor": {"ingredients": [("Big Fish", 1), ("Fruit", 1)], "result": ("Sweet Sailor", 1)},
-        "Fruit Jam": {"ingredients": [("Fruit", 1), ("Fruit", 1)], "result": ("Fruit Jam", 1)},
         "Reef Medley": {"ingredients": [("Big Fish", 1), ("Big Fish", 1)], "result": ("Reef Medley", 1)},
         "Twinfin Delight": {"ingredients": [("Big Fish", 1), ("Fish", 1)], "result": ("Twinfin Delight", 1)},
     }
@@ -2714,7 +2712,7 @@ class CookingUI:
                 text = self.font.render(f"You have cooked {cooked_name}!", True, WHITE)
                 screen.blit(text, (
                     box_x + box_width // 2 - text.get_width() // 2,
-                    box_y + 150
+                    box_y + 1
                 ))
             else:
                 self.cooked_item = None
