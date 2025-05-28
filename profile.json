@@ -351,18 +351,23 @@
     "achievements": {}
   },
   "lee": {
-    "health": 200,
+    "health": 400,
     "position": [
-      1718.597500000002,
-      172.47250000000122
+      1474.1475000000005,
+      190.72750000000127
     ],
     "inventory": {
-      "Wood": 12,
-      "Fruit": 9,
-      "Big Fish": 3
+      "Wood": 17,
+      "Fruit": 5,
+      "Big Fish": 4,
+      "Fish": 3,
+      "Fruit Jam": 3,
+      "Twinfin Delight": 1,
+      "Grilled Fish": 1,
+      "Reef Medley": 1
     },
-    "level": 2,
-    "exp": 85,
+    "level": 4,
+    "exp": 110,
     "achievements": {
       "First Kill": false,
       "Zombie Slayer (10 kills)": false,
@@ -379,10 +384,11 @@
     ],
     "stats": {
       "zombie_kills": 0,
-      "wood_collected": 12,
-      "fruit_collected": 11,
+      "wood_collected": 17,
+      "fruit_collected": 13,
       "days_survived": 0,
-      "fish_collected": 6
+      "fish_collected": 26,
+      "crystal_collected": 10
     }
   },
   "6": {
