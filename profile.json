@@ -69,17 +69,20 @@
     "exp": 0
   },
   "bye": {
-    "health": 670,
+    "health": 800,
     "position": [
-      1136.2924999999993,
-      434.307500000009
+      1491.0350000000017,
+      189.01000000000892
     ],
     "inventory": {
       "Wood": 132,
-      "Fruit": 72
+      "Fruit": 70,
+      "Special Dish": 1,
+      "Fish": 1,
+      "Fish Soup": 1
     },
-    "level": 7,
-    "exp": 335,
+    "level": 8,
+    "exp": 60,
     "achievements": {
       "First Kill": true,
       "Zombie Slayer (10 kills)": true,
@@ -92,17 +95,17 @@
     },
     "shown_achievements": [
       "Lumberjack (10 wood)",
-      "First Kill",
       "Level 5 Achieved",
       "Zombie Slayer (10 kills)",
-      "Fruit Picker (5 fruit)"
+      "Fruit Picker (5 fruit)",
+      "First Kill"
     ],
     "stats": {
       "zombie_kills": 10,
       "wood_collected": 37,
       "fruit_collected": 22,
       "days_survived": 0,
-      "fish_collected": 0,
+      "fish_collected": 3,
       "crystals_collected": 0
     }
   },
