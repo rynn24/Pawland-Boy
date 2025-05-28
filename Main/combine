@@ -92,6 +92,7 @@ house_area = [
     }   
 ] 
 in_house = False
+cooking_ui_visible = False
 house_image = pygame.image.load("rynn/inside-house.png").convert()
 house_rect = house_image.get_rect()
 show_house_prompt = False
@@ -201,14 +202,26 @@ class Inventory:
         self.slot_rects = []
         self.font = pygame.font.SysFont("Arial", 20)
         self.item_icons = {
-                "Wood": pygame.image.load("minting/Wood.png").convert_alpha(),
-                "Fruit": pygame.image.load("minting/Fruit.png").convert_alpha(),
-                "Fish": pygame.image.load("minting/fish_1.png").convert_alpha(),
-                "Big Fish": pygame.image.load("minting/Fish_2.png").convert_alpha(),
-                "Crystal": pygame.image.load("minting/Crystal.png").convert_alpha(),
-                "Boat": pygame.image.load("minting/Boat.png").convert_alpha(),
-                "Firefly": pygame.image.load("minting/Firefly.jpg").convert_alpha(),
-            }
+            "Wood": {"image": pygame.image.load("minting/Wood.png").convert_alpha(), "categories": ["material"]},
+            "Fruit": {"image": pygame.image.load("minting/Fruit.png").convert_alpha(), "categories": ["ingredient", "food"]},
+            "Fish": {"image": pygame.image.load("minting/fish_1.png").convert_alpha(), "categories": ["ingredient"]},
+            "Big Fish": {"image": pygame.image.load("minting/Fish_2.png").convert_alpha(), "categories": ["ingredient"]},
+            "Crystal": {"image": pygame.image.load("minting/Crystal.png").convert_alpha(), "categories": ["material"]},
+            "Boat": {"image": pygame.image.load("minting/Boat.png").convert_alpha(), "categories": ["tool"]},
+            "Firefly": {"image": pygame.image.load("minting/Firefly.jpg").convert_alpha(), "categories": ["material"]},
+        }
+
+        self.recipes = {
+    "Fish Soup": {"ingredients": [("Fish", 1), ("Fruit", 1)], "result": ("Fish Soup", 1)},
+    "Grilled Fish": {"ingredients": [("Fish", 2)], "result": ("Grilled Fish", 1)},
+    "Sweet Sailor": {"ingredients": [("Big Fish", 1), ("Fruit", 2)], "result": ("Special Dish", 1)}
+}
+
+        # Add images for the new food items
+        self.item_icons["Fish Soup"] = {"image": pygame.image.load("rynn/fish-soup.png").convert_alpha(), "category": "food"}
+        self.item_icons["Grilled Fish"] = {"image": pygame.image.load("rynn/grill-fish.png").convert_alpha(), "category": "food"}
+        self.item_icons["Special Dish"] = {"image": pygame.image.load("rynn/sweet-sailor.png").convert_alpha(), "category": "food"}
+            
         self.slot_size = 60
         self.slot_margin = 10
         self.is_inventory_open = False  # Track whether inventory is open
@@ -295,7 +308,8 @@ class Inventory:
 
     def draw_item_icon(self, surface, name, count, rect):
         if name in self.item_icons:
-            icon = self.item_icons[name]
+            icon_data = self.item_icons[name]
+            icon = icon_data["image"]
             icon = pygame.transform.smoothscale(icon, (self.slot_size - 10, self.slot_size - 10))  # Auto resize
             icon_rect = icon.get_rect(center=rect.center)
             surface.blit(icon, icon_rect)
@@ -652,6 +666,18 @@ class InventoryMenu:
                 {"label": "Eat", "action": "eat"},
                 {"label": "Drop", "action": "drop"},
             ],
+            "Sweet Sailor": [
+                {"label": "Eat", "action": "eat"},
+                {"label": "Drop", "action": "drop"},
+            ],
+            "Fish Soup": [
+                {"label": "Eat", "action": "eat"},
+                {"label": "Drop", "action": "drop"},
+            ],
+            "Grilled Fish": [
+                {"label": "Eat", "action": "eat"},
+                {"label": "Drop", "action": "drop"},
+            ],
             # Default fallback if item is not listed
             "default": [
                 {"label": "Use", "action": "use"},
@@ -666,7 +692,9 @@ class InventoryMenu:
             "Crystal": "Looks valuable.",
             "Boat": "Used for traveling across water.",
             "Firefly": "Cute bugs that glows in the dark.",
-            
+            "Fish Soup": "A delicious soup made from fish and fruit. Restores 30 health.",
+            "Grilled Fish": "Perfectly cooked fish. Restores 20 health.",
+            "Sweet Sailor": "A gourmet meal. Restores 50 health and gives temporary buffs."
         }
 
         
@@ -819,7 +847,15 @@ class InventoryMenu:
             print(f"Eating {name}")
             self.player_instance.gain_health(5)
             self.inventory.remove_item(index, 1)
-
+        elif action == "eat" and self.inventory.item_icons[name]["category"] == "food":
+            if name == "Fish Soup":
+                self.gain_health(30)
+            elif name == "Grilled Fish":
+                self.gain_health(20)
+            elif name == "Special Dish":
+                self.gain_health(50)
+                # Could add temporary buffs here
+            self.inventory.remove_item(index, 1)
         elif action == "drop":
             print(f"Dropping {name}")
             self.inventory.remove_item(index, 1)
@@ -1410,6 +1446,33 @@ class Player:
         if self.health > self.max_health:
             self.health = self.max_health
         print(f"Health restored! Current health: {self.health}")
+
+    # In the Player class, modify the perform_action method in InventoryMenu:
+    def perform_action(self, action, index):
+        item = self.inventory.slots[index]
+        if not item:
+            print("No item in slot!")
+            return
+
+        name, count = item
+        
+        if action == "eat" and self.inventory.item_icons[name]["category"] == "food":
+            if name == "Fish Soup":
+                self.gain_health(30)
+            elif name == "Grilled Fish":
+                self.gain_health(20)
+            elif name == "Special Dish":
+                self.gain_health(50)
+                # Could add temporary buffs here
+            self.inventory.remove_item(index, 1)
+        elif name == "Fruit" and action == "eat":
+            self.gain_health(5)
+            self.inventory.remove_item(index, 1)
+        elif action == "drop":
+            self.inventory.remove_item(index, 1)
+        elif action == "use":
+            print(f"Using {name}")
+            self.inventory.remove_item(index, 1)
 
 class AchievementSystem:
     def __init__(self, on_unlock_callback=None):
@@ -2369,6 +2432,219 @@ player.inventory = inventory  # Assign filled inventory
 # Now create inventory_menu with player
 inventory_menu = InventoryMenu(inventory, window_size, player)
 
+class CookingUI:
+    def __init__(self, inventory, screen_width, screen_height):
+        self.inventory = inventory
+        self.screen_width = screen_width
+        self.screen_height = screen_height
+        self.visible = False
+        self.selected_ingredients = []
+        self.dragging_item = None
+        self.drag_offset = (0, 0)
+        
+        # Cooking area dimensions
+        self.cooking_area = pygame.Rect(398, 256, 85, 80)
+        
+        # UI elements
+        self.ingredients_panel = pygame.Rect(40, 120, 350, 250) #Ingredients box
+        self.cooking_pot_panel = pygame.Rect(420, 180, 150, 150) #Pot box
+        self.slot_size = 60
+        self.slot_margin = 10
+        self.ingredient_slots = []
+        self.cooking_slots = [None, None]  # Two slots for ingredients
+        self.cook_button = pygame.Rect(445, 350, 100, 40) #Cook button
+        
+        # Load pot image
+        self.pot_image = pygame.image.load("rynn/pot.png").convert_alpha() 
+        self.pot_image = pygame.transform.scale(self.pot_image, (150, 150))
+        
+        # Font
+        self.font = pygame.font.SysFont("Times New Roman", 24)
+        
+        # Close button
+        self.close_button_rect = pygame.Rect(40, 35, 80, 30) #Close button
+    
+    def toggle(self):
+        self.visible = not self.visible
+        if self.visible:
+            self.selected_ingredients = []
+            self.update_ingredient_slots()
+    
+    def update_ingredient_slots(self):
+        self.ingredient_slots = []
+        ingredients = [item for item in self.inventory.slots 
+                    if item and "ingredient" in self.inventory.item_icons[item[0]].get("categories", [])]
+
+        
+        start_x = self.ingredients_panel.x + 20
+        start_y = self.ingredients_panel.y + 20
+        
+        for i, item in enumerate(ingredients):
+            row = i // 4
+            col = i % 4
+            x = start_x + col * (self.slot_size + self.slot_margin)
+            y = start_y + row * (self.slot_size + self.slot_margin)
+            self.ingredient_slots.append({
+                "rect": pygame.Rect(x, y, self.slot_size, self.slot_size),
+                "item": item
+            })
+    
+    def handle_event(self, event):
+        if not self.visible:
+            return False
+            
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if event.button == 1:  # Left click
+                mouse_pos = pygame.mouse.get_pos()
+                
+                # Check if clicking on an ingredient
+                for slot in self.ingredient_slots:
+                    if slot["rect"].collidepoint(mouse_pos):
+                        self.dragging_item = slot["item"]
+                        self.drag_offset = (mouse_pos[0] - slot["rect"].x, 
+                                           mouse_pos[1] - slot["rect"].y)
+                        return True
+                
+                # Check if clicking on cook button
+                if self.cook_button.collidepoint(mouse_pos):
+                    self.cook()
+                    return True
+                
+                # Check if clicking close button
+                if self.close_button_rect.collidepoint(mouse_pos):
+                    self.visible = False
+                    return True
+                
+        elif event.type == pygame.MOUSEBUTTONUP:
+            if event.button == 1 and self.dragging_item:
+                mouse_pos = pygame.mouse.get_pos()
+                
+                # Check if dropping on a cooking slot
+                for i, slot_rect in enumerate(self.get_cooking_slot_rects()):
+                    if slot_rect.collidepoint(mouse_pos):
+                        if not self.cooking_slots[i]:  # Slot is empty
+                            self.cooking_slots[i] = (self.dragging_item[0], 1)
+                            # Remove 1 from inventory
+                            self.inventory.remove_item(
+                                self.inventory.slots.index(self.dragging_item), 1)
+                            self.update_ingredient_slots()
+                
+                self.dragging_item = None
+                return True
+                
+        elif event.type == pygame.MOUSEMOTION and self.dragging_item:
+            return True
+            
+        return False
+    
+    def get_cooking_slot_rects(self):
+        # Returns rects for the two cooking slots above the pot
+        pot_center = self.cooking_pot_panel.centerx
+        return [
+            pygame.Rect(pot_center - self.slot_size - 10, 
+                       self.cooking_pot_panel.y - self.slot_size - 20,
+                       self.slot_size, self.slot_size),
+            pygame.Rect(pot_center + 10, 
+                       self.cooking_pot_panel.y - self.slot_size - 20,
+                       self.slot_size, self.slot_size)
+        ]
+    
+    def cook(self):
+        # Check if we have a valid recipe
+        ingredients = [item for item in self.cooking_slots if item]
+        
+        for recipe_name, recipe in self.inventory.recipes.items():
+            recipe_ingredients = sorted([ing[0] for ing in recipe["ingredients"]])
+            current_ingredients = sorted([ing[0] for ing in ingredients])
+            
+            if recipe_ingredients == current_ingredients:
+                # We have a match!
+                result_item, result_count = recipe["result"]
+                self.inventory.add_item(result_item, result_count)
+                
+                # Clear cooking slots
+                self.cooking_slots = [None, None]
+                return True
+                
+        # No recipe matched
+        print("No matching recipe found!")
+        return False
+    
+    def draw(self, screen):
+        if not self.visible:
+            return
+            
+        # Darken background
+        overlay = pygame.Surface((self.screen_width, self.screen_height), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 180))
+        screen.blit(overlay, (0, 0))
+        
+        # Draw ingredients panel
+        pygame.draw.rect(screen, (139, 69, 19), self.ingredients_panel, border_radius=10)
+        pygame.draw.rect(screen, (255, 255, 255), self.ingredients_panel, 2, border_radius=10)
+        
+        # Draw title
+        title = self.font.render("Ingredients", True, (255, 255, 255))
+        screen.blit(title, (self.ingredients_panel.x + 10, self.ingredients_panel.y - 35))
+        
+        # Draw ingredient slots
+        for slot in self.ingredient_slots:
+            pygame.draw.rect(screen, (200, 200, 200), slot["rect"])
+            item_name, item_count = slot["item"]
+            icon = self.inventory.item_icons[item_name]["image"]
+            icon = pygame.transform.scale(icon, (self.slot_size - 10, self.slot_size - 10))
+            screen.blit(icon, (slot["rect"].x + 5, slot["rect"].y + 5))
+            
+            count_text = self.font.render(f"x{item_count}", True, (0, 0, 0))
+            screen.blit(count_text, (slot["rect"].right - 25, slot["rect"].bottom - 20))
+        
+        # Draw cooking panel
+        pygame.draw.rect(screen, (100, 100, 100), self.cooking_pot_panel, border_radius=10)
+        pygame.draw.rect(screen, (255, 255, 255), self.cooking_pot_panel, 2, border_radius=10)
+        
+        # Draw pot image
+        screen.blit(self.pot_image, 
+                   (self.cooking_pot_panel.centerx - self.pot_image.get_width()//2,
+                    self.cooking_pot_panel.centery - self.pot_image.get_height()//2))
+        
+        # Draw cooking slots above pot
+        slot_rects = self.get_cooking_slot_rects()
+        for i, rect in enumerate(slot_rects):
+            pygame.draw.rect(screen, (200, 200, 200), rect)
+            if self.cooking_slots[i]:
+                item_name = self.cooking_slots[i][0]
+                icon = self.inventory.item_icons[item_name]["image"]
+                icon = pygame.transform.scale(icon, (self.slot_size - 10, self.slot_size - 10))
+                screen.blit(icon, (rect.x + 5, rect.y + 5))
+        
+        # Draw cook button
+        pygame.draw.rect(screen, (50, 150, 50), self.cook_button, border_radius=5)
+        cook_text = self.font.render("Cook", True, (255, 255, 255))
+        screen.blit(cook_text, (self.cook_button.centerx - cook_text.get_width()//2,
+                               self.cook_button.centery - cook_text.get_height()//2))
+        
+        # Draw close button
+        pygame.draw.rect(screen, (200, 50, 50), self.close_button_rect, border_radius=5)
+        close_text = self.font.render("Close", True, (255, 255, 255))
+        screen.blit(close_text, (self.close_button_rect.centerx - close_text.get_width()//2,
+                                self.close_button_rect.centery - close_text.get_height()//2))
+        
+        # Draw dragging item if any
+        if self.dragging_item:
+            mouse_pos = pygame.mouse.get_pos()
+            item_name = self.dragging_item[0]
+            icon = self.inventory.item_icons[item_name]["image"]
+            icon = pygame.transform.scale(icon, (self.slot_size - 10, self.slot_size - 10))
+            screen.blit(icon, (mouse_pos[0] - self.drag_offset[0] + 5, 
+                             mouse_pos[1] - self.drag_offset[1] + 5))
+    
+    def draw_cooking_area_hint(self, screen):
+        """Draw the cooking area highlight when UI is not visible"""
+        if not self.visible:
+            pygame.draw.rect(screen, (255, 255, 255), self.cooking_area, 2)
+            cook_text = self.font.render("Cooking Area", True, (255, 255, 255))
+            screen.blit(cook_text, (self.cooking_area.x, self.cooking_area.y - 20))
+
 # Main loop
 running = True
 while running:
@@ -2635,6 +2911,9 @@ while running:
                 }
             break
         
+    # Cooking
+    cooking_ui = CookingUI(inventory, screen.get_width(), screen.get_height())
+      
     if in_house:
         # Get screen size
         screen_width, screen_height = screen.get_size()
@@ -2652,7 +2931,10 @@ while running:
         for event in pygame.event.get():
             if event.type == pygame.MOUSEBUTTONDOWN:
                 mouse_clicked = True
-                
+                for event in pygame.event.get():
+                    if event.type == pygame.MOUSEBUTTONDOWN:
+                        mouse_clicked = True
+                         
         # UI elements in house
         button_width, button_height = 120, 40
 
@@ -2699,8 +2981,23 @@ while running:
         # Show mouse position on screen
         mouse_pos_text = font.render(f"Mouse: {mouse_x}, {mouse_y}", True, (255, 255, 255))
         screen.blit(mouse_pos_text, (10, 10))
+        
+        # Check if clicking cooking area
+        if cooking_ui.cooking_area.collidepoint(mouse_pos):
+            cooking_ui.toggle() 
+            
+            # Let cooking UI handle its own events
+            cooking_ui.handle_event(event)
     
+            # Draw cooking area hint when UI is closed
+            cooking_ui.draw_cooking_area_hint(screen)
+            
+            # Draw cooking UI if open
+            cooking_ui.draw(screen)  
+                      
+
     achievement_display.update()        
+
     pygame.display.update()
     pygame.display.flip()
 pygame.quit()
