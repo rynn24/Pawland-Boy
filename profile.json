@@ -241,5 +241,16 @@
       "days_survived": 0,
       "fish_collected": 6
     }
+  },
+  "6": {
+    "health": 100,
+    "position": [
+      1500,
+      125
+    ],
+    "inventory": {},
+    "level": 1,
+    "exp": 0,
+    "achievements": {}
   }
 }
