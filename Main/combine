@@ -221,6 +221,8 @@ class Inventory:
         "Grilled Fish": {"ingredients": [("Fish", 1),("Fish", 1)], "result": ("Grilled Fish", 1)},
         "Sweet Sailor": {"ingredients": [("Big Fish", 1), ("Fruit", 1)], "result": ("Sweet Sailor", 1)},
         "Fruit Jam": {"ingredients": [("Fruit", 1), ("Fruit", 1)], "result": ("Fruit Jam", 1)},
+        "Reef Medley": {"ingredients": [("Big Fish", 1), ("Big Fish", 1)], "result": ("Reef Medley", 1)},
+        "Twinfin Delight": {"ingredients": [("Big Fish", 1), ("Fish", 1)], "result": ("Twinfin Delight", 1)},
     }
 
         # Add images for the new food items
@@ -228,6 +230,9 @@ class Inventory:
         self.item_icons["Grilled Fish"] = {"image": pygame.image.load("rynn/grill-fish.png").convert_alpha(), "categories": "food"}
         self.item_icons["Sweet Sailor"] = {"image": pygame.image.load("rynn/sweet-sailor.png").convert_alpha(), "categories": "food"}
         self.item_icons["Fruit Jam"] = {"image": pygame.image.load("rynn/jam.png").convert_alpha(), "categories": "food"}
+        self.item_icons["Reef Medley"] = {"image": pygame.image.load("rynn/reef.png").convert_alpha(), "categories": "food"}
+        self.item_icons["Twinfin Delight"] = {"image": pygame.image.load("rynn/twin.png").convert_alpha(), "categories": "food"}
+        
             
         self.slot_size = 60
         self.slot_margin = 10
@@ -694,6 +699,14 @@ class InventoryMenu:
                 {"label": "Eat", "action": "eat"},
                 {"label": "Drop", "action": "drop"},
             ],
+            "Reef Medly": [
+                {"label": "Eat", "action": "eat"},
+                {"label": "Drop", "action": "drop"},
+            ],
+            "Twinfin Delight": [
+                {"label": "Eat", "action": "eat"},
+                {"label": "Drop", "action": "drop"},
+            ],
             # Default fallback if item is not listed
             "default": [
                 {"label": "Use", "action": "use"},
@@ -719,11 +732,12 @@ class InventoryMenu:
             "FishBone_Clip":"A stylish clip. Might smell fishy.",
             "Fish Soup": "A delicious soup made from fish and fruit. Restores 30 health.",
             "Grilled Fish": "Perfectly cooked fish. Restores 20 health.",
-            "Sweet Sailor": "A gourmet meal. Restores 50 health and gives temporary buffs.",
-            "Fruit Jam": "Sweet fruit jam. Increases movement speed for 20 seconds. " ,
-            "ZombiePaw" : "A costume get after killing a lot zombies ."             
+            "Sweet Sailor": "A gourmet meal. Restores 50 health",
+            "Fruit Jam": "Sweet fruit jam. Increases movement speed for 20 seconds. ",   
+            "Reef Medley": "A vibrant fusion of ocean flavours.",
+            "Twinfin Delight": "A harmonious dish crafted from 2 types of fish. " ,
+            "ZombiePaw" : "A costume get after killing a lot zombies ."         
         }
-
         
     def toggle(self):
         self.visible = not self.visible
@@ -2541,7 +2555,11 @@ class PondArea:
             inventory.add_item(result["name"], 1)
             self.player.add_exp(25) 
             self.player.stats.setdefault("fish_collected", 0)
-
+            self.player.stats["fish_collected"] += 1
+            self.player.stats.setdefault("crystal_collected", 0)
+            self.player.stats["crystal_collected"] += 1
+            
+            
             if result["id"] in ["fish_1", "fish_2"]:
                 self.player.stats["fish_collected"] += 1
                 print("Fish collected:", self.player.stats["fish_collected"])
@@ -2813,7 +2831,10 @@ class CookingUI:
         
         # Close button
         self.close_button_rect = pygame.Rect(40, 35, 80, 30) #Close button
-    
+
+        self.cooked_item = None  # Will hold (item_name, image)
+        self.cooked_display_time = 0  # Timer to show the message
+
     def toggle(self):
         self.visible = not self.visible
         if self.visible:
@@ -2824,7 +2845,6 @@ class CookingUI:
         self.ingredient_slots = []
         ingredients = [item for item in self.inventory.slots 
                     if item and "ingredient" in self.inventory.item_icons[item[0]].get("categories", [])]
-
         
         start_x = self.ingredients_panel.x + 20
         start_y = self.ingredients_panel.y + 20
@@ -2912,6 +2932,13 @@ class CookingUI:
                 result_item, result_count = recipe["result"]
                 self.inventory.add_item(result_item, result_count)
                 
+                 # Set cooked item display
+                self.cooked_item = (
+                    result_item,
+                    self.inventory.item_icons[result_item]["image"]
+                )
+                self.cooked_display_time = pygame.time.get_ticks()
+                
                 # Clear cooking slots
                 self.cooking_slots = [None, None]
                 return True
@@ -2988,12 +3015,36 @@ class CookingUI:
             screen.blit(icon, (mouse_pos[0] - self.drag_offset[0] + 5, 
                              mouse_pos[1] - self.drag_offset[1] + 5))
     
-    #def draw_cooking_area_hint(self, screen):
-       # """Draw the cooking area highlight to show it's clickable"""
-       # pygame.draw.rect(screen, (255, 255, 255), self.cooking_area, 2)
-       #cook_text = self.font.render("Click to Cook", True, (255, 255, 255))
-        #screen.blit(cook_text, (self.cooking_area.x, self.cooking_area.y - 20))
-    
+        # Display cooked item result
+        if self.cooked_item:
+            elapsed = pygame.time.get_ticks() - self.cooked_display_time
+            if elapsed < 3000:  # Show for 3 seconds
+                cooked_name, cooked_image = self.cooked_item
+
+                # Setup box dimensions
+                box_width, box_height = 200, 130
+                box_x = self.screen_width // 2 - box_width // 2
+                box_y = self.screen_height // 2 - box_height // 2
+                box_rect = pygame.Rect(box_x, box_y, box_width, box_height)
+
+                # Draw white background and gray border
+                pygame.draw.rect(screen, (255, 255, 255), box_rect)        # White background
+                pygame.draw.rect(screen, (120, 120, 120), box_rect, 4)     # Grey border
+
+                # Draw image
+                image = pygame.transform.scale(cooked_image, (100, 100))
+                screen.blit(image, (box_x + box_width // 2 - 40, box_y + 10))
+
+                # Draw text
+                text = self.font.render(f"You have cooked {cooked_name}!", True, WHITE)
+                screen.blit(text, (
+                    box_x + box_width // 2 - text.get_width() // 2,
+                    box_y + 150
+                ))
+            else:
+                self.cooked_item = None
+
+
     def open(self):
         self.visible = True
         self.selected_ingredients = []
