@@ -731,6 +731,7 @@ class InventoryMenu:
             "Fruit Jam": "Sweet fruit jam. Increases movement speed for 20 seconds. ",   
             "Reef Medley": "A vibrant fusion of ocean flavours.",
             "Twinfin Delight": "A harmonious dish crafted from 2 types of fish. "         
+        }
         
     def toggle(self):
         self.visible = not self.visible
