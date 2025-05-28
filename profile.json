@@ -132,16 +132,38 @@
     "exp": 0
   },
   "666\r": {
-    "health": 90,
+    "health": 200,
     "position": [
-      175.11000000000448,
-      1295.9624999999985
+      977.0374999999974,
+      958.3624999999989
     ],
     "inventory": {
-      "Wood": 33
+      "Wood": 55,
+      "Fruit": 10
     },
-    "level": 1,
-    "exp": 0
+    "level": 2,
+    "exp": 85,
+    "achievements": {
+      "First Kill": true,
+      "Zombie Slayer (10 kills)": false,
+      "Level 5 Achieved": false,
+      "Wood Collector (10 wood)": false,
+      "Fruit Picker (5 fruit)": true,
+      "Survivor (3 days)": false,
+      "Lumberjack (10 wood)": true,
+      "Crystal Hunter (1 crystal)": false
+    },
+    "shown_achievements": [
+      "First Kill",
+      "Lumberjack (10 wood)",
+      "Fruit Picker (5 fruit)"
+    ],
+    "stats": {
+      "zombie_kills": 1,
+      "wood_collected": 22,
+      "fruit_collected": 10,
+      "days_survived": 0
+    }
   },
   "hj": {
     "health": 100,
