@@ -44,20 +44,6 @@
       "days_survived": 0
     }
   },
-  "lee": {
-    "health": 0,
-    "position": [
-      1515.7925000000014,
-      208.44250000000065
-    ],
-    "inventory": {
-      "sword": 1,
-      "Wood": 4,
-      "Fruit": 1
-    },
-    "level": 1,
-    "exp": 0
-  },
   "hi": {
     "health": 100,
     "position": [
@@ -71,15 +57,18 @@
   "bye": {
     "health": 670,
     "position": [
-      1136.2924999999993,
-      434.307500000009
+      1367.9675000000004,
+      358.2850000000087
     ],
     "inventory": {
       "Wood": 132,
-      "Fruit": 72
+      "Fruit": 70,
+      "Sweet Sailor": 1,
+      "Fish": 1,
+      "Fish Soup": 1
     },
-    "level": 7,
-    "exp": 335,
+    "level": 8,
+    "exp": 60,
     "achievements": {
       "First Kill": true,
       "Zombie Slayer (10 kills)": true,
@@ -91,18 +80,18 @@
       "Crystal Hunter (1 crystal)": false
     },
     "shown_achievements": [
-      "Lumberjack (10 wood)",
       "First Kill",
       "Level 5 Achieved",
-      "Zombie Slayer (10 kills)",
-      "Fruit Picker (5 fruit)"
+      "Lumberjack (10 wood)",
+      "Fruit Picker (5 fruit)",
+      "Zombie Slayer (10 kills)"
     ],
     "stats": {
       "zombie_kills": 10,
       "wood_collected": 37,
       "fruit_collected": 22,
       "days_survived": 0,
-      "fish_collected": 0,
+      "fish_collected": 3,
       "crystals_collected": 0
     }
   },
@@ -188,6 +177,17 @@
     "achievements": {}
   },
   "35": {
+    "health": 100,
+    "position": [
+      1500,
+      125
+    ],
+    "inventory": {},
+    "level": 1,
+    "exp": 0,
+    "achievements": {}
+  },
+  "lee": {
     "health": 100,
     "position": [
       1500,
