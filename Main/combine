@@ -854,7 +854,7 @@ class InventoryMenu:
             print(f"Eating {name}")
             self.player_instance.gain_health(5)
             self.inventory.remove_item(index, 1)
-        elif action == "eat" and self.inventory.item_icons[name]["category"] == "food":
+        elif action == "eat" and self.inventory.item_icons[name]["categories"] == "food":
             if name == "Fish Soup":
                 self.gain_health(30)
             elif name == "Grilled Fish":
