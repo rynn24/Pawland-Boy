@@ -213,6 +213,7 @@ class Inventory:
             "Armor(Gold)" :pygame.image.load("haojun/image/armor(gold).png").convert_alpha(),
             "Armor(Diamond)" :pygame.image.load("haojun/image/armor(diamond).png").convert_alpha(),
             "FishBone_Clip": pygame.image.load("minting/FishBoneClip.png").convert_alpha(),
+            "ZombiePaw": pygame.image.load("minting/zombie_head.png").convert_alpha(),
         }
 
         self.recipes = {
@@ -702,6 +703,10 @@ class InventoryMenu:
                 {"label": "Equip", "action": "equip"},
                 {"label": "Unequip", "action": "unequip"},
             ],
+            "ZombiePaw": [
+                {"label": "Equip", "action": "equip"},
+                {"label": "Unequip", "action": "unequip"},
+            ],
         }
         self.item_descriptions = {
             "Wood": "Can be used to build things.",
@@ -715,7 +720,8 @@ class InventoryMenu:
             "Fish Soup": "A delicious soup made from fish and fruit. Restores 30 health.",
             "Grilled Fish": "Perfectly cooked fish. Restores 20 health.",
             "Sweet Sailor": "A gourmet meal. Restores 50 health and gives temporary buffs.",
-            "Fruit Jam": "Sweet fruit jam. Increases movement speed for 20 seconds. "               
+            "Fruit Jam": "Sweet fruit jam. Increases movement speed for 20 seconds. " ,
+            "ZombiePaw" : "A costume get after killing a lot zombies ."             
         }
 
         
@@ -892,11 +898,15 @@ class InventoryMenu:
             print(f"Equipping {name}")
             if name == "FishBone_Clip":
                 self.player_instance.equip_hairclip(name)
+            if name == "ZombiePaw":
+                self.player_instance.equip_zombieskin(name)
                 
         elif action == "unequip":
             print(f"Unequipping {name}")
             if name == "FishBone_Clip":
                 self.player_instance.unequip_hairclip ()
+            if name == "ZombiePaw":
+                self.player_instance.unequip_zombieskin()
  
 
         else:
@@ -1056,7 +1066,7 @@ class Player:
         print(f"Loaded player data for {self.username}: health={self.health}, position={self.position}, inventory={self.inventory},level={self.level}, exp={self.exp}")
 
         self.position = pygame.Vector2(self.position[0], self.position[1])
-        self.speed = speed 
+        self.speed = 2
         if isinstance(self.position, list) or isinstance(self.position, tuple):
             self.position = pygame.Vector2(self.position[0], self.position[1])
 
@@ -1067,7 +1077,7 @@ class Player:
         self.frame = 0
         self.attack_frame = 0
         self.last_frame_time = 0
-        self.frame_speed = 0.1
+        self.frame_speed = 0.2
         self.attack_frame_delay = 3
         self.attack_frame_counter = 0
         self.weapons = ['hand', 'axe', 'sword']
@@ -1148,6 +1158,12 @@ class Player:
         self.hairclip_walk_left = load_frames(self.hairclip_walk_sheet, FRAME_WIDTH, FRAME_HEIGHT, 2, 4)
         self.hairclip_walk_right = load_frames(self.hairclip_walk_sheet, FRAME_WIDTH, FRAME_HEIGHT, 3, 4)
 
+        self.zombieskin_walk_sheet = pygame.image.load("minting/zombieskin.png").convert_alpha()
+        self.zombieskin_walk_down = load_frames(self.zombieskin_walk_sheet, FRAME_WIDTH, FRAME_HEIGHT, 0, 3)
+        self.zombieskin_walk_up = load_frames(self.zombieskin_walk_sheet, FRAME_WIDTH, FRAME_HEIGHT, 1, 4)
+        self.zombieskin_walk_left = load_frames(self.zombieskin_walk_sheet, FRAME_WIDTH, FRAME_HEIGHT, 2, 4)
+        self.zombieskin_walk_right = load_frames(self.zombieskin_walk_sheet, FRAME_WIDTH, FRAME_HEIGHT, 3, 4)
+
         self.attack_sheets = {
             'hand': pygame.image.load("minting/hand_attack.png").convert_alpha(),
             'axe': pygame.image.load("minting/axe_attack.png").convert_alpha(),
@@ -1190,6 +1206,27 @@ class Player:
                 'left': load_frames(self.hairclip_attack_sheets['sword'], FRAME_WIDTH, FRAME_HEIGHT, 1, 4)
             }
         }
+
+        self.zombieskin_attack_sheets = {
+            'hand': pygame.image.load("minting/zombie_hand.png").convert_alpha(),
+            'axe': pygame.image.load("minting/zombie_axe.png").convert_alpha(),
+            'sword': pygame.image.load("minting/zombie_sword.png").convert_alpha()
+        }
+
+        self.zombieskin_attack_frames = {
+            'hand': {
+                'right': load_frames(self.zombieskin_attack_sheets['hand'], FRAME_WIDTH, FRAME_HEIGHT, 0, 2),
+                'left': load_frames(self.zombieskin_attack_sheets['hand'], FRAME_WIDTH, FRAME_HEIGHT, 1, 2)
+            },
+            'axe': {
+                'right': load_frames(self.zombieskin_attack_sheets['axe'], FRAME_WIDTH, FRAME_HEIGHT, 0, 2),
+                'left': load_frames(self.zombieskin_attack_sheets['axe'], FRAME_WIDTH, FRAME_HEIGHT, 1, 2)
+            },
+            'sword': {
+                'right': load_frames(self.zombieskin_attack_sheets['sword'], FRAME_WIDTH, FRAME_HEIGHT, 0, 4),
+                'left': load_frames(self.zombieskin_attack_sheets['sword'], FRAME_WIDTH, FRAME_HEIGHT, 1, 4)
+            }
+        }
          
         self.dead = False
         self.death_frame_index = 0
@@ -1198,8 +1235,11 @@ class Player:
         self.respawn_delay = 3000  # 3 seconds
 
         # Load hairclip spritesheet and extract one frame to stick on head
-        self.equipped_hairclip = None  # nothing equipped by default
-        self.show_animation = False 
+        # nothing equipped by default
+        self.equipped_hairclip = None
+        self.equipped_zombieskin = None  
+        self.show_animation = False
+         
         
 
         # Load death animation (you can change the image path and frame count as needed)
@@ -1225,22 +1265,45 @@ class Player:
             frames = self.hairclip_walk_frames[self.direction]
             frame_idx = self.frame % len(frames)
             return frames[frame_idx]
+        
+    def equip_zombieskin(self, name):
+        self.equipped_zombieskin = name
+
+    def unequip_zombieskin(self):
+        print("Removing costume from character")
+        self.equipped_zombieskin = None
+
+    def get_current_zombieskin_sprite(self):
+        if not self.equipped_zombieskin:
+            return None
+        
+        if self.attacking:
+            idx = min(self.attack_frame, len(self.zombieskin_attack_frames[self.current_weapon]['right']) - 1)
+            side = 'left' if self.direction == 'left' else 'right'
+            return self.zombieskin_attack_frames[self.current_weapon][side][idx]
+        else:
+            frames = self.hairclip_walk_frames[self.direction]
+            frame_idx = self.frame % len(frames)
+            return frames[frame_idx]
 
     def move(self, keys, dt):
         move_distance = self.speed * dt 
         moving = False
-        direction_vector = pygame.math.Vector2(0, 0)
+
+        zombieskin_sprite = None
+        hairclip_sprite = None
+        current_sprite = None
 
         if self.dead:
             self.update_death()
             if self.death_frame_index < len(self.death_frames):
-                return self.position, self.death_frames[self.death_frame_index],None
+                return self.position, self.death_frames[self.death_frame_index], None, None
             else:
-                return self.position, self.death_frames[-1],None
+                return self.position, self.death_frames[-1], None, None
 
         if self.attacking:
             self.rect.center = (self.position.x, self.position.y)
-            return self.position, self.get_attack_sprite(), self.get_hairclip_frame() if self.equipped_hairclip else None
+            return self.position, self.get_attack_sprite(), (self.get_hairclip_frame() if self.equipped_hairclip else None), (self.get_zombieskin_frame() if self.equipped_zombieskin else None)
 
         if keys[pygame.K_w]:
             self.position.y -= move_distance
@@ -1258,24 +1321,26 @@ class Player:
             self.position.x += move_distance
             self.direction = 'right'
             moving = True
-        
+
         if moving:
             current_time = pygame.time.get_ticks()
             if current_time - self.last_frame_time > self.frame_speed * 1000:
-                self.frame += 1
+                self.frame = (self.frame + 1) % len(self.walk_down)  # 这里self.frame始终是整数
                 self.last_frame_time = current_time
-            
-            current_sprite = self.get_current_sprite()
-            hairclip_sprite = self.get_hairclip_frame()if self.equipped_hairclip else None
-        else:
-            self.frame = 0  # Reset animation frame
-            current_sprite = self.walk_down[0]
-            hairclip_sprite = self.hairclip_walk_down[0] if self.equipped_hairclip else None
-            print(type(self.hairclip_walk_down), len(self.hairclip_walk_down))
 
-            self.rect.center = (self.position.x, self.position.y)
-        return self.position, current_sprite, hairclip_sprite
-    
+            current_sprite = self.get_current_sprite()
+            hairclip_sprite = self.get_hairclip_frame() if self.equipped_hairclip else None
+            zombieskin_sprite = self.get_zombieskin_frame() if self.equipped_zombieskin else None
+        else:
+            self.frame = 0
+            current_sprite = self.walk_down[0]
+            zombieskin_sprite = self.zombieskin_walk_down[0] if self.equipped_zombieskin else None
+            hairclip_sprite = self.hairclip_walk_down[0] if self.equipped_hairclip else None
+
+        self.rect.center = (self.position.x, self.position.y)
+
+        return self.position, current_sprite, hairclip_sprite, zombieskin_sprite
+
     def switch_weapon(self, key):
         if key == pygame.K_TAB:
             current_index = self.weapons.index(self.current_weapon)
@@ -1394,8 +1459,8 @@ class Player:
             'right': self.walk_right
         }[self.direction]
 
-        self.frame %= len(sprite_list)
-        return sprite_list[self.frame]
+        frame_index = int(self.frame) % len(sprite_list)
+        return sprite_list[frame_index]
 
     def take_damage(self, amount):
         if self.dead:
@@ -1508,12 +1573,16 @@ class Player:
     def draw(self, screen, offset):
         # get base sprite (player)
         player_sprite = self.get_current_sprite()  # You have this method
-        
+        # get zombieskin sprite
+        zombieskin_sprite = self.get_zombieskin_frame()
         # get hairclip sprite
         hairclip_sprite = self.get_hairclip_frame()
 
         # Draw player
         screen.blit(player_sprite, self.rect.topleft - offset)
+
+        if zombieskin_sprite:
+            screen.blit(zombieskin_sprite, self.rect.topleft - offset)
         # Draw hairclip if equipped
         if hairclip_sprite:
             screen.blit(hairclip_sprite, self.rect.topleft - offset)
@@ -1576,6 +1645,28 @@ class Player:
             self.health = self.max_health
         print(f"Health restored! Current health: {self.health}")
 
+    def get_zombieskin_frame(self):
+        if not self.equipped_zombieskin:
+            return None
+
+        if self.attacking:
+            frame_index = self.attack_frame // 2
+
+            # Get fram
+        else:
+            if self.direction == 'up':
+                frames = self.zombieskin_walk_up
+            elif self.direction == 'down':
+                frames = self.zombieskin_walk_down
+            elif self.direction == 'left':
+                frames = self.zombieskin_walk_left
+            elif self.direction == 'right':
+                frames = self.zombieskin_walk_right
+            else:
+                return None
+            frame_index = self.frame % len(frames)  # Just use the frame as is
+            return frames[frame_index]
+        
     def get_hairclip_frame(self):
         if not self.equipped_hairclip:
             return None
@@ -1615,6 +1706,8 @@ class Player:
             frame_index = self.frame % len(frames)
             return frames[frame_index]
         
+
+        
     
     def gain_speed(self, amount):
         self.speed += amount
@@ -1652,6 +1745,7 @@ class Player:
 
 class AchievementSystem:
     def __init__(self, on_unlock_callback=None, inventory=None):
+        print(f"⚠️ NEW ACHIEVEMENT SYSTEM CREATED ⚠️ ID: {id(self)}")
         self.achievements = {
             "First Kill": False,
             "Zombie Slayer (10 kills)": False,
@@ -1660,7 +1754,8 @@ class AchievementSystem:
             "Fruit Picker (5 fruit)": False,
             "Survivor (3 days)": False,
             "Lumberjack (10 wood)": False,
-            "Crystal Hunter (1 crystal)": False
+            "Crystal Hunter (1 crystal)": False,
+            "Fisherman (4 fish)": False
         }
         self.shown_achievements = set()
         self.on_unlock_callback = on_unlock_callback
@@ -1668,6 +1763,10 @@ class AchievementSystem:
         print(f"[DEBUG] AchievementSystem created with callback: {self.on_unlock_callback}")
 
     def check_achievements(self, player, stats):
+        if "Fisherman (4 fish)" not in self.achievements:
+            print("[ERROR] Achievement missing! Resetting...")
+            self.achievements["Fisherman (4 fish)"] = False  # Auto-repair
+     
         if not self.achievements["First Kill"] and stats["zombie_kills"] >= 1:
             self.unlock("First Kill")
         if not self.achievements["Zombie Slayer (10 kills)"] and stats["zombie_kills"] >= 10:
@@ -1680,6 +1779,8 @@ class AchievementSystem:
             self.unlock("Fruit Picker (5 fruit)")
         if not self.achievements["Survivor (3 days)"] and stats["days_survived"] >= 3:
             self.unlock("Survivor (3 days)")
+        if not self.achievements["Fisherman (4 fish)"] and stats.get("fish_collected", 0) >=4:
+            self.unlock("Fisherman (4 fish)")
             
 
     def unlock(self, name):
@@ -1709,7 +1810,15 @@ class AchievementSystem:
                     print(f"  Visible slot {i}: {slot[0]} x{slot[1]}")
                 else:
                     print(f"  Visible slot {i}: EMPTY")
+                    
+        if name == "Fisherman (4 fish)" and self.inventory:
+            added = self.inventory.add_item("FishBone_Clip", 1)
+            print(f"[DEBUG] Added FishBone_Clip to inventory for achievement: {name}")
 
+        if name == "Zombie Slayer (10 kills)" and self.inventory:
+                    added = self.inventory.add_item("ZombiePaw", 1)
+                    print(f"[DEBUG] Added FishBone_Clip to inventory for achievement: {name}")
+        
         if name not in self.shown_achievements:
             if self.on_unlock_callback:
                 try:
@@ -2432,7 +2541,6 @@ class PondArea:
             inventory.add_item(result["name"], 1)
             self.player.add_exp(25) 
             self.player.stats.setdefault("fish_collected", 0)
-            self.player.stats["fish_collected"] += 1
 
             if result["id"] in ["fish_1", "fish_2"]:
                 self.player.stats["fish_collected"] += 1
@@ -3014,7 +3122,7 @@ while running:
     # ========== GAME LOGIC ONLY WHEN IN "GAME" STATE ==========
     if game_state == "game":
         keys = pygame.key.get_pressed()
-        new_position, current_sprite, hairclip_sprite = player_instance.move(keys, dt)
+        new_position, current_sprite, hairclip_sprite, zombieskin_sprite = player_instance.move(keys, dt)
         move_distance = speed * dt * 60
 
         current_time = time.time()
@@ -3092,6 +3200,10 @@ while running:
     player_instance.draw_health_bar(screen)#player hp bar
     player_instance.draw_health_bar(screen)
     player_instance.draw_exp_bar(screen)
+
+    if zombieskin_sprite:
+        scaled_zombieskin = scale_sprite(zombieskin_sprite, character_scale)
+        screen.blit(scaled_zombieskin, (sprite_x, sprite_y))
 
     if hairclip_sprite:
         scaled_hairclip = scale_sprite(hairclip_sprite, character_scale)
