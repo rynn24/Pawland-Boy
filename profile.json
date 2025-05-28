@@ -188,14 +188,39 @@
     "achievements": {}
   },
   "lee": {
-    "health": 100,
+    "health": 200,
     "position": [
-      1500,
-      125
+      1500.5725000000007,
+      198.35750000000118
     ],
-    "inventory": {},
-    "level": 1,
-    "exp": 0,
-    "achievements": {}
+    "inventory": {
+      "Wood": 12,
+      "Fruit": 9,
+      "Big Fish": 3,
+      "Fruit Jam": 1
+    },
+    "level": 2,
+    "exp": 85,
+    "achievements": {
+      "First Kill": false,
+      "Zombie Slayer (10 kills)": false,
+      "Level 5 Achieved": false,
+      "Wood Collector (10 wood)": false,
+      "Fruit Picker (5 fruit)": true,
+      "Survivor (3 days)": false,
+      "Lumberjack (10 wood)": true,
+      "Crystal Hunter (1 crystal)": false
+    },
+    "shown_achievements": [
+      "Fruit Picker (5 fruit)",
+      "Lumberjack (10 wood)"
+    ],
+    "stats": {
+      "zombie_kills": 0,
+      "wood_collected": 12,
+      "fruit_collected": 11,
+      "days_survived": 0,
+      "fish_collected": 6
+    }
   }
 }
