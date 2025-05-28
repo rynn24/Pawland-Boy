@@ -424,5 +424,16 @@
       "fruit_collected": 20,
       "days_survived": 0
     }
+  },
+  "new": {
+    "health": 100,
+    "position": [
+      1500,
+      125
+    ],
+    "inventory": {},
+    "level": 1,
+    "exp": 0,
+    "achievements": {}
   }
 }
