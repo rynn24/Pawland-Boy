@@ -212,15 +212,17 @@ class Inventory:
         }
 
         self.recipes = {
-    "Fish Soup": {"ingredients": [("Fish", 1), ("Fruit", 1)], "result": ("Fish Soup", 1)},
-    "Grilled Fish": {"ingredients": [("Fish", 2)], "result": ("Grilled Fish", 1)},
-    "Sweet Sailor": {"ingredients": [("Big Fish", 1), ("Fruit", 2)], "result": ("Special Dish", 1)}
-}
+        "Fish Soup": {"ingredients": [("Fish", 1), ("Fruit", 1)], "result": ("Fish Soup", 1)},
+        "Grilled Fish": {"ingredients": [("Fish", 1),("Fish", 1)], "result": ("Grilled Fish", 1)},
+        "Sweet Sailor": {"ingredients": [("Big Fish", 1), ("Fruit", 1)], "result": ("Sweet Sailor", 1)},
+        "Fruit Jam": {"ingredients": [("Fruit", 1), ("Fruit", 1)], "result": ("Fruit Jam", 1)},
+    }
 
         # Add images for the new food items
         self.item_icons["Fish Soup"] = {"image": pygame.image.load("rynn/fish-soup.png").convert_alpha(), "category": "food"}
         self.item_icons["Grilled Fish"] = {"image": pygame.image.load("rynn/grill-fish.png").convert_alpha(), "category": "food"}
-        self.item_icons["Special Dish"] = {"image": pygame.image.load("rynn/sweet-sailor.png").convert_alpha(), "category": "food"}
+        self.item_icons["Sweet Sailor"] = {"image": pygame.image.load("rynn/sweet-sailor.png").convert_alpha(), "category": "food"}
+        self.item_icons["Fruit Jam"] = {"image": pygame.image.load("rynn/jam.png").convert_alpha(), "category": "food"}
             
         self.slot_size = 60
         self.slot_margin = 10
@@ -663,11 +665,7 @@ class InventoryMenu:
                 {"label": "Drop", "action": "drop"},
             ],
             "Fish": [
-                {"label": "Eat", "action": "eat"},
-                {"label": "Drop", "action": "drop"},
-            ],
-            "Sweet Sailor": [
-                {"label": "Eat", "action": "eat"},
+                {"label": "Use", "action": "use"},
                 {"label": "Drop", "action": "drop"},
             ],
             "Fish Soup": [
@@ -675,6 +673,14 @@ class InventoryMenu:
                 {"label": "Drop", "action": "drop"},
             ],
             "Grilled Fish": [
+                {"label": "Eat", "action": "eat"},
+                {"label": "Drop", "action": "drop"},
+            ],
+            "Sweet Sailor": [
+                {"label": "Eat", "action": "eat"},
+                {"label": "Drop", "action": "drop"},
+            ],
+            "Fruit Jam": [
                 {"label": "Eat", "action": "eat"},
                 {"label": "Drop", "action": "drop"},
             ],
@@ -694,7 +700,8 @@ class InventoryMenu:
             "Firefly": "Cute bugs that glows in the dark.",
             "Fish Soup": "A delicious soup made from fish and fruit. Restores 30 health.",
             "Grilled Fish": "Perfectly cooked fish. Restores 20 health.",
-            "Sweet Sailor": "A gourmet meal. Restores 50 health and gives temporary buffs."
+            "Sweet Sailor": "A gourmet meal. Restores 50 health and gives temporary buffs.",
+            "Fruit Jam": "Sweet fruit jam. Increases movement speed for 20 seconds. "            
         }
 
         
@@ -1021,7 +1028,9 @@ class Player:
         self.exp_to_next_level = self.calculate_exp_needed(self.level)
         self.max_health= 100*self.level
         self.achievement_system = achievement_system
-
+        self.original_speed = self.speed
+        self.speed_timer = 0 
+        
         self.current_attack_targets = []
         self.attack_multipliers = [0, 1, 1.5, 1.8, 2.0, 2.5, 3.0, 4.0, 6.0]  # Index = level
         self.weapon_icons = {
@@ -1382,6 +1391,10 @@ class Player:
                 if self.current_frame >= len(self.frames):
                     self.current_frame = 0
                     self.show_animation = False  # Stop after one loop
+                    
+        if self.speed_timer and time.time() > self.speed_timer:
+            self.speed = self.original_speed
+            self.speed_timer = 0
 
     def draw(self, screen):
         if self.show_animation:
@@ -1444,6 +1457,10 @@ class Player:
         if self.health > self.max_health:
             self.health = self.max_health
         print(f"Health restored! Current health: {self.health}")
+    
+    def gain_speed(self, amount):
+        self.speed += amount
+        self.speed_timer = time.time() + duration
 
     # In the Player class, modify the perform_action method in InventoryMenu:
     def perform_action(self, action, index):
@@ -1454,6 +1471,7 @@ class Player:
 
         name, count = item
         
+        #food only
         if action == "eat" and self.inventory.item_icons[name]["category"] == "food":
             if name == "Fish Soup":
                 self.gain_health(30)
@@ -1461,8 +1479,10 @@ class Player:
                 self.gain_health(20)
             elif name == "Special Dish":
                 self.gain_health(50)
-                # Could add temporary buffs here
+            elif name == "Fruit Jam":
+                self.gain_speed(1.5, duration = 20)
             self.inventory.remove_item(index, 1)
+            
         elif name == "Fruit" and action == "eat":
             self.gain_health(5)
             self.inventory.remove_item(index, 1)
@@ -2195,6 +2215,9 @@ class PondArea:
         if result["id"] != "nothing":
             inventory.add_item(result["name"], 1)
             self.player.add_exp(25) 
+            self.player.stats.setdefault("fish_collected", 0)
+            self.player.stats["fish_collected"] += 1
+
             if result["id"] in ["fish_1", "fish_2"]:
                 self.player.stats["fish_collected"] += 1
                 print("Fish collected:", self.player.stats["fish_collected"])
@@ -2637,11 +2660,11 @@ class CookingUI:
             screen.blit(icon, (mouse_pos[0] - self.drag_offset[0] + 5, 
                              mouse_pos[1] - self.drag_offset[1] + 5))
     
-    def draw_cooking_area_hint(self, screen):
-        """Draw the cooking area highlight to show it's clickable"""
-        pygame.draw.rect(screen, (255, 255, 255), self.cooking_area, 2)
-        cook_text = self.font.render("Click to Cook", True, (255, 255, 255))
-        screen.blit(cook_text, (self.cooking_area.x, self.cooking_area.y - 20))
+    #def draw_cooking_area_hint(self, screen):
+       # """Draw the cooking area highlight to show it's clickable"""
+       # pygame.draw.rect(screen, (255, 255, 255), self.cooking_area, 2)
+       #cook_text = self.font.render("Click to Cook", True, (255, 255, 255))
+        #screen.blit(cook_text, (self.cooking_area.x, self.cooking_area.y - 20))
     
     def open(self):
         self.visible = True
@@ -2934,7 +2957,7 @@ while running:
         screen.blit(scaled_house, (0, 0))
 
         # Draw cooking area hint
-        cooking_ui.draw_cooking_area_hint(screen)
+        # cooking_ui.draw_cooking_area_hint(screen)
 
         # Get mouse position and events once
         mouse_pos = pygame.mouse.get_pos()
