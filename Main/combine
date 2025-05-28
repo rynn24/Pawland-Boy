@@ -315,7 +315,13 @@ class Inventory:
     def draw_item_icon(self, surface, name, count, rect):
         if name in self.item_icons:
             icon_data = self.item_icons[name]
-            icon = icon_data["image"]
+            
+            if isinstance(icon_data, pygame.Surface):
+                icon = icon_data
+            elif isinstance(icon_data, dict) and "image" in icon_data:
+                icon = icon_data["image"]
+            else:
+                return
             icon = pygame.transform.smoothscale(icon, (self.slot_size - 10, self.slot_size - 10))  # Auto resize
             icon_rect = icon.get_rect(center=rect.center)
             surface.blit(icon, icon_rect)
@@ -1228,9 +1234,9 @@ class Player:
         if self.dead:
             self.update_death()
             if self.death_frame_index < len(self.death_frames):
-                return self.position, self.death_frames[self.death_frame_index]
+                return self.position, self.death_frames[self.death_frame_index],None
             else:
-                return self.position, self.death_frames[-1]
+                return self.position, self.death_frames[-1],None
 
         if self.attacking:
             self.rect.center = (self.position.x, self.position.y)
@@ -1268,7 +1274,7 @@ class Player:
             print(type(self.hairclip_walk_down), len(self.hairclip_walk_down))
 
             self.rect.center = (self.position.x, self.position.y)
-            return self.position, current_sprite, hairclip_sprite
+        return self.position, current_sprite, hairclip_sprite
     
     def switch_weapon(self, key):
         if key == pygame.K_TAB:
@@ -2662,12 +2668,11 @@ def draw_settings_menu(screen):
 inventory.set_items(inventory_data)  # Load saved items
 
 # Create player first
-player = Player(position, speed, current_user, level, exp)
-player.inventory = inventory  # Assign filled inventory
-player_instance = player
+player_instance.inventory = inventory  # Assign filled inventory
+
 
 # Now create inventory_menu with player
-inventory_menu = InventoryMenu(inventory, window_size, player)
+inventory_menu = InventoryMenu(inventory, window_size, player_instance)
 
 class CookingUI:
     def __init__(self, inventory, screen_width, screen_height):
