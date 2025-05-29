@@ -729,8 +729,8 @@ class InventoryMenu:
             "Grilled Fish": "Perfectly cooked fish. Restores 20 health.",
             "Sweet Sailor": "A gourmet meal. Restores 50 health",
             "Fruit Jam": "Sweet fruit jam. Increases movement speed for 20 seconds. ",   
-            "Reef Medley": "A vibrant fusion of ocean flavours.",
-            "Twinfin Delight": "A harmonious dish crafted from 2 types of fish. "         
+            "Reef Medley": "A vibrant fusion of ocean flavours. Increases movement speed for 30 seconds and restores 30 health.",
+            "Twinfin Delight": "A harmonious dish crafted from 2 types of fish. Restores 100 health.  "         
         }
         
     def toggle(self):
@@ -1629,10 +1629,17 @@ class Player:
             frame_index = self.frame % len(frames)
             return frames[frame_index]
         
-    
-    def gain_speed(self, amount):
+    def gain_health(self, amount):
+        self.health += amount
+        if self.health > self.max_health:
+            self.health = self.max_health
+        print(f"[DEBUG] Gained {amount} health. Current health: {self.health}")
+
+    def gain_speed(self, amount, duration):
         self.speed += amount
         self.speed_timer = time.time() + duration
+        print(f"[DEBUG] Speed increased by {amount} for {duration} seconds. Current speed: {self.speed}")
+
 
     # In the Player class, modify the perform_action method in InventoryMenu:
     def perform_action(self, action, index):
@@ -1653,6 +1660,11 @@ class Player:
                 self.gain_health(50)
             elif name == "Fruit Jam":
                 self.gain_speed(1.5, duration = 20)
+            elif name == "Reef Medly":
+                self.gain_health(30)
+                self.gain_speed(1.5, duration = 30)
+            elif name == "Twinfin Delight":
+                self.gain_health(100)
             self.inventory.remove_item(index, 1)
             
         elif name == "Fruit" and action == "eat":
