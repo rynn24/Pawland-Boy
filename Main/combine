@@ -1317,7 +1317,7 @@ class Player:
             side = 'left' if self.direction == 'left' else 'right'
             return self.zombieskin_attack_frames[self.current_weapon][side][idx]
         else:
-            frames = self.hairclip_walk_frames[self.direction]
+            frames = self.zombieskin_walk_frames[self.direction]
             frame_idx = self.frame % len(frames)
             return frames[frame_idx]
 
@@ -1338,7 +1338,7 @@ class Player:
 
         if self.attacking:
             self.rect.center = (self.position.x, self.position.y)
-            return self.position, self.get_attack_sprite(), (self.get_hairclip_frame() if self.equipped_hairclip else None), (self.get_zombieskin_frame() if self.equipped_zombieskin else None)
+            return self.position, self.get_attack_sprite(),(self.get_zombieskin_frame() if self.equipped_zombieskin else None),(self.get_hairclip_frame() if self.equipped_hairclip else None)
 
         if keys[pygame.K_w]:
             self.position.y -= move_distance
@@ -1685,10 +1685,21 @@ class Player:
             return None
 
         if self.attacking:
-            frame_index = self.attack_frame // 2
-
-            # Get fram
+            weapon = self.current_weapon
+            direction = 'left' if self.direction == 'left' else 'right'  # Attacks only have left/right
+            
+            # Get the attack frames for current weapon
+            weapon_frames = self.zombieskin_attack_frames.get(weapon, {}).get(direction, [])
+            
+            if not weapon_frames:
+                print(f"[WARNING] No zombieskin attack frames for {weapon} {direction}")
+                return None
+                
+            # Calculate frame index based on attack progress
+            frame_index = min(self.attack_frame // 2, len(weapon_frames) - 1)
+            return weapon_frames[frame_index]
         else:
+            # Walking frames
             if self.direction == 'up':
                 frames = self.zombieskin_walk_up
             elif self.direction == 'down':
@@ -1699,7 +1710,8 @@ class Player:
                 frames = self.zombieskin_walk_right
             else:
                 return None
-            frame_index = self.frame % len(frames)  # Just use the frame as is
+                
+            frame_index = self.frame % len(frames)
             return frames[frame_index]
         
     def get_hairclip_frame(self):
