@@ -885,11 +885,16 @@ class InventoryMenu:
 
         elif action == "eat" and self.inventory.item_icons[name]["categories"] == "food":
             if name == "Fish Soup":
-                self.gain_health(30)
+                self.player_instance.gain_health(30)
             elif name == "Grilled Fish":
-                self.gain_health(20)
+                self.player_instance.gain_health(20)
             elif name == "Special Dish":
-                self.gain_health(50)
+                self.player_instance.gain_health(50)
+            elif name == "Reef Medly":
+                self.player_instance.gain_health(30)
+                self.player_instance.gain_speed(1.5, duration = 30)
+            elif name == "Twinfin Delight":
+                self.player_instance.gain_health(100)
                 # Could add temporary buffs here
             self.inventory.remove_item(index, 1)
 
