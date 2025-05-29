@@ -907,11 +907,16 @@ class InventoryMenu:
 
         elif action == "eat" and self.inventory.item_icons[name]["categories"] == "food":
             if name == "Fish Soup":
-                self.gain_health(30)
+                self.player_instance.gain_health(30)
             elif name == "Grilled Fish":
-                self.gain_health(20)
+                self.player_instance.gain_health(20)
             elif name == "Special Dish":
-                self.gain_health(50)
+                self.player_instance.gain_health(50)
+            elif name == "Reef Medly":
+                self.player_instance.gain_health(30)
+                self.player_instance.gain_speed(1.5, duration = 30)
+            elif name == "Twinfin Delight":
+                self.player_instance.gain_health(100)
                 # Could add temporary buffs here
             self.inventory.remove_item(index, 1)
 
@@ -1742,6 +1747,8 @@ class Player:
     def gain_speed(self, amount):
         self.speed += amount
         self.speed_timer = time.time() + duration
+        print(f"[DEBUG] Speed increased by {amount} for {duration} seconds. Current speed: {self.speed}")
+
 
     # In the Player class, modify the perform_action method in InventoryMenu:
     def perform_action(self, action, index):
@@ -1762,6 +1769,11 @@ class Player:
                 self.gain_health(50)
             elif name == "Fruit Jam":
                 self.gain_speed(1.5, duration = 20)
+            elif name == "Reef Medly":
+                self.gain_health(30)
+                self.gain_speed(1.5, duration = 30)
+            elif name == "Twinfin Delight":
+                self.gain_health(100)
             self.inventory.remove_item(index, 1)
             
         elif name == "Fruit" and action == "eat":

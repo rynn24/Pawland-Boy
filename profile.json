@@ -356,8 +356,8 @@
   "lee": {
     "health": 400,
     "position": [
-      1474.1475000000005,
-      190.72750000000127
+      1448.8325000000004,
+      193.01500000000127
     ],
     "inventory": {
       "Wood": 17,
@@ -434,14 +434,25 @@
     }
   },
   "new": {
-    "health": 100,
+    "health": 200,
     "position": [
-      1500.0,
-      125.0
+      1465.6874999999993,
+      183.4925000000002
     ],
-    "inventory": {},
-    "level": 1,
-    "exp": 0,
+    "inventory": {
+      "Reef Medley": 5,
+      "Grilled Fish": 2,
+      "Twinfin Delight": 3,
+      "Fish Soup": 4,
+      "Sweet Sailor": 4,
+      "Fruit Jam": 5,
+      "Fish": 6,
+      "Big Fish": 6,
+      "Wood": 50,
+      "Fruit": 11
+    },
+    "level": 2,
+    "exp": 45,
     "achievements": {
       "First Kill": false,
       "Zombie Slayer (10 kills)": false,
@@ -450,15 +461,16 @@
       "Fruit Picker (5 fruit)": false,
       "Survivor (3 days)": false,
       "Lumberjack (10 wood)": false,
-      "Crystal Hunter (1 crystal)": false,
-      "Fisherman (4 fish)": false
+      "Crystal Hunter (1 crystal)": false
     },
     "shown_achievements": [],
     "stats": {
       "zombie_kills": 0,
-      "wood_collected": 0,
-      "fruit_collected": 0,
-      "days_survived": 0
+      "wood_collected": 4,
+      "fruit_collected": 2,
+      "days_survived": 0,
+      "fish_collected": 6,
+      "crystal_collected": 3
     }
   }
 }
