@@ -237,40 +237,63 @@ class Inventory:
         self.slot_size = 60
         self.slot_margin = 10
         self.is_inventory_open = False  # Track whether inventory is open
+        self.columns = 4  # Define number of columns
+        self.rows = 4     # Define number of rows (max_slots / columns)
 
         # Increase the size of the inventory window for better spacing
-        self.window_width = 5.4 * (self.slot_size + self.slot_margin) + self.slot_margin  # 5 columns of slots + margin
-        self.window_height = 4.4 * (self.slot_size + self.slot_margin) + self.slot_margin  # 4 rows of slots + margin
+        self.window_width = self.columns * (self.slot_size + self.slot_margin) + self.slot_margin 
+        self.window_height =self.rows * (self.slot_size + self.slot_margin) + self.slot_margin  # 4 rows of slots + margin
         self.window_rect = pygame.Rect(50, 100, self.window_width, self.window_height)  # Position and size of the window (stick to the left)
         self.window_color = (139, 69, 19)  # Brown color for the window (wood-like)
 
         # Define positions of the 5 visible slots (always on the screen)
         self.visible_slots_rects = []
-        self.visible_slots_x = (800 - 5 * (self.slot_size + self.slot_margin)) // 2  # Centered on top
+        self.visible_slots_x = (800 - self.columns * (self.slot_size + self.slot_margin)) // 2  # Centered on top
         self.visible_slots_y = 50  # Start y position for visible slots
         self.generate_slot_rects()
 
     def generate_slot_rects(self):
         """Generate the positions for all the inventory slots"""
         self.slot_rects = []
-
-        # After the window is positioned on the left, calculate the positions for the slots
-        start_x = self.window_rect.x + 20  # Position slots inside window starting with a margin from the left
-        start_y = self.window_rect.y + 20  # Position slots inside window starting with a margin from the top
+        # Window slots (4 columns)
+        start_x = self.window_rect.x + self.slot_margin
+        start_y = self.window_rect.y + self.slot_margin
 
         # Calculate the positions for each of the 20 slots (5 columns x 4 rows)
         for i in range(self.max_slots):
-            x = start_x + (i % 5) * (self.slot_size + self.slot_margin)  # 5 slots per row
-            y = start_y + (i // 5) * (self.slot_size + self.slot_margin)  # Stack 4 rows
+            col = i % self.columns
+            row = i // self.columns
+            x = start_x + col * (self.slot_size + self.slot_margin)
+            y = start_y + row * (self.slot_size + self.slot_margin)
             self.slot_rects.append(pygame.Rect(x, y, self.slot_size, self.slot_size))
 
         # Define the visible slots (always on the screen)
         self.visible_slots_rects = []
-        for i in range(5):  # Just 5 visible boxes at the top of the screen
-            x = self.visible_slots_x + (i % 5) * (self.slot_size + self.slot_margin)
+        for i in range(self.columns):  # Now 4 slots
+            x = self.visible_slots_x + i * (self.slot_size + self.slot_margin)
             y = self.visible_slots_y
             self.visible_slots_rects.append(pygame.Rect(x, y, self.slot_size, self.slot_size))
+    
+    def get_slot_at_pos(self, pos):
+        if not self.window_rect.collidepoint(pos):
+            return None
+            
+        rel_x = pos[0] - self.window_rect.left - self.slot_margin
+        rel_y = pos[1] - self.window_rect.top - self.slot_margin
 
+        if rel_x < 0 or rel_y < 0:
+            return None 
+        
+        col = rel_x // (self.slot_size + self.slot_margin)
+        row = rel_y // (self.slot_size + self.slot_margin)
+        
+        # Enforce 4-column limit
+        if col >= self.columns or row >= self.rows:  
+            return None
+            
+        slot_index = row * self.columns + col
+        return slot_index if slot_index < self.max_slots else None
+    
     def toggle_inventory(self):
         """Toggle the inventory screen (open/close)"""
         self.is_inventory_open = not self.is_inventory_open
@@ -860,13 +883,6 @@ class InventoryMenu:
                 self.selected_index = i
                 return
 
-            for i in range(self.inventory.max_slots):
-                x = start_x + (i % 5) * (slot_size + slot_margin)
-                y = start_y + (i // 5) * (slot_size + slot_margin)
-                slot_rect = pygame.Rect(x, y, slot_size, slot_size)
-                if slot_rect.collidepoint(pos):
-                    self.selected_index = i
-                    return
 
         # Check button clicks (if any selected)
         if self.selected_index is not None:
