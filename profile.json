@@ -123,16 +123,16 @@
   "hj2": {
     "health": 240,
     "position": [
-      1187.3749999999995,
-      1370.162499999995
+      757.6709999999991,
+      418.03449999999583
     ],
     "inventory": {
       "Big Fish": 3,
-      "Wood": 31,
-      "Fruit": 19
+      "Wood": 37,
+      "Fruit": 21
     },
     "level": 3,
-    "exp": 20,
+    "exp": 50,
     "achievements": {
       "First Kill": false,
       "Zombie Slayer (10 kills)": false,
@@ -140,15 +140,17 @@
       "Wood Collector (10 wood)": false,
       "Fruit Picker (5 fruit)": false,
       "Survivor (3 days)": false,
-      "Lumberjack (10 wood)": false,
+      "Lumberjack (10 wood)": true,
       "Crystal Hunter (1 crystal)": false,
       "Fisherman (4 fish)": false
     },
-    "shown_achievements": [],
+    "shown_achievements": [
+      "Lumberjack (10 wood)"
+    ],
     "stats": {
       "zombie_kills": 0,
-      "wood_collected": 4,
-      "fruit_collected": 2,
+      "wood_collected": 10,
+      "fruit_collected": 4,
       "days_survived": 0
     }
   },
