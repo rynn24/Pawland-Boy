@@ -209,9 +209,9 @@ class Inventory:
             "Crystal": {"image": pygame.image.load("minting/Crystal.png").convert_alpha(), "categories": ["material"]},
             "Boat": {"image": pygame.image.load("minting/Boat.png").convert_alpha(), "categories": ["tool"]},
             "Firefly": {"image": pygame.image.load("minting/Firefly.jpg").convert_alpha(), "categories": ["material"]},
-            "Armor(Iron)" :pygame.image.load("haojun/image/armor(iron).png").convert_alpha(),
-            "Armor(Gold)" :pygame.image.load("haojun/image/armor(gold).png").convert_alpha(),
-            "Armor(Diamond)" :pygame.image.load("haojun/image/armor(diamond).png").convert_alpha(),
+            "Armor(Iron)": {"image": pygame.image.load("haojun/image/armor(iron).png").convert_alpha(), "categories": ["armor"]},
+            "Armor(Gold)": {"image": pygame.image.load("haojun/image/armor(gold).png").convert_alpha(), "categories": ["armor"]},
+            "Armor(Diamond)": {"image": pygame.image.load("haojun/image/armor(diamond).png").convert_alpha(), "categories": ["armor"]},
         }
 
         self.recipes = {
@@ -319,7 +319,7 @@ class Inventory:
             icon_rect = icon.get_rect(center=rect.center)
             surface.blit(icon, icon_rect)
 
-            # Draw item count
+        if "armor" not in icon_data.get("categories", []):
             count_text = self.font.render(f"x{count}", True, (0, 0, 0))
             count_rect = count_text.get_rect(bottomright=(rect.right - 4, rect.bottom - 2))
             surface.blit(count_text, count_rect)
@@ -351,7 +351,13 @@ class Inventory:
                 self.slots[index] = None
             else:
                 self.slots[index] = (name, count)
-
+    def has_item(self, item_name):
+        for slot in self.slots:
+            if slot is not None:
+                if isinstance(slot, (tuple, list)) and len(slot) > 0:
+                    if slot[0] == item_name:
+                        return True
+        return False
 
 class UserSystem:
     def __init__(self, filename="profile.json"):
@@ -703,7 +709,10 @@ class InventoryMenu:
             "Fish Soup": "A delicious soup made from fish and fruit. Restores 30 health.",
             "Grilled Fish": "Perfectly cooked fish. Restores 20 health.",
             "Sweet Sailor": "A gourmet meal. Restores 50 health and gives temporary buffs.",
-            "Fruit Jam": "Sweet fruit jam. Increases movement speed for 20 seconds. "            
+            "Fruit Jam": "Sweet fruit jam. Increases movement speed for 20 seconds. ",     
+            "Armor(Iron)": "Sturdy protection for everyday survival. Reduces incoming damage by 10%.",
+            "Armor(Gold)": "Shiny but practical. Lightweight defense that cuts damage by 30%.",
+            "Armor(Diamond)": "Top-tier protection forged from rare diamonds. Reduces damage by 50%."
         }
 
         
@@ -850,8 +859,14 @@ class InventoryMenu:
             return
 
         name, count = item
-        print(f"Performing action '{action}' on item '{name}' at slot {index}")
-
+        is_armor = False
+        if "Armor" in name:
+            is_armor = True
+            
+        if is_armor and action in ("use", "drop"):
+            print(f"Cannot {action} armor item: {name}")
+            return
+        
         if name == "Fruit" and action == "eat":
             print(f"Eating {name}")
             self.player_instance.gain_health(5)
@@ -1318,7 +1333,15 @@ class Player:
     def take_damage(self, amount):
         if self.dead:
             return
-        self.health -= amount
+
+        # 🛡️ Apply armor reduction if available
+        armor_reduction_factor = self.get_armor_reduction_factor()
+        reduced_amount = int(amount * armor_reduction_factor)
+
+        self.health -= reduced_amount
+
+        print(f"[DEBUG] Player took {reduced_amount} damage (original: {amount}, reduction factor: {armor_reduction_factor})")
+
         if self.health <= 0:
             self.health = 0
             self.dead = True
@@ -1519,6 +1542,13 @@ class Player:
             print(f"Using {name}")
             self.inventory.remove_item(index, 1)
 
+    def get_armor_reduction_factor(self):
+        reduction = 1.0  # Default: full damage
+        for armor_name, factor in ARMOR_PROTECTION.items():
+            if inventory.has_item(armor_name) and factor < reduction:
+                reduction = factor
+        return reduction
+    
 class AchievementSystem:
     def __init__(self, on_unlock_callback=None, inventory=None):
         self.achievements = {
@@ -1543,7 +1573,7 @@ class AchievementSystem:
             self.unlock("Zombie Slayer (10 kills)")
         if not self.achievements["Level 5 Achieved"] and player.level >= 5:
             self.unlock("Level 5 Achieved")
-        if not self.achievements["Wood Collector (10 wood)"] and stats["wood_collected"] >= 10:
+        if not self.achievements["Lumberjack (10 wood)"] and stats["wood_collected"] >= 10:
             self.unlock("Lumberjack (10 wood)")
         if not self.achievements["Fruit Picker (5 fruit)"] and stats["fruit_collected"] >= 5:
             self.unlock("Fruit Picker (5 fruit)")
@@ -1596,39 +1626,34 @@ class AchievementDisplay:
         self.screen = screen
         self.current_achievement = None
         self.display_start_time = 0
-        self.display_duration = 3  # seconds to show
+        self.display_duration = 3000  # ms
 
     def show(self, achievement_name):
         self.current_achievement = achievement_name
-        self.display_start_time = pygame.time.get_ticks() / 1000
-        print(f"Showing achievement: {achievement_name}")
+        self.display_start_time = pygame.time.get_ticks()
 
     def update(self):
         if self.current_achievement:
-            current_time = pygame.time.get_ticks() / 1000
+            current_time = pygame.time.get_ticks()
             if current_time - self.display_start_time < self.display_duration:
                 text = f"Achievement Unlocked: {self.current_achievement}"
-                text_surface = self.font.render(text, True, (255, 215, 0))  # gold color
-                
-                # Get screen size
-                screen_width, screen_height = self.screen.get_size()
-                
-                # Center the text
-                text_rect = text_surface.get_rect(center=(screen_width // 2, screen_height // 2))
-                self.screen.blit(text_surface, text_rect)
+                text_surface = self.font.render(text, True, (255, 215, 0))
+                rect = text_surface.get_rect(center=(self.screen.get_width() // 2, self.screen.get_height() // 2))
+                self.screen.blit(text_surface, rect)
             else:
                 self.current_achievement = None
 
 class AchievementPage:
-    def __init__(self, screen_size, achievement_system, font=None):
+    def __init__(self,window_size, achievement_system, font=None):
         self.visible = False
         self.achievement_system = achievement_system
         self.screen_size = screen_size
         self.font = font or pygame.font.SysFont(None, 28)
         self.title_font = pygame.font.SysFont(None, 40)
+        self.window_size = window_size
 
     def draw(self, screen):
-        w, h = self.screen_size
+        w, h = self.window_size
 
         # Background overlay
         overlay = pygame.Surface((w, h), pygame.SRCALPHA)
@@ -1649,8 +1674,17 @@ class AchievementPage:
                 color = (0, 255, 0)
                 status_text = "[✔]"
                 text = self.font.render(f"{status_text} {name}", True, color)
-                screen.blit(text, (100, start_y + y_offset * spacing))
+                text_x = self.window_size[0] // 2 - text.get_width() // 2
+                screen.blit(text, (text_x, start_y + y_offset * spacing))
                 y_offset += 1
+
+    def update_layout(self, window_size):
+        self.window_size = window_size
+        self.window_rect = pygame.Rect(
+            self.window_size[0] // 2 - 250,
+            self.window_size[1] // 2 - 200,
+            500, 400
+        )
 
 user_system = UserSystem()  # Create UserSystem instance
 speed = 2.5  # Adjust as needed
@@ -1796,7 +1830,7 @@ class Zombie(pygame.sprite.Sprite):
         self.player = player
         self.speed = 1.5
         self.attack_range = 30
-        self.attack_damage = 10
+        self.attack_damage = 20
         self.last_attack_time = 0
         self.attack_cooldown = 1
         self.attack_windup_time = 0.3
@@ -2390,6 +2424,11 @@ default_achievements = {
     "Lumberjack (10 wood)": False,
     "Crystal Hunter (1 crystal)": False
 }
+ARMOR_PROTECTION = {
+    "Armor(Iron)": 0.90,     # 10% damage reduction
+    "Armor(Gold)": 0.70,     # 30% damage reduction
+    "Armor(Diamond)": 0.50,  # 50% damage reduction
+}
 while not in_game:
     events = pygame.event.get()
     for event in events:
@@ -2471,7 +2510,7 @@ screen_size=screen.get_size()
 settings_menu = SettingsMenu(screen_size)
 saved_stats = user_system.users[current_user].get("stats", None)
 showing_achievements = False
-achievement_page = AchievementPage(screen_size, achievement_system)
+achievement_page = AchievementPage(window_size, achievement_system)
 
 
 if saved_stats:
@@ -2832,6 +2871,7 @@ while running:
                     settings_menu.create_buttons(screen.get_size())
                 overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
                 inventory_menu.update_layout(screen.get_size())
+                achievement_page.update_layout(screen.get_size())
             elif event.key == pygame.K_b:
                 inventory_menu.toggle()
 
