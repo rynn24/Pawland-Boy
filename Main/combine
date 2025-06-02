@@ -212,8 +212,8 @@ class Inventory:
             "Armor(Iron)": {"image": pygame.image.load("haojun/image/armor(iron).png").convert_alpha(), "categories": ["armor"]},
             "Armor(Gold)": {"image": pygame.image.load("haojun/image/armor(gold).png").convert_alpha(), "categories": ["armor"]},
             "Armor(Diamond)": {"image": pygame.image.load("haojun/image/armor(diamond).png").convert_alpha(), "categories": ["armor"]},
-            "FishBone_Clip": pygame.image.load("minting/FishBoneClip.png").convert_alpha(),
-            "ZombiePaw": pygame.image.load("minting/zombie_head.png").convert_alpha(),
+            "FishBone_Clip": {"image": pygame.image.load("minting/FishBoneClip.png").convert_alpha(), "categories": ["skin"]},
+            "ZombiePaw": {"image": pygame.image.load("minting/zombie_head.png").convert_alpha(), "categories": ["skin"]},
         }
 
         self.recipes = {
@@ -345,20 +345,28 @@ class Inventory:
         if name in self.item_icons:
             icon_data = self.item_icons[name]
             
+            # Set default icon
             if isinstance(icon_data, pygame.Surface):
                 icon = icon_data
+                show_count = True  # Default to True if no categories
             elif isinstance(icon_data, dict) and "image" in icon_data:
                 icon = icon_data["image"]
+                # Only show count if not armor
+                categories = icon_data.get("categories", [])
+                show_count = not any(c in categories for c in ["armor", "skin"])
             else:
-                return
-            icon = pygame.transform.smoothscale(icon, (self.slot_size - 10, self.slot_size - 10))  # Auto resize
+                return  # Skip if icon is invalid
+
+            # Resize and draw icon
+            icon = pygame.transform.smoothscale(icon, (self.slot_size - 10, self.slot_size - 10))
             icon_rect = icon.get_rect(center=rect.center)
             surface.blit(icon, icon_rect)
 
-        if "armor" not in icon_data.get("categories", []):
-            count_text = self.font.render(f"x{count}", True, (0, 0, 0))
-            count_rect = count_text.get_rect(bottomright=(rect.right - 4, rect.bottom - 2))
-            surface.blit(count_text, count_rect)
+            # Draw item count (if not armor)
+            if show_count:
+                count_text = self.font.render(f"x{count}", True, (0, 0, 0))
+                count_rect = count_text.get_rect(bottomright=(rect.right - 4, rect.bottom - 2))
+                surface.blit(count_text, count_rect)
             
     def get_inventory_dict(self):
         """Return inventory as a dictionary for saving purposes."""
@@ -1777,8 +1785,6 @@ class Player:
             return frames[frame_index]
         
 
-        
-    
     def gain_speed(self, amount):
         self.speed += amount
         self.speed_timer = time.time() + duration
@@ -1832,14 +1838,13 @@ class AchievementSystem:
         print(f"⚠️ NEW ACHIEVEMENT SYSTEM CREATED ⚠️ ID: {id(self)}")
         self.achievements = {
             "First Kill": False,
-            "Zombie Slayer (10 kills)": False,
+            "Zombie Slayer (20 kills)": False,
             "Level 5 Achieved": False,
             "Wood Collector (10 wood)": False,
             "Fruit Picker (5 fruit)": False,
-            "Survivor (3 days)": False,
             "Lumberjack (10 wood)": False,
             "Crystal Hunter (1 crystal)": False,
-            "Fisherman (4 fish)": False
+            "Fisherman (10 fish)": False
         }
         self.shown_achievements = set()
         self.on_unlock_callback = on_unlock_callback
@@ -1847,24 +1852,22 @@ class AchievementSystem:
         print(f"[DEBUG] AchievementSystem created with callback: {self.on_unlock_callback}")
 
     def check_achievements(self, player, stats):
-        if "Fisherman (4 fish)" not in self.achievements:
+        if "Fisherman (10 fish)" not in self.achievements:
             print("[ERROR] Achievement missing! Resetting...")
-            self.achievements["Fisherman (4 fish)"] = False  # Auto-repair
+            self.achievements["Fisherman (10 fish)"] = False  # Auto-repair
      
         if not self.achievements["First Kill"] and stats["zombie_kills"] >= 1:
             self.unlock("First Kill")
-        if not self.achievements["Zombie Slayer (10 kills)"] and stats["zombie_kills"] >= 10:
-            self.unlock("Zombie Slayer (10 kills)")
+        if not self.achievements["Zombie Slayer (20 kills)"] and stats["zombie_kills"] >= 20:
+            self.unlock("Zombie Slayer (20 kills)")
         if not self.achievements["Level 5 Achieved"] and player.level >= 5:
             self.unlock("Level 5 Achieved")
         if not self.achievements["Lumberjack (10 wood)"] and stats["wood_collected"] >= 10:
             self.unlock("Lumberjack (10 wood)")
         if not self.achievements["Fruit Picker (5 fruit)"] and stats["fruit_collected"] >= 5:
             self.unlock("Fruit Picker (5 fruit)")
-        if not self.achievements["Survivor (3 days)"] and stats["days_survived"] >= 3:
-            self.unlock("Survivor (3 days)")
-        if not self.achievements["Fisherman (4 fish)"] and stats.get("fish_collected", 0) >=4:
-            self.unlock("Fisherman (4 fish)")
+        if not self.achievements["Fisherman (10 fish)"] and stats.get("fish_collected", 0) >=10:
+            self.unlock("Fisherman (10 fish)")
             
 
     def unlock(self, name):
@@ -2124,7 +2127,7 @@ class Zombie(pygame.sprite.Sprite):
         self.player = player
         self.speed = 1.5
         self.attack_range = 30
-        self.attack_damage = 20
+        self.attack_damage = 30
         self.last_attack_time = 0
         self.attack_cooldown = 1
         self.attack_windup_time = 0.3
@@ -2331,11 +2334,11 @@ class Boss(pygame.sprite.Sprite):
         self.area_rect = area_rect
         self.speed = 1.75
         self.attack_range = 60
-        self.attack_damage = 100
+        self.attack_damage = 150
         self.last_attack_time = 0
         self.attack_cooldown = 1.2
-        self.hp = 2000
-        self.max_hp = 2000
+        self.hp = 2500
+        self.max_hp = 2500
         self.attack_duration = 0.5
         self.attack_animation_end_time = 0
         self.state = "idle"
@@ -2713,13 +2716,13 @@ in_game = False
 inventory = Inventory() 
 default_achievements = {
     "First Kill": False,
-    "Zombie Slayer (10 kills)": False,
+    "Zombie Slayer (20 kills)": False,
     "Level 5 Achieved": False,
     "Wood Collector (10 wood)": False,
     "Fruit Picker (5 fruit)": False,
-    "Survivor (3 days)": False,
     "Lumberjack (10 wood)": False,
-    "Crystal Hunter (1 crystal)": False
+    "Crystal Hunter (1 crystal)": False,
+    "Fisherman (10 fish)": False
 }
 ARMOR_PROTECTION = {
     "Armor(Iron)": 0.90,     # 10% damage reduction
