@@ -1809,7 +1809,7 @@ class AchievementSystem:
             "Survivor (3 days)": False,
             "Lumberjack (10 wood)": False,
             "Crystal Hunter (1 crystal)": False,
-            "Fisherman (4 fish)": False
+            "Fisherman (15 fish)": False
         }
         self.shown_achievements = set()
         self.on_unlock_callback = on_unlock_callback
@@ -1817,9 +1817,9 @@ class AchievementSystem:
         print(f"[DEBUG] AchievementSystem created with callback: {self.on_unlock_callback}")
 
     def check_achievements(self, player, stats):
-        if "Fisherman (4 fish)" not in self.achievements:
+        if "Fisherman (15 fish)" not in self.achievements:
             print("[ERROR] Achievement missing! Resetting...")
-            self.achievements["Fisherman (4 fish)"] = False  # Auto-repair
+            self.achievements["Fisherman (15 fish)"] = False  # Auto-repair
      
         if not self.achievements["First Kill"] and stats["zombie_kills"] >= 1:
             self.unlock("First Kill")
@@ -1833,8 +1833,8 @@ class AchievementSystem:
             self.unlock("Fruit Picker (5 fruit)")
         if not self.achievements["Survivor (3 days)"] and stats["days_survived"] >= 3:
             self.unlock("Survivor (3 days)")
-        if not self.achievements["Fisherman (4 fish)"] and stats.get("fish_collected", 0) >=4:
-            self.unlock("Fisherman (4 fish)")
+        if not self.achievements["Fisherman (15 fish)"] and stats.get("fish_collected", 0) >=15:
+            self.unlock("Fisherman (15 fish)")
             
 
     def unlock(self, name):
@@ -1865,7 +1865,7 @@ class AchievementSystem:
                 else:
                     print(f"  Visible slot {i}: EMPTY")
                     
-        if name == "Fisherman (4 fish)" and self.inventory:
+        if name == "Fisherman (15 fish)" and self.inventory:
             added = self.inventory.add_item("FishBone_Clip", 1)
             print(f"[DEBUG] Added FishBone_Clip to inventory for achievement: {name}")
 
