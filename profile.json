@@ -496,6 +496,7 @@
     },
     "level": 1,
     "exp": 25,
+    "day": 2,
     "achievements": {
       "First Kill": false,
       "Zombie Slayer (10 kills)": false,
