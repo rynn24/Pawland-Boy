@@ -1149,6 +1149,7 @@ class Player:
         self.achievement_system = achievement_system
         self.original_speed = self.speed
         self.speed_timer = 0 
+        self.attack_sound_played = False
         
         self.current_attack_targets = []
         self.attack_multipliers = [0, 1, 1.5, 1.8, 2.0, 2.5, 3.0, 4.0, 6.0]  # Index = level
@@ -1203,6 +1204,12 @@ class Player:
             80: pygame.image.load("haojun/image/exp 80.png").convert_alpha(),
             100: pygame.image.load("haojun/image/exp 100.png").convert_alpha(),
         }
+        self.chop_sounds = [
+            pygame.mixer.Sound("haojun/chop1.wav"),
+            pygame.mixer.Sound("haojun/chop2.wav"),
+            pygame.mixer.Sound("haojun/chop3.wav")
+        ]
+        self.attack_sound = pygame.mixer.Sound("haojun/player_attack_sound.wav")
 
         self.walk_sheet = pygame.image.load("minting/character.png").convert_alpha()
         self.walk_down = load_frames(self.walk_sheet, FRAME_WIDTH, FRAME_HEIGHT, 0, 3)
@@ -1303,6 +1310,9 @@ class Player:
         # Load death animation (you can change the image path and frame count as needed)
         death_sheet = pygame.image.load("minting/die.png").convert_alpha()
         self.death_frames = load_frames(death_sheet, FRAME_WIDTH, FRAME_HEIGHT, 0, 25)
+
+    def play_chop_sound(self):
+        random.choice(self.chop_sounds).play()
 
     def equip_hairclip(self, name):
         self.equipped_hairclip = name
@@ -1410,14 +1420,7 @@ class Player:
             self.current_attack_targets.clear()
             return None
 
-        if self.attack_frame_counter >= self.attack_frame_delay:
-            self.attack_frame += 1
-            self.attack_frame_counter = 0
-        else:
-            self.attack_frame_counter += 1
-
         sprite = self.get_attack_sprite()
-
         current_attack_frames = self.attack_frames[self.current_weapon]
 
         if self.direction == 'left':
@@ -1428,26 +1431,28 @@ class Player:
         if self.attack_frame // 2 >= max_frames:
             self.attacking = False
             self.attack_frame = 0
+            self.attack_sound_played = False
             self.current_attack_targets.clear()
             return None
 
+        # Trigger hit on frame 1
         if self.attack_frame // 2 == 1:
             attack_rect = self.get_attack_rect(50)
+            hit_tree = False
 
             if self.current_weapon == 'axe':
                 for tree in trees + trees_2:
                     if attack_rect.colliderect(tree.get_hitbox()) and not tree.was_hit:
+                        hit_tree = True
+                        self.play_chop_sound()
                         tree.start_animation()
                         tree.was_hit = True
-                        # Add wood to inventory
                         self.add_exp(5)
                         inventory.add_item("Wood", 1)
-                        print(f"[DEBUG] inventory id in axe code: {id(inventory)}")
                         self.stats["wood_collected"] += 1
                         print("Wood collected:", self.stats["wood_collected"])
                         self.achievement_system.check_achievements(self, self.stats)
-                        
-                        # If it's from trees_2
+
                         if tree in trees_2:
                             inventory.add_item("Fruit", 1)
                             self.stats["fruit_collected"] += 1
@@ -1456,20 +1461,13 @@ class Player:
 
                         tree.update(pygame.time.get_ticks() / 1000)
 
-            if self.current_weapon == 'sword':
-                for zombie in zombies:
-                    if attack_rect.colliderect(zombie.rect) and zombie not in self.current_attack_targets:
-                        damage = self.weapon_damage[self.current_weapon]
-                        killed = zombie.take_damage(damage, self.position)
-                        if killed:
-                            self.stats["zombie_kills"] += 1
-                            self.achievement_system.check_achievements(self, self.stats)
-                            print("Zombie kills:", self.stats["zombie_kills"])
-                        self.current_attack_targets.append(zombie)
-            else:
-                if not self.current_attack_targets:
+            if not hit_tree and not self.attack_sound_played:
+                self.attack_sound.play()
+                self.attack_sound_played = True
+
+                if self.current_weapon == 'sword':
                     for zombie in zombies:
-                        if attack_rect.colliderect(zombie.rect):
+                        if attack_rect.colliderect(zombie.rect) and zombie not in self.current_attack_targets:
                             damage = self.weapon_damage[self.current_weapon]
                             killed = zombie.take_damage(damage, self.position)
                             if killed:
@@ -1477,12 +1475,30 @@ class Player:
                                 self.achievement_system.check_achievements(self, self.stats)
                                 print("Zombie kills:", self.stats["zombie_kills"])
                             self.current_attack_targets.append(zombie)
-                            break
+                else:
+                    if not self.current_attack_targets:
+                        for zombie in zombies:
+                            if attack_rect.colliderect(zombie.rect):
+                                damage = self.weapon_damage[self.current_weapon]
+                                killed = zombie.take_damage(damage, self.position)
+                                if killed:
+                                    self.stats["zombie_kills"] += 1
+                                    self.achievement_system.check_achievements(self, self.stats)
+                                    print("Zombie kills:", self.stats["zombie_kills"])
+                                self.current_attack_targets.append(zombie)
+                                break
 
-            if attack_rect.colliderect(boss.rect) and boss not in self.current_attack_targets:
-                damage = self.weapon_damage[self.current_weapon]
-                boss.take_damage(damage)
-                self.current_attack_targets.append(boss)
+                if attack_rect.colliderect(boss.rect) and boss not in self.current_attack_targets:
+                    damage = self.weapon_damage[self.current_weapon]
+                    boss.take_damage(damage)
+                    self.current_attack_targets.append(boss)
+
+        # Control attack frame timing
+        if self.attack_frame_counter >= self.attack_frame_delay:
+            self.attack_frame += 1
+            self.attack_frame_counter = 0
+        else:
+            self.attack_frame_counter += 1
 
         return sprite
     
@@ -1833,6 +1849,14 @@ class Player:
                 reduction = factor
         return reduction
     
+def trim_surface(surface):
+    """Remove transparent padding around the surface."""
+    mask = pygame.mask.from_surface(surface)
+    rect = mask.get_bounding_rects()[0] if mask.get_bounding_rects() else surface.get_rect()
+    trimmed_surface = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
+    trimmed_surface.blit(surface, (0, 0), rect)
+    return trimmed_surface   
+
 class AchievementSystem:
     def __init__(self, on_unlock_callback=None, inventory=None):
         print(f"⚠️ NEW ACHIEVEMENT SYSTEM CREATED ⚠️ ID: {id(self)}")
@@ -1948,32 +1972,62 @@ class AchievementPage:
         self.font = font or pygame.font.SysFont(None, 28)
         self.title_font = pygame.font.SysFont(None, 40)
         self.window_size = window_size
-
+        self.achievement_icons = {
+            "First Kill": trim_surface(pygame.image.load("haojun/image/first_kill.png")),
+            "Zombie Slayer (20 kills)": trim_surface(pygame.image.load("haojun/image/zombie_slayer.png")),
+            "Level 5 Achieved": trim_surface(pygame.image.load("haojun/image/level5.png")),
+            "Lumberjack (10 wood)": trim_surface(pygame.image.load("haojun/image/lumberjack.png")),
+            "Fruit Picker (5 fruit)": trim_surface(pygame.image.load("haojun/image/fruit_picker.png")),
+            "Fisherman (10 fish)": trim_surface(pygame.image.load("haojun/image/fisherman.png")),
+            # Add more as needed
+        }
+    
     def draw(self, screen):
         w, h = self.window_size
 
-        # Background overlay
         overlay = pygame.Surface((w, h), pygame.SRCALPHA)
         overlay.fill((0, 0, 0, 180))
         screen.blit(overlay, (0, 0))
 
-        # Draw title
         title = self.title_font.render("Achievements", True, (255, 255, 255))
         screen.blit(title, (w // 2 - title.get_width() // 2, 50))
 
-        # List only unlocked achievements
+        start_x = 100
         start_y = 120
-        spacing = 35
-        y_offset = 0  # track vertical position for only unlocked
+        spacing = 80
+        icon_size = 64
+        padding = 10
+        cols = (w - 2 * start_x) // (icon_size + padding)
 
+        mouse_pos = pygame.mouse.get_pos()
+        self.hovered_achievement = None
+
+        idx = 0
         for name, unlocked in self.achievement_system.achievements.items():
-            if unlocked:  # only draw unlocked achievements
-                color = (0, 255, 0)
-                status_text = "[✔]"
-                text = self.font.render(f"{status_text} {name}", True, color)
-                text_x = self.window_size[0] // 2 - text.get_width() // 2
-                screen.blit(text, (text_x, start_y + y_offset * spacing))
-                y_offset += 1
+            if unlocked:
+                row = idx // cols
+                col = idx % cols
+                icon = self.achievement_icons.get(name)
+
+                if icon:
+                    icon = pygame.transform.scale(icon, (64, 64))
+                    x = start_x + col * (icon_size + padding)
+                    y = start_y + row * (icon_size + padding)
+                    screen.blit(icon, (x, y))
+
+                    # Check for mouse hover
+                    icon_rect = pygame.Rect(x, y, icon.get_width(), icon.get_height())
+                    if icon_rect.collidepoint(mouse_pos):
+                        self.hovered_achievement = name
+
+                idx += 1
+
+        # Draw hover text if applicable
+        if self.hovered_achievement:
+            tooltip = self.font.render(self.hovered_achievement, True, (255, 255, 255))
+            tooltip_rect = tooltip.get_rect(topleft=(mouse_pos[0] + 15, mouse_pos[1] + 10))
+            pygame.draw.rect(screen, (0, 0, 0), tooltip_rect.inflate(10, 6))
+            screen.blit(tooltip, tooltip_rect)
 
     def update_layout(self, window_size):
         self.window_size = window_size
@@ -2811,7 +2865,6 @@ settings_menu = SettingsMenu(screen_size)
 saved_stats = user_system.users[current_user].get("stats", None)
 showing_achievements = False
 achievement_page = AchievementPage(window_size, achievement_system)
-
 
 if saved_stats:
     player_instance.stats = saved_stats
