@@ -849,6 +849,9 @@ class InventoryMenu:
                 # Get the selected item and its buttons
                 buttons = self.item_buttons.get(name, self.item_buttons["default"])
 
+                if "Armor" in name:
+                    buttons = []
+
                 # Calculate where to start placing buttons
                 button_start_y = info_y + 40 + len(wrapped_lines) * 20 + 10
 
@@ -915,13 +918,6 @@ class InventoryMenu:
             return
 
         name, count = item
-        is_armor = False
-        if "Armor" in name:
-            is_armor = True
-            
-        if is_armor and action in ("use", "drop"):
-            print(f"Cannot {action} armor item: {name}")
-            return
         
         if name == "Fruit" and action == "eat":
             print(f"Eating {name}")
