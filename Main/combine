@@ -149,6 +149,7 @@ cycle_duration = 60  # 60 seconds total for one full cycle
 day_duration = cycle_duration * 0.66  # 66% day → 39.6 seconds
 night_duration = cycle_duration * 0.34  # 34% night → 20.4 seconds
 time_counter = 0
+current_day = 1
 
 
 # Minimap settings
@@ -448,7 +449,8 @@ class UserSystem:
             },
             "level": 1,
             "exp": 0,
-            "achievements": {}  # ✅ Add this line
+            "achievements": {},
+            "day": 1
         }
         self.save_users()
         return True
@@ -473,13 +475,14 @@ class UserSystem:
         inventory = user_data.get("inventory", {})
         level = user_data.get("level", 1)
         exp = user_data.get("exp", 0)
-
+        day = user_data.get("day", 1)
+        
         print(f"get_player_data inventory for {username}: {inventory}")
     
         if isinstance(position, dict):
             position = [position.get("0", 1500), position.get("1", 125)]
 
-        return health, position, inventory, level, exp 
+        return health, position, inventory, level, exp, day
 
     def get_inventory_dict(self, username):
         inventory = self.users[username]["inventory"]
@@ -497,7 +500,7 @@ class UserSystem:
 
         return inventory_dict
 
-    def save_progress(self, username, health, position, inventory_dict, level, exp, achievements=None, shown_achievements=None, stats=None):
+    def save_progress(self, username, health, position, inventory_dict, level, exp, achievements=None, shown_achievements=None, stats=None, day=None):
         print(f"[DEBUG] save_progress called for username: {username}")
         if username in self.users:
             # Convert position to list if it's a Vector2
@@ -520,7 +523,8 @@ class UserSystem:
                 self.users[username]["shown_achievements"] = list(shown_achievements)  # Save set as list
             if stats is not None:
                 self.users[username]["stats"] = stats  # ⬅ Save player progress stats
-
+            if day is not None:
+                self.users[username]["day"] = day
             print(f"Saving data for {username}: {self.users[username]}")  # Debug print
             self.save_users()
         else:
@@ -1115,7 +1119,7 @@ class Player:
     def __init__(self, position, speed, username, level, exp, achievement_system=None, ):
         self.username = username
         self.user_system = UserSystem()
-        self.health, self.position, self.inventory, self.level, self.exp = self.user_system.get_player_data(self.username)
+        self.health, self.position, self.inventory, self.level, self.exp, self.day = self.user_system.get_player_data(self.username)
         print(f"Loaded player data for {self.username}: health={self.health}, position={self.position}, inventory={self.inventory},level={self.level}, exp={self.exp}")
 
         self.position = pygame.Vector2(self.position[0], self.position[1])
@@ -2840,7 +2844,7 @@ while not in_game:
 
     pygame.display.flip()
 
-health, position, inventory_data, level, exp = user_system.get_player_data(current_user)
+health, position, inventory_data, level, exp, day = user_system.get_player_data(current_user)
 saved_stats = user_system.users[current_user].get("stats", {
     "zombie_kills": 0,
     "wood_collected": 0,
@@ -3194,6 +3198,9 @@ cooking_ui = CookingUI(inventory, screen.get_width(), screen.get_height())
 running = True
 while running:
     dt = clock.tick(60) / 1000
+    if time_counter >= cycle_duration:
+        time_counter = 0  # Reset the cycle
+        current_day += 1  # Advance to next day
     current_time = pygame.time.get_ticks() / 1000
     events = pygame.event.get()
     for event in events:
@@ -3566,6 +3573,12 @@ while running:
     else:
         achievement_page.visible = False     
     achievement_display.update()
+    
+    day_text = font.render(f"Day {current_day}", True, (255, 255, 255))
+    text_rect = day_text.get_rect()
+    text_rect.topright = (screen.get_width() - 10, 10)
+    screen.blit(day_text, text_rect)
+    
     pygame.display.update()
     pygame.display.flip()
 pygame.quit()
