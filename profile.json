@@ -196,82 +196,6 @@
     "level": 1,
     "exp": 0
   },
-  "666": {
-    "health": 250,
-    "position": [
-      1690.9640000000065,
-      492.43199999999797
-    ],
-    "inventory": {
-      "Wood": 42,
-      "Fruit": 1,
-      "Fish": 5,
-      "Big Fish": 10,
-      "FishBone_Clip": 1
-    },
-    "level": 3,
-    "exp": 90,
-    "achievements": {
-      "First Kill": true,
-      "Zombie Slayer (10 kills)": false,
-      "Level 5 Achieved": false,
-      "Wood Collector (10 wood)": false,
-      "Fruit Picker (5 fruit)": true,
-      "Survivor (3 days)": false,
-      "Lumberjack (10 wood)": true,
-      "Crystal Hunter (1 crystal)": false,
-      "Fisherman (15 fish)": true
-    },
-    "shown_achievements": [
-      "Fisherman (15 fish)",
-      "Lumberjack (10 wood)"
-    ],
-    "stats": {
-      "zombie_kills": 9,
-      "wood_collected": 18,
-      "fruit_collected": 12,
-      "days_survived": 0,
-      "fish_collected": 18,
-      "crystal_collected": 2
-    }
-  },
-  "666\r": {
-    "health": 190,
-    "position": [
-      1137.9755000000027,
-      917.8814999999959
-    ],
-    "inventory": {
-      "Wood": 41,
-      "Fruit": 8,
-      "FishBone_Clip": 1,
-      "ZombiePaw": 1,
-      "Armor(Iron)": 1
-    },
-    "level": 2,
-    "exp": 65,
-    "achievements": {
-      "First Kill": true,
-      "Zombie Slayer (10 kills)": false,
-      "Level 5 Achieved": false,
-      "Wood Collector (10 wood)": false,
-      "Fruit Picker (5 fruit)": true,
-      "Survivor (3 days)": false,
-      "Lumberjack (10 wood)": false,
-      "Crystal Hunter (1 crystal)": false,
-      "Fisherman (4 fish)": false
-    },
-    "shown_achievements": [
-      "Fruit Picker (5 fruit)",
-      "First Kill"
-    ],
-    "stats": {
-      "zombie_kills": 3,
-      "wood_collected": 8,
-      "fruit_collected": 8,
-      "days_survived": 0
-    }
-  },
   "hj": {
     "health": 100,
     "position": [
@@ -515,6 +439,75 @@
       "fruit_collected": 0,
       "days_survived": 0,
       "fish_collected": 14
+    }
+  },
+  "heh": {
+    "health": 100,
+    "position": [
+      1500.0,
+      125.0
+    ],
+    "inventory": {
+      "Wood": 14,
+      "Big Fish": 3,
+      "Sweet Sailor": 2,
+      "Fish": 1,
+      "FishBone_Clip": 1,
+      "Twinfin Delight": 1
+    },
+    "level": 1,
+    "exp": 0,
+    "achievements": {
+      "First Kill": false,
+      "Zombie Slayer (10 kills)": false,
+      "Level 5 Achieved": false,
+      "Wood Collector (10 wood)": false,
+      "Fruit Picker (5 fruit)": true,
+      "Survivor (3 days)": false,
+      "Lumberjack (10 wood)": true,
+      "Crystal Hunter (1 crystal)": false,
+      "Fisherman (15 fish)": true
+    },
+    "shown_achievements": [
+      "Fruit Picker (5 fruit)",
+      "Fisherman (15 fish)",
+      "Lumberjack (10 wood)"
+    ],
+    "stats": {
+      "zombie_kills": 0,
+      "wood_collected": 14,
+      "fruit_collected": 7,
+      "days_survived": 0,
+      "fish_collected": 20,
+      "crystal_collected": 10
+    }
+  },
+  "v": {
+    "health": 100,
+    "position": [
+      1500.0,
+      208.60000000000022
+    ],
+    "inventory": {},
+    "level": 1,
+    "exp": 0,
+    "achievements": {
+      "First Kill": false,
+      "Zombie Slayer (10 kills)": false,
+      "Level 5 Achieved": false,
+      "Wood Collector (10 wood)": false,
+      "Fruit Picker (5 fruit)": false,
+      "Survivor (3 days)": false,
+      "Lumberjack (10 wood)": false,
+      "Crystal Hunter (1 crystal)": false,
+      "Fisherman (15 fish)": false
+    },
+    "shown_achievements": [],
+    "stats": {
+      "zombie_kills": 0,
+      "wood_collected": 0,
+      "fruit_collected": 0,
+      "days_survived": 0
     }
   }
 }

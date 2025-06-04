@@ -209,11 +209,11 @@ class Inventory:
             "Crystal": {"image": pygame.image.load("minting/Crystal.png").convert_alpha(), "categories": ["material"]},
             "Boat": {"image": pygame.image.load("minting/Boat.png").convert_alpha(), "categories": ["tool"]},
             "Firefly": {"image": pygame.image.load("minting/Firefly.jpg").convert_alpha(), "categories": ["material"]},
-            "Armor(Iron)" :pygame.image.load("haojun/image/armor(iron).png").convert_alpha(),
-            "Armor(Gold)" :pygame.image.load("haojun/image/armor(gold).png").convert_alpha(),
-            "Armor(Diamond)" :pygame.image.load("haojun/image/armor(diamond).png").convert_alpha(),
-            "FishBone_Clip": pygame.image.load("minting/FishBoneClip.png").convert_alpha(),
-            "ZombiePaw": pygame.image.load("minting/zombie_head.png").convert_alpha(),
+            "Armor(Iron)" :{"image":pygame.image.load("haojun/image/armor(iron).png").convert_alpha(),"categories": ["rewards"]},
+            "Armor(Gold)" :{"image":pygame.image.load("haojun/image/armor(gold).png").convert_alpha(),"categories": ["rewards"]},
+            "Armor(Diamond)" :{"image":pygame.image.load("haojun/image/armor(diamond).png").convert_alpha(),"categories": ["rewards"]},
+            "FishBone_Clip": {"image":pygame.image.load("minting/FishBoneClip.png").convert_alpha(),"categories": ["rewards"]},
+            "ZombiePaw": {"image":pygame.image.load("minting/zombie_head.png").convert_alpha(),"categories": ["rewards"]},
         }
 
         self.recipes = {
@@ -699,11 +699,9 @@ class InventoryMenu:
                 {"label": "Drop", "action": "drop"},
             ],
             "Wood": [
-                {"label": "Use", "action": "use"},
                 {"label": "Drop", "action": "drop"},
             ],
             "Fish": [
-                {"label": "Use", "action": "use"},
                 {"label": "Drop", "action": "drop"},
             ],
             "Fish Soup": [
@@ -732,7 +730,6 @@ class InventoryMenu:
             ],
             # Default fallback if item is not listed
             "default": [
-                {"label": "Use", "action": "use"},
                 {"label": "Drop", "action": "drop"},
             ],
             "FishBone_Clip": [
@@ -924,11 +921,6 @@ class InventoryMenu:
             print(f"Dropping {name}")
             self.inventory.remove_item(index, 1)
 
-        elif action == "use":
-            print(f"Using {name}")
-            self.inventory.remove_item(index, 1)
-            # Add general use logic
-
         elif action == "equip":
             print(f"Equipping {name}")
             if name == "FishBone_Clip":
@@ -943,9 +935,9 @@ class InventoryMenu:
             if name == "ZombiePaw":
                 self.player_instance.unequip_zombieskin()
  
-
         else:
             print(f"No action implemented for: {action}")
+            
     def update_layout(self, window_size):
         self.window_size = window_size
         self.window_rect = pygame.Rect(
@@ -1360,7 +1352,7 @@ class Player:
         if moving:
             current_time = pygame.time.get_ticks()
             if current_time - self.last_frame_time > self.frame_speed * 1000:
-                self.frame = (self.frame + 1) % len(self.walk_down)  # 这里self.frame始终是整数
+                self.frame = (self.frame + 1) % len(self.walk_down)  
                 self.last_frame_time = current_time
 
             current_sprite = self.get_current_sprite()
@@ -2606,8 +2598,8 @@ class PondArea:
                 self.player.achievement_system.check_achievements(self.player, self.player.stats)
 
             elif result["id"] == "crystal":
-                self.player.stats["crystals_collected"] += 1
-                print("Crystals collected:", self.player.stats["crystals_collected"])
+                self.player.stats["crystal_collected"] += 1
+                print("Crystal collected:", self.player.stats["crystal_collected"])
                 self.player.achievement_system.check_achievements(self.player, self.player.stats)
 
                     
@@ -3096,6 +3088,186 @@ class CookingUI:
 # Cooking
 cooking_ui = CookingUI(inventory, screen.get_width(), screen.get_height())
 
+class TutorialPage:
+    def __init__(self, title, text, image_paths):
+        self.title = title
+        self.text = text
+        self.frames = self._load_frames(image_paths)
+        self.frame_index = 0
+        self.frame_timer = 0
+        self.frame_delay = 0.10
+
+    def _load_frames(self, paths):
+        return [pygame.image.load(p).convert_alpha() for p in paths]
+    
+    def update(self, dt):
+        self.frame_timer += dt
+        if self.frame_timer >= self.frame_delay:
+            self.frame_timer = 0
+            self.frame_index = (self.frame_index + 1) % len(self.frames)
+
+
+    def draw(self, surface, font, x, y, w, h):
+        # Draw background
+        pygame.draw.rect(surface, (245, 245, 220), (x, y, w, h))
+        pygame.draw.rect(surface, (200, 200, 200), (x, y, w, h), 2)
+
+        # Draw title
+        title_surf = font.render(self.title, True, (0, 0, 0))
+        surface.blit(title_surf, (x + 20, y + 20))
+
+        # Word wrap the text within (w - 40) width
+        wrapped_lines = self.wrap_text(self.text, font, w - 40)
+        
+        # Draw wrapped text lines below title
+        line_height = font.get_height()
+        text_y = y + 20 + title_surf.get_height() + 10  # space after title
+        for line in wrapped_lines:
+            text_surf = font.render(line, True, (0, 0, 0,))
+            surface.blit(text_surf, (x + 20, text_y))
+            text_y += line_height
+
+        # Draw animation frame below text
+        frame = self.frames[self.frame_index]
+
+        # Calculate max width and height for frame
+        max_frame_width = w - 40
+        max_frame_height = h - (text_y - y) - 20  # remaining space below text minus padding
+
+        # Scale frame proportionally to fit max size
+        frame_w, frame_h = frame.get_size()
+        scale = min(max_frame_width / frame_w, max_frame_height / frame_h)
+        new_size = (int(frame_w * scale), int(frame_h * scale))
+        frame_scaled = pygame.transform.scale(frame, new_size)
+
+        # Center the frame horizontally, position below text
+        frame_x = x + (w - new_size[0]) // 2
+        frame_y = text_y + 10
+
+        surface.blit(frame_scaled, (frame_x, frame_y))
+
+
+    def wrap_text(self, text, font, max_width):
+        """Split text into lines that fit max_width."""
+        words = text.split(' ')
+        lines = []
+        current_line = ''
+
+        for word in words:
+            test_line = current_line + word + ' '
+            if font.size(test_line)[0] <= max_width:
+                current_line = test_line
+            else:
+                lines.append(current_line.rstrip())
+                current_line = word + ' '
+        if current_line:
+            lines.append(current_line.rstrip())
+        return lines
+
+movementT_frames = [f"minting/Twalk/walk_{i:03}.png" for i in range(40)]
+attackT_frames = [f"minting/Tattack/ezgif-frame-{i:03}.png" for i in range(1,66)]
+inventoryT_frames = [f"minting/Tinventory/ezgif-frame-{i:03}.png" for i in range(1,84)]
+fishingT_frames = [f"minting/FishT/ezgif-frame-{i:03}.png" for i in range(1,84)]
+EnemyT_frames = [f"minting/EnemyT/ezgif-frame-{i:03}.png" for i in range(1,122)]
+
+tutorial_pages = [
+    TutorialPage("Movement", "Use W A S D to move.", movementT_frames),
+    TutorialPage("Attack & Chop", "Press SPACE to attack and chop.", attackT_frames),
+    TutorialPage("Inventory", "Press B to open and close inventory. Go try the button of each items!", inventoryT_frames),
+    TutorialPage("Fishing", "Approach the ponf and press J ", fishingT_frames),
+    TutorialPage("Respawn", "You will be respawn back to the house after getting killed.The level wil reset. Be aware of the enemies ,especially the BOSS", EnemyT_frames),
+
+]
+
+class TutorialManager:
+    def __init__(self, font, tutorial_pages, window_size, pos=(100, 100), size=(400, 300)):
+        self.font = font
+        self.pages = tutorial_pages  # list of TutorialPage
+        self.pos = pos
+        self.size = size
+        self.show = False
+        self.page_index = 0
+        self.sidebar_width = 150  # width of sidebar
+        self.button_height = 50   # height of each button
+        self.window_size = window_size
+        self.help_icon = pygame.image.load("minting/tutorialbook.png").convert_alpha()
+        self.help_icon = pygame.transform.scale(self.help_icon, (60, 60))  # Adjust size
+        self.help_icon_rect = self.help_icon.get_rect(topleft=(160, 50))
+
+        
+
+    def toggle(self):
+        self.show = not self.show
+        print(f"Tutorial show = {self.show}")
+        self.pages[self.page_index].frame_index = 0
+        self.pages[self.page_index].frame_timer = 0
+
+    def next_page(self):
+        self.page_index = (self.page_index + 1) % len(self.pages)
+
+    def prev_page(self):
+        self.page_index = (self.page_index - 1) % len(self.pages)
+
+    def update(self, dt):
+        if self.show:   
+            self.pages[self.page_index].update(dt)
+
+    def draw(self, surface):
+        if not self.show:
+            screen.blit(self.help_icon, self.help_icon_rect)
+            return
+        if self.show:
+            x, y = self.pos
+            w, h = self.size
+
+           # Darken background like settings menu
+            overlay = pygame.Surface(self.window_size, pygame.SRCALPHA)
+            overlay.fill((0, 0, 0, 180))
+            screen.blit(overlay, (0, 0))
+
+            # Draw sidebar
+            pygame.draw.rect(surface, (238, 232, 170), (x, y, self.sidebar_width, h))
+            for i, page in enumerate(self.pages):
+                btn_rect = pygame.Rect(x, y + i * self.button_height, self.sidebar_width, self.button_height)
+                color = (240, 218, 129) if i == self.page_index else (243, 252, 192)
+                pygame.draw.rect(surface, color, btn_rect)
+                text_surf = self.font.render(page.title, True, (0, 0, 0))
+                surface.blit(text_surf, (btn_rect.x + 10, btn_rect.y + 10))
+
+            # Draw selected tutorial page
+            content_x = x + self.sidebar_width + 10
+            content_w = w - self.sidebar_width - 20
+            self.pages[self.page_index].draw(surface, self.font, content_x, y, content_w, h)
+
+ 
+
+    def handle_event(self, event):
+        if self.show and event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            mx, my = event.pos
+            x, y = self.pos
+            for i in range(len(self.pages)):
+                btn_rect = pygame.Rect(x, y + i * self.button_height, self.sidebar_width, self.button_height)
+                if btn_rect.collidepoint(mx, my):
+                    self.page_index = i
+                    self.pages[i].frame_index = 0  # Reset animation
+                    self.pages[i].frame_timer = 0
+                    break
+
+    def update_layout(self, window_size):
+        self.window_size = window_size
+        width, height = window_size
+
+        box_width = int(width * 0.7)
+        box_height = int(height * 0.7)
+        box_x = (width - box_width) // 2
+        box_y = (height - box_height) // 2
+
+        self.pos = (box_x, box_y)
+        self.size = (box_width, box_height)
+
+
+
+tutorial = TutorialManager(font, tutorial_pages, pygame.display.get_surface().get_size())
 
 # Main loop
 running = True
@@ -3104,6 +3276,7 @@ while running:
     current_time = pygame.time.get_ticks() / 1000
     events = pygame.event.get()
     for event in events:
+        tutorial.handle_event(event)
         if event.type == pygame.QUIT:
             # Save progress before exiting
             inventory_dict = inventory.get_inventory_dict()
@@ -3145,12 +3318,16 @@ while running:
                 elif game_state == "settings":
                     game_state = "game"
                     settings_menu.visible = False
-            if event.key == pygame.K_EQUALS:
+
+            elif event.key == pygame.K_EQUALS:
                 minimap_zoom_factor = min(4.0, minimap_zoom_factor + 0.1)
+            
             elif event.key == pygame.K_MINUS:
                 minimap_zoom_factor = max(0.5, minimap_zoom_factor - 0.1)
+            
             elif event.key == pygame.K_TAB:
                 player_instance.switch_weapon(event.key)
+            
             elif event.key == pygame.K_f:  # F key to toggle fullscreen
                 is_fullscreen = not is_fullscreen
                 if is_fullscreen:
@@ -3163,20 +3340,35 @@ while running:
                     settings_menu.create_buttons(screen.get_size())
                 overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
                 inventory_menu.update_layout(screen.get_size())
+                tutorial.update_layout(screen.get_size())
+            
             elif event.key == pygame.K_b:
                 inventory_menu.toggle()
+
+            elif event.key == pygame.K_t:
+                print("T pressed")
+                tutorial.toggle()
+
+            if tutorial.show:
+                if event.key == pygame.K_RIGHT:
+                    tutorial.next_page()
+                elif event.key == pygame.K_LEFT:
+                    tutorial.prev_page()
 
         elif event.type == pygame.KEYUP:
             if event.key == pygame.K_SPACE:
                 player_instance.attacking = True
-        
+
+    
         # In the main game loop's event handling section (where other events are handled):
-        elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # Left mouse button
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # Left mouse button
+            if tutorial.help_icon_rect.collidepoint(event.pos):
+                tutorial.toggle()
             mouse_pos = pygame.mouse.get_pos()
             # Convert mouse position to world coordinates for cooking area check
             world_mouse_x = mouse_pos[0] * (camera.width / screen.get_width()) + camera.x
             world_mouse_y = mouse_pos[1] * (camera.height / screen.get_height()) + camera.y
-            
+                
             # Existing inventory menu click handling
             if inventory_menu.visible:
                 inventory_menu.handle_click(event.pos)
@@ -3240,6 +3432,7 @@ while running:
                     if direction == "a": proposed_position.x -= move_distance; player_instance.direction = "left"
                     if direction == "d": proposed_position.x += move_distance; player_instance.direction = "right"
 
+
     achievement_system.check_achievements(player_instance, player_instance.stats)
 
     proposed_position.x = max(0, min(proposed_position.x, map_image.get_width()))
@@ -3255,6 +3448,8 @@ while running:
 
     zoom_surface.fill((0, 0, 0))
     zoom_surface.blit(map_image, (0, 0), camera)
+
+    
 
     for tree in trees:
         tree.update(current_time)
@@ -3352,13 +3547,15 @@ while running:
     pygame.draw.rect(screen, (255, 255, 255), weapon_box, 2)  # White border
     screen.blit(icon_scaled, (weapon_box.x + 10, weapon_box.y + 10))
     
+    
     #Draw pond
     pond.draw(screen, player_position, font, reward_font)
-
-
-    #Draw inventory
     inventory.draw(screen)
-
+    if not pond.show_animation:
+        tutorial.update(dt)
+        tutorial.draw(screen)
+        
+   
     # ========== DRAW SETTINGS MENU WHEN ACTIVE ==========
     if game_state == "settings":
         screen.fill((10, 10, 10))  # Optional: dim background
@@ -3472,6 +3669,7 @@ while running:
     else:
         achievement_page.visible = False     
     achievement_display.update()
+
     pygame.display.update()
     pygame.display.flip()
 pygame.quit()
