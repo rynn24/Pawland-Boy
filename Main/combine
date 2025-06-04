@@ -353,7 +353,7 @@ class Inventory:
                 icon = icon_data["image"]
                 # Only show count if not armor
                 categories = icon_data.get("categories", [])
-                show_count = not any(c in categories for c in ["armor", "skin"])
+                show_count = not any(c in categories for c in ["tool", "skin"])
             else:
                 return  # Skip if icon is invalid
 
@@ -849,7 +849,8 @@ class InventoryMenu:
                 # Get the selected item and its buttons
                 buttons = self.item_buttons.get(name, self.item_buttons["default"])
 
-
+                if "Armor" in name:
+                    buttons = []
 
                 # Calculate where to start placing buttons
                 button_start_y = info_y + 40 + len(wrapped_lines) * 20 + 10
@@ -983,7 +984,7 @@ class SettingsMenu:
         # Initialize music
         pygame.mixer.init()
         try:
-            self.music = pygame.mixer.Sound("haojun/music.mp3")  # Replace with your music file
+            self.music = pygame.mixer.Sound("haojun/music 1.mp3")  # Replace with your music file
             self.music_volume = 0.5
             self.music.play(-1)
             self.music.set_volume(self.music_volume)
@@ -1535,7 +1536,7 @@ class Player:
         if self.dead:
             return
 
-        # 🛡️ Apply armor reduction if available
+        # Apply armor reduction if available
         armor_reduction_factor = self.get_armor_reduction_factor()
         reduced_amount = int(amount * armor_reduction_factor)
 
@@ -1887,6 +1888,8 @@ class AchievementSystem:
             self.unlock("Fruit Picker (5 fruit)")
         if not self.achievements["Fisherman (10 fish)"] and stats.get("fish_collected", 0) >=10:
             self.unlock("Fisherman (10 fish)")
+        if not self.achievements["Crystal Hunter (1 crystal)"] and stats.get("crystals_collected", 0) >=1:
+            self.unlock("Crystal Hunter (1 crystal)")
             
 
     def unlock(self, name):
@@ -1921,7 +1924,7 @@ class AchievementSystem:
             added = self.inventory.add_item("FishBone_Clip", 1)
             print(f"[DEBUG] Added FishBone_Clip to inventory for achievement: {name}")
 
-        if name == "Zombie Slayer (10 kills)" and self.inventory:
+        if name == "Zombie Slayer (20 kills)" and self.inventory:
                     added = self.inventory.add_item("ZombiePaw", 1)
                     print(f"[DEBUG] Added FishBone_Clip to inventory for achievement: {name}")
         
@@ -1974,6 +1977,7 @@ class AchievementPage:
             "Lumberjack (10 wood)": trim_surface(pygame.image.load("haojun/image/lumberjack.png")),
             "Fruit Picker (5 fruit)": trim_surface(pygame.image.load("haojun/image/fruit_picker.png")),
             "Fisherman (10 fish)": trim_surface(pygame.image.load("haojun/image/fisherman.png")),
+            "Crystal Hunter (1 crystal)": trim_surface(pygame.image.load("haojun/image/crystal_hunter.png")),
             # Add more as needed
         }
     
@@ -2684,9 +2688,8 @@ class PondArea:
             self.fishing_sound.play()
             self.player.add_exp(25) 
             self.player.stats.setdefault("fish_collected", 0)
-            self.player.stats["fish_collected"] += 1
-            self.player.stats.setdefault("crystal_collected", 0)
-            self.player.stats["crystal_collected"] += 1
+            self.player.stats.setdefault("crystals_collected", 0)
+
             
             
             if result["id"] in ["fish_1", "fish_2"]:
