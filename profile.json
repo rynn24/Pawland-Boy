@@ -480,5 +480,37 @@
       "fish_collected": 6,
       "crystal_collected": 3
     }
+  },
+  "fish": {
+    "health": 100,
+    "position": [
+      1401.0819999999985,
+      646.6419999999955
+    ],
+    "inventory": {
+      "Big Fish": 1
+    },
+    "level": 1,
+    "exp": 25,
+    "achievements": {
+      "First Kill": false,
+      "Zombie Slayer (10 kills)": false,
+      "Level 5 Achieved": false,
+      "Wood Collector (10 wood)": false,
+      "Fruit Picker (5 fruit)": false,
+      "Survivor (3 days)": false,
+      "Lumberjack (10 wood)": false,
+      "Crystal Hunter (1 crystal)": false,
+      "Fisherman (4 fish)": false
+    },
+    "shown_achievements": [],
+    "stats": {
+      "zombie_kills": 0,
+      "wood_collected": 0,
+      "fruit_collected": 0,
+      "days_survived": 0,
+      "fish_collected": 2,
+      "crystal_collected": 1
+    }
   }
 }
