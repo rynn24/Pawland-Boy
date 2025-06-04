@@ -388,6 +388,7 @@ class Inventory:
                 self.slots[index] = None
             else:
                 self.slots[index] = (name, count)
+inventory = Inventory()
 
 
 class UserSystem:
@@ -500,7 +501,8 @@ class UserSystem:
                 "position": position,
                 "inventory": inventory_dict,
                 "level": level,
-                "exp": exp
+                "exp": exp,
+                "day": current_day
 
             }
             if achievements is not None:
@@ -3100,14 +3102,135 @@ class CookingUI:
 # Cooking
 cooking_ui = CookingUI(inventory, screen.get_width(), screen.get_height())
 
+# Crafting
+class CraftingTable:
+    def __init__(self, screen, upgrade_icon_path, build_icon_path, font, inventory, boat_data, armor_data):
+        self.screen = screen
+        self.font = font
+        self.inventory = inventory
+        self.boat_data = boat_data  # Dict like {"wood": 0, "crystal": 0}
+        self.armor_data = armor_data  # Dict like {"level": "iron"}
+
+        self.open = False
+        self.rect = pygame.Rect(100, 100, 300, 200)  # UI box
+
+        # Buttons
+        self.upgrade_rect = pygame.Rect(self.rect.x + 20, self.rect.y + 50, 120, 40)
+        self.build_rect = pygame.Rect(self.rect.x + 20, self.rect.y + 100, 120, 40)
+        self.close_rect = pygame.Rect(self.rect.x + 250, self.rect.y + 10, 30, 30)
+
+        # Icons
+        self.upgrade_icon = pygame.image.load(upgrade_icon_path).convert_alpha()
+        self.build_icon = pygame.image.load(build_icon_path).convert_alpha()
+
+    def open_ui(self):
+        self.open = True
+
+    def close_ui(self):
+        self.open = False
+
+    def handle_click(self, mouse_pos, inside_house):
+        if not self.open:
+            return
+
+        if self.close_rect.collidepoint(mouse_pos):
+            self.close_ui()
+            return "close"
+
+        if self.upgrade_rect.collidepoint(mouse_pos):
+            return self.upgrade_armor()
+
+        if self.build_rect.collidepoint(mouse_pos):
+            return self.build_boat()
+
+        return None
+
+    def draw(self):
+        if not self.open:
+            return
+
+        # UI Box
+        pygame.draw.rect(self.screen, (50, 50, 50), self.rect)
+        pygame.draw.rect(self.screen, (255, 255, 255), self.rect, 2)
+
+        # Upgrade button
+        self.screen.blit(self.upgrade_icon, (self.upgrade_rect.x, self.upgrade_rect.y))
+        upgrade_text = self.font.render("Upgrade Armor", True, (255, 255, 255))
+        self.screen.blit(upgrade_text, (self.upgrade_rect.x + 50, self.upgrade_rect.y + 10))
+
+        # Build boat button
+        self.screen.blit(self.build_icon, (self.build_rect.x, self.build_rect.y))
+        build_text = self.font.render("Build Boat", True, (255, 255, 255))
+        self.screen.blit(build_text, (self.build_rect.x + 50, self.build_rect.y + 10))
+
+        # Close button
+        pygame.draw.rect(self.screen, (150, 0, 0), self.close_rect)
+        close_text = self.font.render("X", True, (255, 255, 255))
+        self.screen.blit(close_text, (self.close_rect.x + 7, self.close_rect.y + 5))
+
+    def upgrade_armor(self):
+        level_order = ["iron", "gold", "diamond"]
+        current = self.armor_data["level"]
+        if current == "diamond":
+            print("Armor is already max level.")
+            return None
+
+        crystals = self.inventory.get("crystal", 0)
+        if crystals < 5:
+            print("Not enough crystals to upgrade armor.")
+            return None
+
+        # Upgrade
+        self.inventory["crystal"] -= 5
+        next_level = level_order[level_order.index(current) + 1]
+        self.armor_data["level"] = next_level
+        print(f"Armor upgraded to {next_level}!")
+        return "upgrade_armor"
+
+    def build_boat(self):
+        inv_dict = self.inventory.get_inventory_dict()
+        wood = inv_dict.get("Wood", 0)
+        crystal = inv_dict.get("crystal", 0)
+        added = False
+
+        if wood >= 3 and self.boat_data["wood"] < 100:
+            self.inventory["wood"] -= 3
+            self.boat_data["wood"] += 3
+            print(f"Added 3 wood. Total: {self.boat_data['wood']}/100")
+            added = True
+        elif self.boat_data["wood"] >= 100:
+            print("Wood requirement already fulfilled.")
+        else:
+            print("Not enough wood to add.")
+
+        if crystal >= 1 and self.boat_data["crystal"] < 10:
+            self.inventory["crystal"] -= 1
+            self.boat_data["crystal"] += 1
+            print(f"Added 1 crystal. Total: {self.boat_data['crystal']}/10")
+            added = True
+        elif self.boat_data["crystal"] >= 10:
+            print("Crystal requirement already fulfilled.")
+        else:
+            print("Not enough crystals to add.")
+
+        if added:
+            return "build_boat"
+        return None
+
+font = pygame.font.SysFont(None, 24)
+boat_data = {"wood": 0, "crystal": 0}
+armor_data = {"level": "iron"}
+
+crafting_table = CraftingTable(screen, "rynn/upgrade.png", "rynn/build.png", font, inventory, boat_data, armor_data)
+crafting_table_rect = pygame.Rect(122, 232, 90, 86)
 
 # Main loop
 running = True
 while running:
     dt = clock.tick(60) / 1000
     if time_counter >= cycle_duration:
-        time_counter = 0  # Reset the cycle
-        current_day += 1  # Advance to next day
+        time_counter = 0  
+        current_day += 1  
     current_time = pygame.time.get_ticks() / 1000
     events = pygame.event.get()
     for event in events:
@@ -3400,9 +3523,6 @@ while running:
         scaled_house = pygame.transform.scale(house_image, (screen_width, screen_height))
         screen.blit(scaled_house, (0, 0))
 
-        # Draw cooking area hint
-        # cooking_ui.draw_cooking_area_hint(screen)
-
         # Get mouse position and events once
         mouse_pos = pygame.mouse.get_pos()
         events = pygame.event.get()
@@ -3472,7 +3592,14 @@ while running:
         # Show mouse position on screen
         mouse_pos_text = font.render(f"Mouse: {mouse_x}, {mouse_y}", True, (255, 255, 255))
         screen.blit(mouse_pos_text, (10, 10))
-    
+
+        if not crafting_table.open and crafting_table_rect.collidepoint((mouse_x, mouse_y)):
+            crafting_table.open_ui()
+        elif crafting_table.open:
+            crafting_table.handle_click(mouse_pos, in_house)
+        
+        if crafting_table.open:
+            crafting_table.draw()
     if game_state == "achievements":
         achievement_page.visible = True
         achievement_page.draw(screen)
