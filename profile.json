@@ -125,19 +125,19 @@
     }
   },
   "hj2": {
-    "health": 140,
+    "health": 600,
     "position": [
-      780.9470000000001,
-      1049.4584999999897
+      1593.2690000000068,
+      744.7144999999907
     ],
     "inventory": {
-      "Big Fish": 3,
+      "Big Fish": 4,
       "Wood": 94,
       "Fruit": 45,
       "Armor(Iron)": 1
     },
-    "level": 5,
-    "exp": 235,
+    "level": 6,
+    "exp": 35,
     "achievements": {
       "First Kill": true,
       "Zombie Slayer (20 kills)": false,
@@ -152,15 +152,17 @@
       "Fisherman (4 fish)": false
     },
     "shown_achievements": [
-      "Level 5 Achieved",
       "First Kill",
+      "Level 5 Achieved",
       "Lumberjack (10 wood)"
     ],
     "stats": {
-      "zombie_kills": 1,
+      "zombie_kills": 2,
       "wood_collected": 67,
       "fruit_collected": 28,
-      "days_survived": 0
+      "days_survived": 0,
+      "fish_collected": 2,
+      "crystal_collected": 1
     }
   },
   "hj3": {

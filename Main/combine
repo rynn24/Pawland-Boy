@@ -769,9 +769,9 @@ class InventoryMenu:
             "FishBone_Clip":"A stylish clip. Might smell fishy.",
             "Fish Soup": "A delicious soup made from fish and fruit. Restores 30 health.",
             "Grilled Fish": "Perfectly cooked fish. Restores 20 health.",
-            "Armor(Iron)": "Sturdy protection for everyday survival. Reduces incoming damage by 10%.",
-            "Armor(Gold)": "Shiny but practical. Lightweight defense that cuts damage by 30%.",
-            "Armor(Diamond)": "Top-tier protection forged from rare diamonds. Reduces damage by 50%.",
+            "Armor(Iron)": "Sturdy protection for everyday survival. Reduces incoming damage by 10%.(This item cannot be drop or use)",
+            "Armor(Gold)": "Shiny but practical. Lightweight defense that cuts damage by 30%.(This item cannot be drop or use)",
+            "Armor(Diamond)": "Top-tier protection forged from rare diamonds. Reduces damage by 50%.(This item cannot be drop or use)",
             "Sweet Sailor": "A gourmet meal. Restores 50 health",
             "Fruit Jam": "Sweet fruit jam. Increases movement speed for 20 seconds. ",   
             "Reef Medley": "A vibrant fusion of ocean flavours.",
@@ -2206,6 +2206,7 @@ class Zombie(pygame.sprite.Sprite):
         self.death_time = 0
         self.death_duration = 1
         self.chase_range = 90
+        self.die_sound = pygame.mixer.Sound("haojun/zombie_die_sound.wav")
 
     def update_facing_direction(self):
         self.image = pygame.transform.flip(self.image, self.facing_left, False)
@@ -2343,6 +2344,7 @@ class Zombie(pygame.sprite.Sprite):
             self.is_dead = True
             self.death_time = time.time()
             self.player.add_exp(25)
+            self.die_sound.play()
             return True  # ✅ Killed!
 
         return False  # Still alive
@@ -2581,7 +2583,7 @@ class PondArea:
         self.detection_radius_x = radius_x * detection_scale
         self.detection_radius_y = radius_y * detection_scale
         self.player = player
-        
+        self.fishing_sound = pygame.mixer.Sound("haojun/fishing_sound.wav")
 
         self.rect = pygame.Rect(
             center[0] - self.visual_radius_x,
@@ -2680,6 +2682,7 @@ class PondArea:
 
         if result["id"] != "nothing":
             inventory.add_item(result["name"], 1)
+            self.fishing_sound.play()
             self.player.add_exp(25) 
             self.player.stats.setdefault("fish_collected", 0)
             self.player.stats["fish_collected"] += 1
