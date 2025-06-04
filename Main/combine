@@ -849,8 +849,7 @@ class InventoryMenu:
                 # Get the selected item and its buttons
                 buttons = self.item_buttons.get(name, self.item_buttons["default"])
 
-                if "Armor" in name:
-                    buttons = []
+
 
                 # Calculate where to start placing buttons
                 button_start_y = info_y + 40 + len(wrapped_lines) * 20 + 10
