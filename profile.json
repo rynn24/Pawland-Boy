@@ -516,14 +516,15 @@
   "fish": {
     "health": 480,
     "position": [
-      1483.4479999999999,
-      204.30199999999937
+      1490.2879999999998,
+      183.93399999999932
     ],
     "inventory": {
-      "Fish": 22,
-      "Big Fish": 15,
+      "Fish": 21,
+      "Big Fish": 14,
       "Crystal": 5,
-      "Armor(Gold)": 1
+      "Armor(Gold)": 1,
+      "Twinfin Delight": 1
     },
     "level": 6,
     "exp": 275,
@@ -542,9 +543,9 @@
       "Fisherman (4 fish)": false
     },
     "shown_achievements": [
-      "Crystal Hunter (1 crystal)",
-      "First Kill",
       "Fisherman (10 fish)",
+      "First Kill",
+      "Crystal Hunter (1 crystal)",
       "Level 5 Achieved"
     ],
     "stats": {
