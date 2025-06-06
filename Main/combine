@@ -98,6 +98,7 @@ house_rect = house_image.get_rect()
 show_house_prompt = False
 paper_image = pygame.image.load("rynn/paper.jpg").convert()
 paper_visible = False
+crafting_visible = False
 
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
@@ -3480,7 +3481,9 @@ cooking_ui = CookingUI(inventory, screen.get_width(), screen.get_height())
 
 class CraftingTable:
     def __init__(self, position, size):
-        self.rect = pygame.Rect(position[0], position[1], size[0], size[1])
+        x, y = position if isinstance(position, (list, tuple)) and len(position) == 2 else (0, 0)
+        w, h = size if isinstance(size, (list, tuple)) and len(size) == 2 else (100, 100)
+        self.rect = pygame.Rect(x, y, w, h)
         self.visible = False
         self.boat_built = False
         self.armor_upgraded = False
@@ -3690,9 +3693,13 @@ class ArmorUpgradeUI:
         
         return button_rects, close_button
 
+player=player_instance
 
 # Main loop
 running = True
+boat_ui = BoatBuildingUI(game_state)
+armor_ui = ArmorUpgradeUI(inventory, player)
+crafting_ui = CraftingTable(game_state, position)
 while running:
     dt = clock.tick(60) / 1000
     if time_counter >= cycle_duration:
@@ -3799,17 +3806,17 @@ while running:
             if inventory_menu.visible:
                 inventory_menu.handle_click(event.pos)
 
-            if crafting_table.rect.collidepoint(world_mouse_x, world_mouse_y) and not in_house:
-                crafting_table.interact()
+            if crafting_ui.rect.collidepoint(world_mouse_x, world_mouse_y) and not in_house:
+                crafting_ui.interact()
             
             # Handle crafting table menu clicks
-            if crafting_table.visible:
-                boat_rect, armor_rect = crafting_table.draw(screen)
+            if crafting_ui.visible:
+                boat_rect, armor_rect = crafting_ui.draw(screen)
                 if boat_rect.collidepoint(mouse_pos):
-                    crafting_table.visible = False
+                    crafting_ui.visible = False
                     boat_ui.toggle()
                 elif armor_rect.collidepoint(mouse_pos):
-                    crafting_table.visible = False
+                    crafting_ui.visible = False
                     armor_ui.toggle()
             
             # Handle boat building UI
@@ -4126,6 +4133,18 @@ while running:
             if close_button_rect.collidepoint(mouse_x, mouse_y) and mouse_clicked:
                 paper_visible = False
                 
+        crafting_ui_area = pygame.Rect(122, 232, 90, 86)
+        if mouse_clicked and crafting_ui_area.collidepoint(mouse_pos) and not crafting_ui.visible:
+            print("Craft pressed")
+            crafting_visible = True
+            
+        if crafting_visible:
+            crafting_ui.draw(screen)                
+            if boat_ui.visible:
+                boat_ui.draw(screen)
+            if armor_ui.visible:
+                armor_ui.draw(screen)   
+                 
         # Show mouse position on screen
         mouse_pos_text = font.render(f"Mouse: {mouse_x}, {mouse_y}", True, (255, 255, 255))
         screen.blit(mouse_pos_text, (10, 10))
@@ -4142,15 +4161,6 @@ while running:
     text_rect.topright = (screen.get_width() - 10, 10)
     screen.blit(day_text, text_rect)
     
-    # In your drawing section, after other UI draws
-    if crafting_table.visible:
-        crafting_table.draw(screen)
-        
-    if boat_ui.visible:
-        boat_ui.draw(screen)
-        
-    if armor_ui.visible:
-        armor_ui.draw(screen)
     
     pygame.display.update()
     pygame.display.flip()
