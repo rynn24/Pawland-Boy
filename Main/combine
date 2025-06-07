@@ -1434,6 +1434,7 @@ class Player:
         self.speed_timer = 0 
         self.attack_sound_played = False
         
+        self.armor_type = None 
         self.current_attack_targets = []
         self.attack_multipliers = [0, 1, 1.5, 1.8, 2.0, 2.5, 3.0, 4.0, 6.0]  # Index = level
         self.weapon_icons = {
@@ -3479,6 +3480,9 @@ class CookingUI:
 # Cooking
 cooking_ui = CookingUI(inventory, screen.get_width(), screen.get_height())
 
+# Recipe book
+
+
 class CraftingTable:
     def __init__(self, position, size):
         x, y = position if isinstance(position, (list, tuple)) and len(position) == 2 else (0, 0)
@@ -3487,6 +3491,8 @@ class CraftingTable:
         self.visible = False
         self.boat_built = False
         self.armor_upgraded = False
+        self.boat_icon = pygame.image.load("rynn/build.png").convert_alpha()
+        self.armor_icon = pygame.image.load("rynn/upgrade.png").convert_alpha()     
         
     def interact(self):
         self.visible = True
@@ -3497,8 +3503,8 @@ class CraftingTable:
             overlay = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
             overlay.fill((0, 0, 0, 180))
             surface.blit(overlay, (0, 0))
-            
-            # Draw crafting menu
+
+            # Draw crafting menu background
             menu_rect = pygame.Rect(
                 surface.get_width()//2 - 150,
                 surface.get_height()//2 - 150,
@@ -3506,28 +3512,51 @@ class CraftingTable:
             )
             pygame.draw.rect(surface, (100, 70, 40), menu_rect)
             pygame.draw.rect(surface, (200, 180, 100), menu_rect, 3)
-            
+
             # Draw title
-            title_font = pygame.font.SysFont(None, 36)
+            title_font = pygame.font.SysFont(None, 40)
             title = title_font.render("Crafting Table", True, (255, 255, 255))
-            surface.blit(title, (menu_rect.centerx - title.get_width()//2, menu_rect.y + 20))
-            
-            # Draw options
+            surface.blit(title, (menu_rect.centerx - title.get_width()//2, menu_rect.y + 30))
+
+            # Font for options
             option_font = pygame.font.SysFont(None, 28)
-            
-            # Boat option
-            boat_rect = pygame.Rect(menu_rect.centerx - 100, menu_rect.centery - 60, 200, 80)
+
+            # --- Boat Option ---
+            boat_rect = pygame.Rect(menu_rect.centerx - 105, menu_rect.centery - 60, 220, 80)
             pygame.draw.rect(surface, (70, 50, 30), boat_rect)
             boat_text = option_font.render("Build Boat", True, (255, 255, 255))
-            surface.blit(boat_text, (boat_rect.centerx - boat_text.get_width()//2, boat_rect.centery - 10))
             
-            # Armor option
-            armor_rect = pygame.Rect(menu_rect.centerx - 100, menu_rect.centery + 40, 200, 80)
+            # Draw boat icon
+            if hasattr(self, 'boat_icon'):
+                icon = pygame.transform.scale(self.boat_icon, (50, 50))
+                icon_x = boat_rect.x + 10
+                icon_y = boat_rect.centery - icon.get_height() // 2
+                surface.blit(icon, (icon_x, icon_y))
+
+                # Text beside icon
+                surface.blit(boat_text, (icon_x + 60, boat_rect.centery - 10))
+            else:
+                surface.blit(boat_text, (boat_rect.centerx - boat_text.get_width()//2, boat_rect.centery - 10))
+
+            # --- Armor Option ---
+            armor_rect = pygame.Rect(menu_rect.centerx - 105, menu_rect.centery + 40, 220, 80)
             pygame.draw.rect(surface, (100, 100, 100), armor_rect)
             armor_text = option_font.render("Upgrade Armor", True, (255, 255, 255))
-            surface.blit(armor_text, (armor_rect.centerx - armor_text.get_width()//2, armor_rect.centery - 10))
-            
+
+            # Draw armor icon
+            if hasattr(self, 'armor_icon'):
+                icon = pygame.transform.scale(self.armor_icon, (50, 50))
+                icon_x = armor_rect.x + 10
+                icon_y = armor_rect.centery - icon.get_height() // 2
+                surface.blit(icon, (icon_x, icon_y))
+
+                # Text beside icon
+                surface.blit(armor_text, (icon_x + 50, armor_rect.centery - 10))
+            else:
+                surface.blit(armor_text, (armor_rect.centerx - armor_text.get_width()//2, armor_rect.centery - 10))
+
             return boat_rect, armor_rect
+
 
 class BoatBuildingUI:
     def __init__(self, inventory):
@@ -3566,7 +3595,9 @@ class BoatBuildingUI:
         # Draw progress
         progress_font = pygame.font.SysFont(None, 24)
         wood_text = progress_font.render(f"Wood: {self.boat_progress}/{self.required_wood}", True, (255, 255, 255))
-        crystal_text = progress_font.render(f"Crystals: {self.inventory.get('Crystal', 0)}/{self.required_crystals}", True, (255, 255, 255))
+        crystal_count = self.inventory.get('Crystal', 0) if isinstance(self.inventory, dict) else 0
+        crystal_text = progress_font.render(f"Crystals: {crystal_count}/{self.required_crystals}", True, (255, 255, 255))
+
         
         surface.blit(wood_text, (menu_rect.x + 50, menu_rect.y + 80))
         surface.blit(crystal_text, (menu_rect.x + 50, menu_rect.y + 120))
@@ -3617,6 +3648,7 @@ class ArmorUpgradeUI:
             "Gold": {"wood": 40, "crystals": 4},
             "Diamond": {"wood": 60, "crystals": 6}
         }
+        self.armor_type = "iron"
         
     def toggle(self):
         self.visible = not self.visible
@@ -3629,6 +3661,14 @@ class ArmorUpgradeUI:
         overlay = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
         overlay.fill((0, 0, 0, 180))
         surface.blit(overlay, (0, 0))
+        
+        armor_order = ["Iron", "Gold", "Diamond"]
+        current_type = self.player.armor_type if self.player.armor_type in armor_order else "Iron"
+        current_index = armor_order.index(current_type)
+
+        for level, costs in self.armor_levels.items():
+            level_index = armor_order.index(level)
+            can_upgrade = level_index > current_index
         
         # Draw menu
         menu_rect = pygame.Rect(
@@ -3693,6 +3733,9 @@ class ArmorUpgradeUI:
         
         return button_rects, close_button
 
+
+
+        
 player=player_instance
 
 # Main loop
@@ -3824,7 +3867,7 @@ while running:
                 add_button, close_button = boat_ui.draw(screen)
                 if add_button.collidepoint(mouse_pos):
                     # Add materials to boat progress
-                    wood_to_add = min(3, inventory.get("Wood", 0))
+                    wood_to_add = min(3, inventory.items.get("Wood", 0))
                     if wood_to_add > 0:
                         inventory.remove_item(inventory.get_slot_index("Wood"), wood_to_add)
                         boat_ui.boat_progress += wood_to_add
@@ -4136,11 +4179,13 @@ while running:
         crafting_ui_area = pygame.Rect(122, 232, 90, 86)
         if mouse_clicked and crafting_ui_area.collidepoint(mouse_pos) and not crafting_ui.visible:
             print("Craft pressed")
-            crafting_visible = True
-            
-        if crafting_visible:
-            crafting_ui.draw(screen)                
+            crafting_ui.visible = True
+                        
+        if crafting_ui.visible:
+            crafting_ui.draw(screen)
+                            
             if boat_ui.visible:
+                print("Boat pressed")
                 boat_ui.draw(screen)
             if armor_ui.visible:
                 armor_ui.draw(screen)   

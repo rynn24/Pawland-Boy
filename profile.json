@@ -516,8 +516,8 @@
   "fish": {
     "health": 480,
     "position": [
-      1490.2879999999998,
-      183.93399999999932
+      1475.2399999999996,
+      206.12599999999944
     ],
     "inventory": {
       "Fish": 21,
@@ -543,10 +543,10 @@
       "Fisherman (4 fish)": false
     },
     "shown_achievements": [
-      "Fisherman (10 fish)",
-      "First Kill",
       "Crystal Hunter (1 crystal)",
-      "Level 5 Achieved"
+      "Level 5 Achieved",
+      "First Kill",
+      "Fisherman (10 fish)"
     ],
     "stats": {
       "zombie_kills": 2,
