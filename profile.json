@@ -154,8 +154,8 @@
   "hj2": {
     "health": 295,
     "position": [
-      969.7329999999986,
-      709.8299999999966
+      1496.4130000000052,
+      189.2299999999994
     ],
     "inventory": {
       "Big Fish": 4,
@@ -181,11 +181,11 @@
       "Fisherman (4 fish)": false
     },
     "shown_achievements": [
-      "Zombie Slayer (20 kills)",
       "First Kill",
+      "Level 5 Achieved",
+      "Zombie Slayer (20 kills)",
       "Crystal Hunter (1 crystal)",
-      "Lumberjack (10 wood)",
-      "Level 5 Achieved"
+      "Lumberjack (10 wood)"
     ],
     "stats": {
       "zombie_kills": 21,
