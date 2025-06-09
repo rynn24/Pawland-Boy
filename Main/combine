@@ -23,7 +23,7 @@ font = pygame.font.SysFont(None, 24)
 reward_font = pygame.font.Font(None, 45) # font for fishing reward
 
 # Load map image
-map_image = pygame.image.load(os.path.join("rynn/Map2.png")).convert()
+map_image = pygame.image.load(os.path.join("images/Map2.png")).convert()
 
 # Camera and player position 
 camera_width, camera_height = 320, 180
@@ -93,10 +93,10 @@ house_area = [
 ] 
 in_house = False
 cooking_ui_visible = False
-house_image = pygame.image.load("rynn/inside-house.png").convert()
+house_image = pygame.image.load("images/inside-house.png").convert()
 house_rect = house_image.get_rect()
 show_house_prompt = False
-paper_image = pygame.image.load("rynn/paper.jpg").convert()
+paper_image = pygame.image.load("images/paper.jpg").convert()
 paper_visible = False
 crafting_visible = False
 
@@ -228,12 +228,12 @@ class Inventory:
     }
 
         # Add images for the new food items
-        self.item_icons["Fish Soup"] = {"image": pygame.image.load("rynn/fish-soup.png").convert_alpha(), "categories": "food"}
-        self.item_icons["Grilled Fish"] = {"image": pygame.image.load("rynn/grill-fish.png").convert_alpha(), "categories": "food"}
-        self.item_icons["Sweet Sailor"] = {"image": pygame.image.load("rynn/sweet-sailor.png").convert_alpha(), "categories": "food"}
-        self.item_icons["Fruit Jam"] = {"image": pygame.image.load("rynn/jam.png").convert_alpha(), "categories": "food"}
-        self.item_icons["Reef Medley"] = {"image": pygame.image.load("rynn/reef.png").convert_alpha(), "categories": "food"}
-        self.item_icons["Twinfin Delight"] = {"image": pygame.image.load("rynn/twin.png").convert_alpha(), "categories": "food"}
+        self.item_icons["Fish Soup"] = {"image": pygame.image.load("images/food/fish-soup.png").convert_alpha(), "categories": "food"}
+        self.item_icons["Grilled Fish"] = {"image": pygame.image.load("images/food/grill-fish.png").convert_alpha(), "categories": "food"}
+        self.item_icons["Sweet Sailor"] = {"image": pygame.image.load("images/food/sweet-sailor.png").convert_alpha(), "categories": "food"}
+        self.item_icons["Fruit Jam"] = {"image": pygame.image.load("images/food/jam.png").convert_alpha(), "categories": "food"}
+        self.item_icons["Reef Medley"] = {"image": pygame.image.load("images/food/reef.png").convert_alpha(), "categories": "food"}
+        self.item_icons["Twinfin Delight"] = {"image": pygame.image.load("images/food/twin.png").convert_alpha(), "categories": "food"}
         
             
         self.slot_size = 60
@@ -2475,7 +2475,7 @@ class Tree:
         surface.blit(self.frames[self.index], pos_on_surface)
 
 # Regular trees (wood only)
-tree_sheet = pygame.image.load("rynn/tree-new.png").convert_alpha()
+tree_sheet = pygame.image.load("images/map-sprite/tree-new.png").convert_alpha()
 tree_frames = load_frames(tree_sheet, 100, 100, 0, 7, spacing=5)
 trees = []
 for _ in range(20):
@@ -2491,7 +2491,7 @@ for _ in range(20):
         attempts += 1
 
 # Fruit trees (wood + fruit)
-tree_sheet_2 = pygame.image.load("rynn/tree-fruit.png").convert_alpha()
+tree_sheet_2 = pygame.image.load("images/map-sprite/tree-fruit.png").convert_alpha()
 tree_frames_2 = load_frames(tree_sheet_2, 100, 100, 0, 7, spacing=5)
 trees_2 = []
 for _ in range(20):
@@ -2955,14 +2955,14 @@ class PondArea:
         "id": "fish_1",
         "name": "Fish",
         "message": "You got a fish!",
-        "image": pygame.image.load("rynn/fish_1.png").convert_alpha(),
+        "image": pygame.image.load("images/fish_1.png").convert_alpha(),
         "chance": 0.4
     },
     {
         "id": "fish_2",
         "name": "Big Fish",
         "message": "You got a fish!",
-        "image": pygame.image.load("rynn/fish_2.png").convert_alpha(),
+        "image": pygame.image.load("images/fish_2.png").convert_alpha(),
         "chance": 0.3
     },
     {
@@ -2975,7 +2975,7 @@ class PondArea:
         "id": "crystal",
         "name": "Crystal",
         "message": "Congratulations! You got a rare item!",
-        "image": pygame.image.load("rynn/crystal.png").convert_alpha(),
+        "image": pygame.image.load("images/crystal.png").convert_alpha(),
         "chance": 0.03
     }
 ]
@@ -3221,8 +3221,8 @@ pond = PondArea(
     center=(1554, 585),
     radius_x=165,
     radius_y=162,
-    day_spritesheet_path="rynn/new-fish-sprite.png",
-    night_spritesheet_path="rynn/night-fish-sprite.png",
+    day_spritesheet_path="images/map-sprite/new-fish-sprite.png",
+    night_spritesheet_path="images/map-sprite/night-fish-sprite.png",
 
     rows=1,  
     cols=17,
@@ -3299,7 +3299,7 @@ class CookingUI:
         self.cook_button = pygame.Rect(445, 350, 100, 40) #Cook button
         
         # Load pot image
-        self.pot_image = pygame.image.load("rynn/pot.png").convert_alpha() 
+        self.pot_image = pygame.image.load("images/pot.png").convert_alpha() 
         self.pot_image = pygame.transform.scale(self.pot_image, (150, 150))
         
         # Font
@@ -3543,8 +3543,8 @@ class CraftingTable:
         self.visible = False
         self.boat_built = False
         self.armor_upgraded = False
-        self.boat_icon = pygame.image.load("rynn/build.png").convert_alpha()
-        self.armor_icon = pygame.image.load("rynn/upgrade.png").convert_alpha()     
+        self.boat_icon = pygame.image.load("images/build.png").convert_alpha()
+        self.armor_icon = pygame.image.load("images/upgrade.png").convert_alpha()     
         
     def interact(self):
         self.visible = True
@@ -3642,7 +3642,7 @@ class BoatBuildingUI:
         self.crystals_contributed = 0
         self.total_levels = 25
         self.day_count = day_count
-        self.frames = self.load_sprite_frames('rynn/boat-sprite.png', 25)
+        self.frames = self.load_sprite_frames('images/map-sprite/boat-sprite.png', 25)
         self.frame_width = self.frames[0].get_width()
         self.frame_height = self.frames[0].get_height()
         self.font = pygame.font.SysFont(None, 24)
@@ -4140,7 +4140,7 @@ while running:
         inventory_menu.draw(screen)
     if show_house_prompt and not in_house:
         text = font.render("Press J to enter house", True, (255, 255, 255))
-        text_rect = text.get_rect(center=(screen.get_width()//2, screen.get_height()-150))
+        text_rect = text.get_rect(center=(screen.get_width()//2, screen.get_height()-10))
         screen.blit(text, text_rect)
     
     if not in_house:  # Only process these if player is outside

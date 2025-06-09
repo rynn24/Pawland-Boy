@@ -76,6 +76,8 @@ BLACK = (0, 0, 0)
 GRAY = (100, 100, 100)
 LIGHT_GRAY = (200, 200, 200)
 
+
+
 def  login_menu(user_system) :
 
     while True:
@@ -1703,10 +1705,6 @@ while running:
         zoom_surface.blit(boss.image, boss_rect_on_screen)
         if not boss.is_dead:
             boss.draw_health_bar(zoom_surface, camera)
-
-    
-
-
 
         # Boss draw
     if boss.alive():  # Check if boss hasn't been killed
