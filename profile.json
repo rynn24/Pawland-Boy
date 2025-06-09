@@ -519,8 +519,8 @@
   "fish": {
     "health": 700,
     "position": [
-      1648.8940000000023,
-      398.27999999999946
+      1498.262,
+      200.37599999999995
     ],
     "inventory": {
       "Fish": 21,
@@ -550,12 +550,12 @@
       "Fisherman (4 fish)": false
     },
     "shown_achievements": [
-      "Fisherman (10 fish)",
-      "Level 5 Achieved",
       "First Kill",
       "Lumberjack (10 wood)",
       "Crystal Hunter (1 crystal)",
-      "Fruit Picker (5 fruit)"
+      "Level 5 Achieved",
+      "Fruit Picker (5 fruit)",
+      "Fisherman (10 fish)"
     ],
     "stats": {
       "zombie_kills": 2,
