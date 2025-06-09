@@ -551,11 +551,11 @@
     },
     "shown_achievements": [
       "Fisherman (10 fish)",
-      "Fruit Picker (5 fruit)",
-      "First Kill",
       "Level 5 Achieved",
+      "Fruit Picker (5 fruit)",
       "Crystal Hunter (1 crystal)",
-      "Lumberjack (10 wood)"
+      "Lumberjack (10 wood)",
+      "First Kill"
     ],
     "stats": {
       "zombie_kills": 2,
