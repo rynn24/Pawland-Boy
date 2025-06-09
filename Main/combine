@@ -3605,6 +3605,10 @@ class BoatBuildingUI:
         self.boat_progress = 0
         self.required_wood = 100
         self.required_crystals = 10
+    
+    def handle_event(self, event):
+        if not self.visible:
+            return False
         
     def toggle(self):
         self.visible = True
@@ -3689,9 +3693,14 @@ class ArmorUpgradeUI:
             "Diamond": {"wood": 60, "crystals": 6}
         }
         self.armor_type = "iron"
+    
+    def handle_event(self, event):
+        if not self.visible:
+            return False
+        
         
     def toggle(self):
-        self.visible = not self.visible
+        self.visible = True
         
     def draw(self, surface):
         if not self.visible:
@@ -3874,7 +3883,7 @@ while running:
         elif event.type == pygame.KEYUP:
             if event.key == pygame.K_SPACE:
                 player_instance.attacking = True
-
+            
     
         # In the main game loop's event handling section (where other events are handled):
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # Left mouse button
@@ -4193,12 +4202,18 @@ while running:
                     crafting_ui.visible = False  
             if mouse_clicked and boat_rect.collidepoint(mouse_pos) and not boat_ui.visible:                
                 print("Boat pressed")
-                boat_ui.toggle()
-                boat_ui.draw(screen)
+                boat_ui.visible = True
+
             elif mouse_clicked and armor_rect.collidepoint(mouse_pos) and not armor_ui.visible:
                 print("Armor pressed")
-                armor_ui.toggle() 
-                armor_ui.draw(screen)   
+                armor_ui.visible = True 
+        
+        if boat_ui.visible:
+            boat_ui.handle_event(event)
+            boat_ui.draw(screen)
+        elif armor_ui.visible:
+            armor_ui.handle_event(event)
+            armor_ui.draw(screen)
                  
         # Show mouse position on screen
         mouse_pos_text = font.render(f"Mouse: {mouse_x}, {mouse_y}", True, (255, 255, 255))
