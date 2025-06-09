@@ -9,7 +9,7 @@ pygame.display.set_caption("Pawland Boy")
 clock = pygame.time.Clock()
 
 # Load assets
-map_image = pygame.image.load(os.path.join("rynn/Map.png")).convert()
+map_image = pygame.image.load(os.path.join("imag/Map.png")).convert()
 
 # Game settings
 camera_width, camera_height = 320, 180  
