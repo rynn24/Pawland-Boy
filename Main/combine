@@ -398,7 +398,25 @@ class Inventory:
             else:
                 self.slots[index] = (name, count)
                 
+    def get_inventory_dict(self):
+        """Return inventory as a dictionary for saving purposes."""
+        data = {}
+        for slot in self.slots:
+            if slot:
+                item_name, item_count = slot
+                data[item_name] = item_count  # Store just the name and count
+        return data
 
+    
+    def set_items(self, items_dict):
+        """Load saved items into the inventory"""
+        self.slots = [None] * self.max_slots
+        index = 0
+        for name, count in items_dict.items():
+            if index < self.max_slots:
+                self.slots[index] = (name, count)
+                index += 1
+                
     def has_item(self, item_name):
         for slot in self.slots:
             if slot is not None:
@@ -3513,6 +3531,28 @@ class CraftingTable:
             pygame.draw.rect(surface, (100, 70, 40), menu_rect)
             pygame.draw.rect(surface, (200, 180, 100), menu_rect, 3)
 
+            menu_rect = pygame.Rect(
+            surface.get_width()//2 - 150,
+            surface.get_height()//2 - 150,
+            300, 300
+            )
+            pygame.draw.rect(surface, (100, 70, 40), menu_rect)
+            pygame.draw.rect(surface, (200, 180, 100), menu_rect, 3)
+
+            # --- Circular Close Button (X) ---
+            close_center = (menu_rect.right - 25, menu_rect.top + 25)  # Circle center
+            close_radius = 15
+
+            # Draw circle (background and border)
+            pygame.draw.circle(surface, (150, 0, 0), close_center, close_radius)        # Red circle
+            pygame.draw.circle(surface, (255, 255, 255), close_center, close_radius, 2) # White border
+
+            # Draw "X" text in center
+            x_font = pygame.font.SysFont(None, 28)
+            x_text = x_font.render("X", True, (255, 255, 255))
+            x_text_rect = x_text.get_rect(center=close_center)
+            surface.blit(x_text, x_text_rect)
+
             # Draw title
             title_font = pygame.font.SysFont(None, 40)
             title = title_font.render("Crafting Table", True, (255, 255, 255))
@@ -3567,7 +3607,7 @@ class BoatBuildingUI:
         self.required_crystals = 10
         
     def toggle(self):
-        self.visible = not self.visible
+        self.visible = True
         
     def draw(self, surface):
         if not self.visible:
@@ -3849,50 +3889,6 @@ while running:
             if inventory_menu.visible:
                 inventory_menu.handle_click(event.pos)
 
-            if crafting_ui.rect.collidepoint(world_mouse_x, world_mouse_y) and not in_house:
-                crafting_ui.interact()
-            
-            # Handle crafting table menu clicks
-            if crafting_ui.visible:
-                boat_rect, armor_rect = crafting_ui.draw(screen)
-                if boat_rect.collidepoint(mouse_pos):
-                    crafting_ui.visible = False
-                    boat_ui.toggle()
-                elif armor_rect.collidepoint(mouse_pos):
-                    crafting_ui.visible = False
-                    armor_ui.toggle()
-            
-            # Handle boat building UI
-            if boat_ui.visible:
-                add_button, close_button = boat_ui.draw(screen)
-                if add_button.collidepoint(mouse_pos):
-                    # Add materials to boat progress
-                    wood_to_add = min(3, inventory.items.get("Wood", 0))
-                    if wood_to_add > 0:
-                        inventory.remove_item(inventory.get_slot_index("Wood"), wood_to_add)
-                        boat_ui.boat_progress += wood_to_add
-                        if boat_ui.boat_progress >= boat_ui.required_wood and inventory.get("Crystal", 0) >= boat_ui.required_crystals:
-                            # Boat can be built
-                            inventory.add_item("Boat", 1)
-                            boat_ui.boat_progress = 0  # Reset progress
-                elif close_button.collidepoint(mouse_pos):
-                    boat_ui.toggle()
-            
-            # Handle armor upgrade UI
-            if armor_ui.visible:
-                armor_buttons, close_button = armor_ui.draw(screen)
-                for button_rect, armor_type in armor_buttons:
-                    if button_rect.collidepoint(mouse_pos):
-                        costs = armor_ui.armor_levels[armor_type]
-                        if (inventory.get("Wood", 0) >= costs["wood"] and 
-                            inventory.get("Crystal", 0) >= costs["crystals"]):
-                            # Upgrade armor
-                            inventory.remove_item(inventory.get_slot_index("Wood"), costs["wood"])
-                            inventory.remove_item(inventory.get_slot_index("Crystal"), costs["crystals"])
-                            player_instance.armor_type = armor_type
-                            inventory.add_item(f"Armor({armor_type})", 1)
-                if close_button.collidepoint(mouse_pos):
-                    armor_ui.toggle()        
         # Handle settings menu events
         if game_state == "settings":
             result = settings_menu.handle_events(event)
@@ -4177,17 +4173,31 @@ while running:
                 paper_visible = False
                 
         crafting_ui_area = pygame.Rect(122, 232, 90, 86)
+        boat_rect = pygame.Rect(205, 180, 220, 80)
+        armor_rect = pygame.Rect(205, 280, 220, 80)
         if mouse_clicked and crafting_ui_area.collidepoint(mouse_pos) and not crafting_ui.visible:
             print("Craft pressed")
             crafting_ui.visible = True
                         
         if crafting_ui.visible:
             crafting_ui.draw(screen)
-                            
-            if boat_ui.visible:
+            # Close button logic (circle at (435, 115), radius 15)
+            close_center = (435, 115)
+            close_radius = 15
+            dx = mouse_pos[0] - close_center[0]
+            dy = mouse_pos[1] - close_center[1]
+            # Check if click is inside the circle
+            if mouse_clicked and dx*dx + dy*dy <= close_radius*close_radius:
+                if crafting_ui.visible:
+                    print("Closed crafting UI")
+                    crafting_ui.visible = False  
+            if mouse_clicked and boat_rect.collidepoint(mouse_pos) and not boat_ui.visible:                
                 print("Boat pressed")
+                boat_ui.toggle()
                 boat_ui.draw(screen)
-            if armor_ui.visible:
+            elif mouse_clicked and armor_rect.collidepoint(mouse_pos) and not armor_ui.visible:
+                print("Armor pressed")
+                armor_ui.toggle() 
                 armor_ui.draw(screen)   
                  
         # Show mouse position on screen
