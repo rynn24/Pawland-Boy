@@ -93,10 +93,10 @@ house_area = [
 ] 
 in_house = False
 cooking_ui_visible = False
-house_image = pygame.image.load("images/inside-house.png").convert()
+house_image = pygame.image.load("images/house/inside-house.png").convert()
 house_rect = house_image.get_rect()
 show_house_prompt = False
-paper_image = pygame.image.load("images/paper.jpg").convert()
+paper_image = pygame.image.load("images/house/paper.jpg").convert()
 paper_visible = False
 crafting_visible = False
 
@@ -3299,7 +3299,7 @@ class CookingUI:
         self.cook_button = pygame.Rect(445, 350, 100, 40) #Cook button
         
         # Load pot image
-        self.pot_image = pygame.image.load("images/pot.png").convert_alpha() 
+        self.pot_image = pygame.image.load("images/house/pot.png").convert_alpha() 
         self.pot_image = pygame.transform.scale(self.pot_image, (150, 150))
         
         # Font
