@@ -2955,14 +2955,14 @@ class PondArea:
         "id": "fish_1",
         "name": "Fish",
         "message": "You got a fish!",
-        "image": pygame.image.load("images/fish_1.png").convert_alpha(),
+        "image": pygame.image.load("images/pond/fish_1.png").convert_alpha(),
         "chance": 0.4
     },
     {
         "id": "fish_2",
         "name": "Big Fish",
         "message": "You got a fish!",
-        "image": pygame.image.load("images/fish_2.png").convert_alpha(),
+        "image": pygame.image.load("images/pond/fish_2.png").convert_alpha(),
         "chance": 0.3
     },
     {
@@ -2975,7 +2975,7 @@ class PondArea:
         "id": "crystal",
         "name": "Crystal",
         "message": "Congratulations! You got a rare item!",
-        "image": pygame.image.load("images/crystal.png").convert_alpha(),
+        "image": pygame.image.load("images/pond/crystal.png").convert_alpha(),
         "chance": 0.03
     }
 ]
@@ -3543,8 +3543,8 @@ class CraftingTable:
         self.visible = False
         self.boat_built = False
         self.armor_upgraded = False
-        self.boat_icon = pygame.image.load("images/build.png").convert_alpha()
-        self.armor_icon = pygame.image.load("images/upgrade.png").convert_alpha()     
+        self.boat_icon = pygame.image.load("images/craft-icon/build.png").convert_alpha()
+        self.armor_icon = pygame.image.load("images/craft-icon/upgrade.png").convert_alpha()     
         
     def interact(self):
         self.visible = True
