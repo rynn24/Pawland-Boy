@@ -1413,28 +1413,28 @@ class PondArea:
         "id": "fish_1",
         "name": "Fish",
         "message": "You got a fish!",
-        "image": pygame.image.load("rynn/fish_1.png").convert_alpha(),
+        "image": pygame.image.load("images/pond/fish_1.png").convert_alpha(),
         "chance": 0.4
     },
     {
         "id": "fish_2",
         "name": "Big Fish",
         "message": "You got a fish!",
-        "image": pygame.image.load("rynn/fish_2.png").convert_alpha(),
+        "image": pygame.image.load("images/pond/fish_2.png").convert_alpha(),
         "chance": 0.3
     },
     {
         "id": "nothing",
         "name": "Nothing",
         "message": "You got nothing...",
-        "image": pygame.image.load("rynn/nothing.png").convert_alpha(),
+        "image": pygame.image.load("images/pond/nothing.png").convert_alpha(),
         "chance": 0.27
     },
     {
         "id": "crystal",
         "name": "Crystal",
         "message": "Congratulations! You got a rare item!",
-        "image": pygame.image.load("rynn/crystal.png").convert_alpha(),
+        "image": pygame.image.load("images/pond/crystal.png").convert_alpha(),
         "chance": 0.03
     }
 ]
