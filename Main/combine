@@ -424,7 +424,30 @@ class Inventory:
                     if slot[0] == item_name:
                         return True
         return False
-        
+    
+    def get_item_count(self, item_name):
+        total = 0
+        for slot in self.slots:
+            if slot and slot[0] == item_name:
+                total += slot[1]
+        return total
+    
+    def remove_items(self, item_name, amount):
+        """Remove 'amount' of 'item_name' from inventory slots, starting from first slots."""
+        remaining = amount
+        for i, slot in enumerate(self.slots):
+            if slot and slot[0] == item_name:
+                name, count = slot
+                if count > remaining:
+                    self.slots[i] = (name, count - remaining)
+                    return True  # done removing
+                else:
+                    self.slots[i] = None  # remove whole slot
+                    remaining -= count
+                if remaining <= 0:
+                    return True
+        # Not enough items to remove
+        return False    
 class UserSystem:
     def __init__(self, filename="profile.json"):
         self.filename = filename
@@ -3075,6 +3098,9 @@ current_screen = "main_menu"
 current_user = None
 in_game = False
 inventory = Inventory() 
+player_inventory = Inventory()
+
+
 default_achievements = {
     "First Kill": False,
     "Zombie Slayer (20 kills)": False,
@@ -3596,10 +3622,12 @@ class CraftingTable:
                 surface.blit(armor_text, (armor_rect.centerx - armor_text.get_width()//2, armor_rect.centery - 10))
 
             return boat_rect, armor_rect
-
+        
+print("game_state is:", game_state, type(game_state))
 
 class BoatBuildingUI:
     def __init__(self, inventory, day_count):
+        print("BoatBuildingUI received inventory:", inventory, type(inventory))
         self.inventory = inventory
         self.visible = False
         self.boat_progress = 0  # wood contributed
@@ -3610,7 +3638,14 @@ class BoatBuildingUI:
         self.frame_width = self.frames[0].get_width()
         self.frame_height = self.frames[0].get_height()
         self.font = pygame.font.SysFont(None, 24)
-
+        self.close_button = pygame.Rect(0, 0, 1, 1)  # Placeholder, updated in draw()
+        self.add_button = pygame.Rect(0, 0, 1, 1)
+        # Initialize current wood count (starting at 0)
+        self.current_wood = 0
+        # Also initialize max wood, if you haven't yet
+        self.max_wood = 50  # or whatever max you want
+        
+        
     def load_sprite_frames(self, path, num_frames):
         sheet = pygame.image.load(path).convert_alpha()
         frame_width = sheet.get_width() // num_frames
@@ -3656,23 +3691,39 @@ class BoatBuildingUI:
         surface.blit(sprite, sprite_pos)
 
         # Inventory summary
-        surface.blit(self.font.render(f"Wood: {self.boat_progress}/50", True, (255, 255, 255)), (menu_rect.x + 50, menu_rect.y + 250))
+        surface.blit(self.font.render(f"Wood: {self.current_wood}/50", True, (255, 255, 255)), (menu_rect.x + 50, menu_rect.y + 250))
         crystal_count = self.inventory.get('Crystal', 0) if isinstance(self.inventory, dict) else 0
         surface.blit(self.font.render(f"Crystals: {crystal_count}/4", True, (255, 255, 255)), (menu_rect.x + 50, menu_rect.y + 280))
 
-        # Add materials button
-        add_button = pygame.Rect(menu_rect.centerx - 100, menu_rect.y + 210, 200, 30)
-        pygame.draw.rect(surface, (50, 150, 50), add_button)
-        add_text = self.font.render("Add Materials", True, (255, 255, 255))
-        surface.blit(add_text, (add_button.centerx - add_text.get_width() // 2, add_button.centery - add_text.get_height() // 2))
-
-        # Close X button (top right of box)
-        close_button = pygame.Rect(menu_rect.right - 30, menu_rect.y + 10, 20, 20)
-        pygame.draw.rect(surface, (150, 0, 0), close_button)
+        # Update close button rect
+        self.close_button = pygame.Rect(menu_rect.right - 30, menu_rect.y + 10, 20, 20)
+        pygame.draw.rect(surface, (150, 0, 0), self.close_button)
         x_text = self.font.render("X", True, (255, 255, 255))
-        surface.blit(x_text, (close_button.centerx - x_text.get_width() // 2, close_button.centery - x_text.get_height() // 2))
+        surface.blit(x_text, (self.close_button.centerx - x_text.get_width() // 2,
+                            self.close_button.centery - x_text.get_height() // 2))
 
-        return add_button, close_button
+        # Update add button rect
+        self.add_button = pygame.Rect(menu_rect.centerx - 100, menu_rect.y + 210, 200, 30)
+        pygame.draw.rect(surface, (50, 150, 50), self.add_button)
+        add_text = self.font.render("Add Materials", True, (255, 255, 255))
+        surface.blit(add_text, (self.add_button.centerx - add_text.get_width() // 2,
+                                self.add_button.centery - add_text.get_height() // 2))
+        
+    def try_add_materials(self):
+        wood_count = self.inventory.get_item_count("Wood")
+        
+        if wood_count > 0 and self.current_wood < self.max_wood:
+            removed = self.inventory.remove_items("Wood", 1)
+            if removed:
+                self.current_wood += 1
+                # Save inventory if needed
+                # save_inventory(self.inventory.get_inventory_dict())
+                print("Added 1 wood to the boat")
+            else:
+                print("Failed to remove wood from inventory")
+        else:
+            print("Not enough wood or boat is full")
+
 
 
 class ArmorUpgradeUI:
@@ -3779,10 +3830,10 @@ class ArmorUpgradeUI:
 
 day_count = current_day       
 player=player_instance
+boat_ui = BoatBuildingUI(player.inventory, day_count)
 
 # Main loop
 running = True
-boat_ui = BoatBuildingUI(game_state, day_count)
 armor_ui = ArmorUpgradeUI(inventory, player)
 crafting_ui = CraftingTable(game_state, position)
 while running:
@@ -4196,15 +4247,25 @@ while running:
             if mouse_clicked and boat_rect.collidepoint(mouse_pos) and not boat_ui.visible:                
                 print("Boat pressed")
                 boat_ui.visible = True
-
+                armor_ui.visible = False
+                crafting_ui.visible = False
             elif mouse_clicked and armor_rect.collidepoint(mouse_pos) and not armor_ui.visible:
                 print("Armor pressed")
                 armor_ui.visible = True
+                boat_ui.visible = False
+                crafting_ui.visible = False
  
         
         if boat_ui.visible:
             boat_ui.handle_event(event)
             boat_ui.draw(screen)
+            if mouse_clicked: 
+                if boat_ui.close_button.collidepoint(mouse_pos):
+                    boat_ui.visible = False  # Close the boat UI
+                elif boat_ui.add_button.collidepoint(mouse_pos):
+                    # Try to add materials
+                    boat_ui.try_add_materials()
+                    
         elif armor_ui.visible:
             armor_ui.handle_event(event)
             armor_ui.draw(screen)
