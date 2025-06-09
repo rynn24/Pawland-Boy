@@ -1487,7 +1487,6 @@ class PondArea:
             frame = self.frames[self.current_frame]
             scaled_frame = pygame.transform.scale(frame, screen.get_size())
             screen.blit(scaled_frame, (0, 0))
-        # Show "Press J to fish" if player is in detection radius
         else:
             if self.is_player_inside(player_position):
                 text_surface = font.render("Press J to fish", True, (255, 255, 255))  # White text

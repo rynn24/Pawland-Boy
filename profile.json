@@ -519,8 +519,8 @@
   "fish": {
     "health": 700,
     "position": [
-      1491.7880000000005,
-      199.99800000000064
+      1648.8940000000023,
+      398.27999999999946
     ],
     "inventory": {
       "Fish": 21,
@@ -528,12 +528,14 @@
       "Crystal": 10,
       "Armor(Gold)": 1,
       "Twinfin Delight": 1,
-      "Wood": 27,
+      "Wood": 12,
       "Fruit": 6
     },
     "level": 7,
     "exp": 65,
     "day": 1,
+    "boat_progress": 0,
+    "boat_crystals": 0,
     "achievements": {
       "First Kill": true,
       "Zombie Slayer (20 kills)": false,
@@ -548,12 +550,12 @@
       "Fisherman (4 fish)": false
     },
     "shown_achievements": [
-      "First Kill",
       "Fisherman (10 fish)",
+      "Level 5 Achieved",
+      "First Kill",
       "Lumberjack (10 wood)",
-      "Fruit Picker (5 fruit)",
       "Crystal Hunter (1 crystal)",
-      "Level 5 Achieved"
+      "Fruit Picker (5 fruit)"
     ],
     "stats": {
       "zombie_kills": 2,
