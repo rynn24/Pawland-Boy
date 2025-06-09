@@ -516,8 +516,8 @@
   "fish": {
     "health": 480,
     "position": [
-      1475.2399999999996,
-      206.12599999999944
+      1490.4399999999998,
+      195.9419999999994
     ],
     "inventory": {
       "Fish": 21,
@@ -528,7 +528,7 @@
     },
     "level": 6,
     "exp": 275,
-    "day": 1,
+    "day": 2,
     "achievements": {
       "First Kill": true,
       "Zombie Slayer (20 kills)": false,
@@ -544,8 +544,8 @@
     },
     "shown_achievements": [
       "Crystal Hunter (1 crystal)",
-      "Level 5 Achieved",
       "First Kill",
+      "Level 5 Achieved",
       "Fisherman (10 fish)"
     ],
     "stats": {
