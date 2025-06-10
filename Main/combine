@@ -625,57 +625,48 @@ def loading_screen(screen, font):
         screen.blit(text, (screen.get_width() // 2 - text.get_width() // 2,
                            screen.get_height() // 2 - text.get_height() // 2))
         pygame.display.flip()
-
-        # Load tutorial frames (only once)
-        tutorial_frames = {
-            "movement": [f"minting/Twalk/walk_{i:03}.png" for i in range(40)],
-            "attack": [f"minting/Tattack/ezgif-frame-{i:03}.png" for i in range(1, 66)],
-            "inventory": [f"minting/Tinventory/ezgif-frame-{i:03}.png" for i in range(1, 84)],
-            "fishing": [f"minting/FishT/ezgif-frame-{i:03}.png" for i in range(1, 84)],
-            "enemy": [f"minting/EnemyT/ezgif-frame-{i:03}.png" for i in range(1, 122)],
-            "weapon": [f"minting/Tweapon/ezgif-frame-{i:03}.png" for i in range(1, 45)],
-            "cook": [f"minting/CookT/ezgif-frame-{i:03}.png" for i in range(1, 102)],
-            "exp": [f"minting/tExp/ezgif-frame-{i:03}.png" for i in range(1, 48)],
+        spritesheets = {
+            "movement": pygame.image.load("minting/TWALK.png").convert_alpha(),
+            "attack": pygame.image.load("minting/TATTACK.png").convert_alpha(),
+            "inventory": pygame.image.load("minting/TINVENTORY.png").convert_alpha(),
+            "fishing": pygame.image.load("minting/TFISH.png").convert_alpha(),
+            "enemy": pygame.image.load("minting/TENEMY.png").convert_alpha(),
+            "weapon": pygame.image.load("minting/TWEAPON.png").convert_alpha(),
+            "cook": pygame.image.load("minting/TCOOK.png").convert_alpha(),
+            "exp": pygame.image.load("minting/TEXP.png").convert_alpha(),
         }
 
         loading = False  # Exit loop after loading once
         clock.tick(60)
 
-    return tutorial_frames
-
-
-# Show loading screen and load frames
-tutorial_frame_paths = loading_screen(screen, font)
+    return spritesheets
 
 class TutorialPage:
-    def __init__(self, title, text, spritesheet_path, frame_width, frame_height):
+    def __init__(self, title, text, spritesheet_surface, frame_width, frame_height):
         self.title = title
         self.text = text
-        self.frames = self._extract_frames(spritesheet_path, frame_width, frame_height)
+        self.frames = []
         self.frame_index = 0
         self.frame_timer = 0
         self.frame_delay = 0.10
 
-    def _extract_frames(self, spritesheet_path, frame_width, frame_height):
+        if spritesheet_surface:  # Check if path is not None/empty
+            self.frames = self._extract_frames(spritesheet_surface, frame_width, frame_height)
+
+    def _extract_frames(self, spritesheet_surface, frame_width, frame_height):
         frames = []
-        if not spritesheet_path:
-            return frames  # No spritesheet, return empty frame list
-
-        sheet = pygame.image.load(spritesheet_path).convert_alpha()
-        sheet_width, sheet_height = sheet.get_size()
-
-        for y in range(0, sheet_height, frame_height):
-            for x in range(0, sheet_width, frame_width):
-                frame = sheet.subsurface(pygame.Rect(x, y, frame_width, frame_height))
-                frames.append(frame)
-
+        try:
+            sheet_width, sheet_height = spritesheet_surface.get_size()
+            
+            for y in range(0, sheet_height, frame_height):
+                for x in range(0, sheet_width, frame_width):
+                    frame = spritesheet_surface.subsurface(pygame.Rect(x, y, frame_width, frame_height))
+                    frames.append(frame)
+        except Exception as e:
+            print(f"Error loading spritesheet: {e}")
         return frames
 
 
-
-    def _load_frames(self, paths):
-        return [pygame.image.load(p).convert_alpha() for p in paths]
-    
     def update(self, dt):
         self.frame_timer += dt
         if self.frame_timer >= self.frame_delay:
@@ -751,17 +742,20 @@ class TutorialPage:
         frame_height = 150  # Estimate or calculate actual image size
         return 20 + title_height + 10 + text_height + 10 + frame_height + 20
 
+# Load spritesheets first
+spritesheets = loading_screen(screen, font)
+
 tutorial_pages = [
-    TutorialPage("Tutorial", "tap the red colour book or use T key for open and close this tutorial.","",0, 0),
-    TutorialPage("Goal", "Build boat in at least 50 days , kill boss and escape Pawland!","",0, 0),
-    TutorialPage("Movement", "Use W A S D to move.", "minting/TWALK.png", 1440, 1080),
-    TutorialPage("Attack & Chop", "Press SPACE to attack and chop.", "minting/TATTACK.png", 1440, 1080),
-    TutorialPage("Inventory", "Press B to open and close inventory.Try out different button for different item.💼💼", "minting/TINVENTORY.png", 772, 590),
-    TutorialPage("Fishing", "Approach the pond and press J,random item will be given!!","minting/TFISH.png",1440, 1080),
-    TutorialPage("Respawn", "You will respawn after getting killed. Beware the boss!", "minting/TENEMY.png", 1440, 1080),
-    TutorialPage("Weapon", "Use Tab to change weapon", "minting/TWEAPON.png", 1440, 1080),
-    TutorialPage("Cooking", "Tap and pull the ingredient to cook .Try different ingredients!", "minting/TCOOK.png", 1440, 1080),
-    TutorialPage("Level & exp", "Gain exp from trees and enemies. HP restores when leveling up!", "minting/TEXP.png",1440, 1080),
+    TutorialPage("Tutorial", "tap the red colour book or use T key for open and close this tutorial.",None, 0, 0),
+    TutorialPage("Goal", "Build boat in at least 50 days , kill boss and escape Pawland!",None, 0, 0),
+    TutorialPage("Movement", "Use W A S D to move.", spritesheets["movement"], 1440, 1080),
+    TutorialPage("Attack & Chop", "Press SPACE to attack and chop.", spritesheets["attack"], 1440, 1080),
+    TutorialPage("Inventory", "Press B to open and close inventory.Try out different button for different item.",spritesheets["inventory"], 772, 590),
+    TutorialPage("Fishing", "Approach the pond and press J,random item will be given!!",spritesheets["fishing"],1440, 1080),
+    TutorialPage("Respawn", "You will respawn after getting killed. Beware the boss!", spritesheets["enemy"], 1440, 1080),
+    TutorialPage("Weapon", "Use Tab to change weapon", spritesheets["weapon"], 1440, 1080),
+    TutorialPage("Cooking", "Tap and pull the ingredient to cook .Try different ingredients!", spritesheets["cook"], 1440, 1080),
+    TutorialPage("Level & exp", "Gain exp from trees and enemies. HP restores when leveling up!",spritesheets["exp"],1440, 1080),
  ]
 
 
