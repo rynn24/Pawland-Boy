@@ -519,8 +519,8 @@
   "fish": {
     "health": 700,
     "position": [
-      1508.5540000000003,
-      203.80799999999982
+      1495.0259999999998,
+      198.33600000000007
     ],
     "inventory": {
       "Fish": 21,
@@ -550,11 +550,11 @@
       "Fisherman (4 fish)": false
     },
     "shown_achievements": [
-      "Fisherman (10 fish)",
-      "Level 5 Achieved",
-      "Fruit Picker (5 fruit)",
-      "Crystal Hunter (1 crystal)",
       "Lumberjack (10 wood)",
+      "Fisherman (10 fish)",
+      "Fruit Picker (5 fruit)",
+      "Level 5 Achieved",
+      "Crystal Hunter (1 crystal)",
       "First Kill"
     ],
     "stats": {
