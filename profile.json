@@ -417,8 +417,8 @@
   "35": {
     "health": 200,
     "position": [
-      1621.9060000000018,
-      427.6119999999993
+      1499.8499999999995,
+      193.98799999999972
     ],
     "inventory": {
       "Fish": 1,
@@ -426,6 +426,7 @@
     },
     "level": 2,
     "exp": 0,
+    "day": 3,
     "achievements": {
       "First Kill": false,
       "Zombie Slayer (20 kills)": false,
