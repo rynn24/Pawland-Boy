@@ -1452,7 +1452,7 @@ class SettingsMenu:
         
         y_text += title.get_height() + 10
 
-        vol_text = self.font.render(f"Music Volume: {int(self.music_volume * 100)}%", True, (255, 255, 255))
+        vol_text = self.font.render(f"Music Volume: {round(self.music_volume * 100)}%", True, (255, 255, 255))
         screen.blit(vol_text, (w // 2 - vol_text.get_width() // 2, y_text))
 
         y_text += vol_text.get_height() + 5
