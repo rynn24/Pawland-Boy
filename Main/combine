@@ -99,7 +99,7 @@ show_house_prompt = False
 paper_image = pygame.image.load("images/house/paper.jpg").convert()
 paper_visible = False
 crafting_visible = False
-
+recipe_visible = False
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 GRAY = (100, 100, 100)
@@ -3533,6 +3533,46 @@ class CookingUI:
 cooking_ui = CookingUI(inventory, screen.get_width(), screen.get_height())
 
 # Recipe book
+class RecipeBookUI:
+    def __init__(self, image_path, close_button_rect, font):
+        self.image = pygame.image.load("images/house/recipe.png").convert_alpha()
+        self.visible = False
+        self.font = font
+        self.close_button = pygame.Rect(0, 0, 1, 1)
+        
+        # Position and size for the UI window
+        self.window_rect = pygame.Rect(100, 100, self.image.get_width() + 40, self.image.get_height() + 80)
+        
+        # Close button rect (you can customize position/size)
+        self.close_button_rect = pygame.Rect(close_button_rect)
+        
+    def open(self):
+        self.visible = True
+        
+    def close(self):
+        self.visible = False
+        
+    def handle_event(self, event):
+        if not self.visible:
+            return
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if self.close_button_rect.collidepoint(event.pos):
+                self.close()
+    
+    def draw(self, surface):
+        if not self.visible:
+            return
+        
+        # Draw the image centered inside the window with some padding
+        image_pos = (self.window_rect.x - 100 , self.window_rect.y - 70)
+        surface.blit(self.image, image_pos)
+        
+        #close button
+        self.close_button = pygame.Rect(560, 90, 25, 30)
+        pygame.draw.rect(surface, (150, 0, 0), self.close_button)
+        x_text = self.font.render("X", True, (255, 255, 255))
+        surface.blit(x_text, (self.close_button.centerx - x_text.get_width() // 2,
+                            self.close_button.centery - x_text.get_height() // 2))
 
 
 class CraftingTable:
@@ -3837,7 +3877,7 @@ class ArmorUpgradeUI:
 day_count = current_day       
 player=player_instance
 boat_ui = BoatBuildingUI(player.inventory, day, boat_progress, boat_crystals )
-
+recipe_ui = RecipeBookUI("images/house/recipe.png", (600, 120, 30, 30), font)
 # Main loop
 running = True
 armor_ui = ArmorUpgradeUI(inventory, player)
@@ -4208,7 +4248,17 @@ while running:
             in_house = False
             player_position = paused_world_state["player_pos"]
             time_counter = paused_world_state["time_counter"]
-            
+        
+        recipe_book_rect = pygame.Rect(161, 125, 53, 18)
+        if recipe_book_rect.collidepoint(mouse_x, mouse_y) and mouse_clicked and not recipe_ui.visible:
+            print("open recipe book")
+            recipe_ui.open()
+        if recipe_ui.open:    
+            recipe_ui.draw(screen)
+            if mouse_clicked: 
+                if recipe_ui.close_button.collidepoint(mouse_pos):
+                    recipe_ui.visible = False  # Close the boat UI
+           
         #  Paper Zone (clickable wall area)
         paper_zone_rect = pygame.Rect(25, 95, 81, 50)  # Adjust coords and size
         if paper_zone_rect.collidepoint(mouse_x, mouse_y) and mouse_clicked and not paper_visible:
