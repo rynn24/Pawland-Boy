@@ -76,6 +76,8 @@ BLACK = (0, 0, 0)
 GRAY = (100, 100, 100)
 LIGHT_GRAY = (200, 200, 200)
 
+
+
 def  login_menu(user_system) :
 
     while True:
@@ -1411,28 +1413,28 @@ class PondArea:
         "id": "fish_1",
         "name": "Fish",
         "message": "You got a fish!",
-        "image": pygame.image.load("rynn/fish_1.png").convert_alpha(),
+        "image": pygame.image.load("images/pond/fish_1.png").convert_alpha(),
         "chance": 0.4
     },
     {
         "id": "fish_2",
         "name": "Big Fish",
         "message": "You got a fish!",
-        "image": pygame.image.load("rynn/fish_2.png").convert_alpha(),
+        "image": pygame.image.load("images/pond/fish_2.png").convert_alpha(),
         "chance": 0.3
     },
     {
         "id": "nothing",
         "name": "Nothing",
         "message": "You got nothing...",
-        "image": pygame.image.load("rynn/nothing.png").convert_alpha(),
+        "image": pygame.image.load("images/pond/nothing.png").convert_alpha(),
         "chance": 0.27
     },
     {
         "id": "crystal",
         "name": "Crystal",
         "message": "Congratulations! You got a rare item!",
-        "image": pygame.image.load("rynn/crystal.png").convert_alpha(),
+        "image": pygame.image.load("images/pond/crystal.png").convert_alpha(),
         "chance": 0.03
     }
 ]
@@ -1487,7 +1489,6 @@ class PondArea:
             frame = self.frames[self.current_frame]
             scaled_frame = pygame.transform.scale(frame, screen.get_size())
             screen.blit(scaled_frame, (0, 0))
-        # Show "Press J to fish" if player is in detection radius
         else:
             if self.is_player_inside(player_position):
                 text_surface = font.render("Press J to fish", True, (255, 255, 255))  # White text
@@ -1704,10 +1705,6 @@ while running:
         zoom_surface.blit(boss.image, boss_rect_on_screen)
         if not boss.is_dead:
             boss.draw_health_bar(zoom_surface, camera)
-
-    
-
-
 
         # Boss draw
     if boss.alive():  # Check if boss hasn't been killed
