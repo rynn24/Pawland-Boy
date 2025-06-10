@@ -568,7 +568,7 @@ class MainMenu:
 
         self.current_frame = 0
         self.frame_timer = 0
-        self.frame_delay = 200  # milliseconds between frames
+        self.frame_delay = 175  # milliseconds between frames
 
     def handle_events(self, events):
         for event in events:
@@ -970,7 +970,7 @@ class LoginPage:
         pygame.display.flip()
 
 class RegisterPage:
-    def __init__(self, screen, user_system, window_size,tutorial):
+    def __init__(self, screen, user_system, window_size,tutorial,button_image2trim=None):
         self.tutorial = tutorial
         self.screen = screen
         self.user_system = user_system
@@ -980,7 +980,7 @@ class RegisterPage:
         self.input_rect = pygame.Rect(window_size[0] // 2 - 100, 160, 220, 40)
         self.active_input = False
         self.register_button = Button(window_size[0] // 2 - 60, 220, 120, 40, "Create Profile",
-                                      (50, 100, 150), (100, 150, 200), (255, 255, 255))
+                                      (50, 100, 150), (100, 150, 200), (255, 255, 255),image=button_image2trim)
         self.back_button = Button(20, 20, 100, 40, "Back",
                                   (100, 100, 100), (150, 150, 150), (255, 255, 255))
         self.message = ""
@@ -3121,7 +3121,7 @@ def quit_game():
     
 main_menu = MainMenu(screen, window_size, button_imagetrim, button_image2trim)
 login_page = LoginPage(screen, user_system, window_size,button_imagetrim)
-register_page = RegisterPage(screen, user_system, window_size,tutorial)
+register_page = RegisterPage(screen, user_system, window_size,tutorial,button_image2trim)
 current_screen = "main_menu"
 current_user = None
 in_game = False
