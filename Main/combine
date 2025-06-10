@@ -643,19 +643,35 @@ def loading_screen(screen, font):
 
     return tutorial_frames
 
-# Setup screen and font before calling loading screen
 
 # Show loading screen and load frames
 tutorial_frame_paths = loading_screen(screen, font)
 
 class TutorialPage:
-    def __init__(self, title, text, image_paths):
+    def __init__(self, title, text, spritesheet_path, frame_width, frame_height):
         self.title = title
         self.text = text
-        self.frames = self._load_frames(image_paths)
+        self.frames = self._extract_frames(spritesheet_path, frame_width, frame_height)
         self.frame_index = 0
         self.frame_timer = 0
         self.frame_delay = 0.10
+
+    def _extract_frames(self, spritesheet_path, frame_width, frame_height):
+        frames = []
+        if not spritesheet_path:
+            return frames  # No spritesheet, return empty frame list
+
+        sheet = pygame.image.load(spritesheet_path).convert_alpha()
+        sheet_width, sheet_height = sheet.get_size()
+
+        for y in range(0, sheet_height, frame_height):
+            for x in range(0, sheet_width, frame_width):
+                frame = sheet.subsurface(pygame.Rect(x, y, frame_width, frame_height))
+                frames.append(frame)
+
+        return frames
+
+
 
     def _load_frames(self, paths):
         return [pygame.image.load(p).convert_alpha() for p in paths]
@@ -702,7 +718,7 @@ class TutorialPage:
         frame_w, frame_h = frame.get_size()
         scale = min(max_frame_width / frame_w, max_frame_height / frame_h)
         new_size = (int(frame_w * scale), int(frame_h * scale))
-        frame_scaled = pygame.transform.scale(frame, new_size)
+        frame_scaled = pygame.transform.scale(frame, (new_size))
 
         # Center the frame horizontally, position below text
         frame_x = x + (w - new_size[0]) // 2
@@ -736,16 +752,16 @@ class TutorialPage:
         return 20 + title_height + 10 + text_height + 10 + frame_height + 20
 
 tutorial_pages = [
-    TutorialPage("Tutorial", "tap the red colour book or use T key for open and close this tutorial.",[]),
-    TutorialPage("Goal", "Build boat in at least 50 days , kill boss and escape Pawland!",[]),
-    TutorialPage("Movement", "Use W A S D to move.", tutorial_frame_paths["movement"]),
-    TutorialPage("Attack & Chop", "Press SPACE to attack and chop.", tutorial_frame_paths["attack"]),
-    TutorialPage("Inventory", "Press B to open and close inventory.Try out different button for different item.💼💼", tutorial_frame_paths["inventory"]),
-    TutorialPage("Fishing", "Approach the pond and press J,random item will be given!!", tutorial_frame_paths["fishing"]),
-    TutorialPage("Respawn", "You will respawn after getting killed. Beware the boss!", tutorial_frame_paths["enemy"]),
-    TutorialPage("Weapon", "Use Tab to change weapon", tutorial_frame_paths["weapon"]),
-    TutorialPage("Cooking", "Tap and pull the ingredient to cook .Try different ingredients!", tutorial_frame_paths["cook"]),
-    TutorialPage("Level & exp", "Gain exp from trees and enemies. HP restores when leveling up!", tutorial_frame_paths["exp"]),
+    TutorialPage("Tutorial", "tap the red colour book or use T key for open and close this tutorial.","",0, 0),
+    TutorialPage("Goal", "Build boat in at least 50 days , kill boss and escape Pawland!","",0, 0),
+    TutorialPage("Movement", "Use W A S D to move.", "minting/TWALK.png", 1440, 1080),
+    TutorialPage("Attack & Chop", "Press SPACE to attack and chop.", "minting/TATTACK.png", 1440, 1080),
+    TutorialPage("Inventory", "Press B to open and close inventory.Try out different button for different item.💼💼", "minting/TINVENTORY.png", 772, 590),
+    TutorialPage("Fishing", "Approach the pond and press J,random item will be given!!","minting/TFISH.png",1440, 1080),
+    TutorialPage("Respawn", "You will respawn after getting killed. Beware the boss!", "minting/TENEMY.png", 1440, 1080),
+    TutorialPage("Weapon", "Use Tab to change weapon", "minting/TWEAPON.png", 1440, 1080),
+    TutorialPage("Cooking", "Tap and pull the ingredient to cook .Try different ingredients!", "minting/TCOOK.png", 1440, 1080),
+    TutorialPage("Level & exp", "Gain exp from trees and enemies. HP restores when leveling up!", "minting/TEXP.png",1440, 1080),
  ]
 
 
