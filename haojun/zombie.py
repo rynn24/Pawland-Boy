@@ -24,13 +24,13 @@ font = pygame.font.SysFont(None, 24)
 reward_font = pygame.font.Font(None, 45) # font for fishing reward
 
 # Load map image
-map_image = pygame.image.load(os.path.join("rynn/Map.png")).convert()
+map_image = pygame.image.load(os.path.join("images/Map2.png")).convert()
 
 # Load abandoned house image
-house_image = pygame.image.load("rynn/house.png").convert_alpha()
+house_image = pygame.image.load("images/house/house.png").convert_alpha()
 house_rect = house_image.get_rect(topleft=(1500, 125))
 
-inside_house_image = pygame.image.load("rynn/inside-house.jpg").convert()
+inside_house_image = pygame.image.load("images/house/inside-house.jpg").convert()
 inside_house = False
 
 # Camera and player position 
@@ -942,7 +942,7 @@ class Tree:
         surface.blit(self.frames[self.index], pos_on_surface)
 
 # Regular trees (wood only)
-tree_sheet = pygame.image.load("rynn/tree-new.png").convert_alpha()
+tree_sheet = pygame.image.load("images/map-sprite/tree-new.png").convert_alpha()
 tree_frames = load_frames(tree_sheet, 100, 100, 0, 7, spacing=5)
 trees = []
 for _ in range(20):
@@ -958,7 +958,7 @@ for _ in range(20):
         attempts += 1
 
 # Fruit trees (wood + fruit)
-tree_sheet_2 = pygame.image.load("rynn/tree-fruit.png").convert_alpha()
+tree_sheet_2 = pygame.image.load("images/map-sprite/tree-fruit.png").convert_alpha()
 tree_frames_2 = load_frames(tree_sheet_2, 100, 100, 0, 7, spacing=5)
 trees_2 = []
 for _ in range(20):
@@ -1523,8 +1523,8 @@ pond = PondArea(
     center=(1554, 585),
     radius_x=165,
     radius_y=162,
-    day_spritesheet_path="rynn/new-fish-sprite.png",
-    night_spritesheet_path="rynn/night-fish-sprite.png",
+    day_spritesheet_path="images/map-sprite/new-fish-sprite.png",
+    night_spritesheet_path="images/map-sprite/night-fish-sprite.png",
 
     rows=1,  
     cols=17,
@@ -1576,7 +1576,8 @@ def draw_settings_menu(screen):
 
     screen.blit(music_text, (100, 150))
     screen.blit(quit_text, (100, 250))
-
+    
+map_manager = MapManager()
 inventory = Inventory()
 # Main loop
 running = True
@@ -1682,7 +1683,8 @@ while running:
 
         # Drawing to zoom_surface
         zoom_surface.fill((0, 0, 0))
-        zoom_surface.blit(map_image, (0, 0), camera)
+        map_manager.draw(zoom_surface, camera)
+
 
         for tree in trees:
             tree.update(current_time)
