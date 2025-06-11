@@ -107,6 +107,18 @@ LIGHT_GRAY = (200, 200, 200)
 DARK_BLUE = (30, 30, 50)
 RED = (255, 50, 50)
 
+def trim_surface(surface):
+    """Remove transparent padding around the surface."""
+    mask = pygame.mask.from_surface(surface)
+    rect = mask.get_bounding_rects()[0] if mask.get_bounding_rects() else surface.get_rect()
+    trimmed_surface = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
+    trimmed_surface.blit(surface, (0, 0), rect)
+    return trimmed_surface   
+
+button_image = pygame.image.load("haojun/image/login.png").convert_alpha()
+button_image2 = pygame.image.load("haojun/image/register.png").convert_alpha()
+button_imagetrim = trim_surface(button_image)
+button_image2trim = trim_surface(button_image2)
 
 def scale_sprite(sprite, scale):
     if scale == 1.0:
@@ -584,14 +596,30 @@ class UserSystem:
             print(f"Username {username} not found in users!")  # Add this debug line!
 
 class MainMenu:
-    def __init__(self, screen, window_size):
+    def __init__(self, screen, window_size, button_imagetrim=None, button_image2trim=None):
         self.screen = screen
         self.window_size = window_size
         self.font = pygame.font.SysFont(None, 48)
+        self.frame_spritesheet = pygame.image.load("haojun/image/background image.png").convert_alpha()
         self.login_button = Button(window_size[0] // 2 - 100, 200, 200, 50, "Choose Profile",
-                                   (50, 150, 50), (100, 200, 100), (255, 255, 255))
+                                   (50, 150, 50), (100, 200, 100), (255, 255, 255),
+                                   image=button_imagetrim)
         self.register_button = Button(window_size[0] // 2 - 100, 270, 200, 50, "Create Profile",
-                                      (50, 50, 150), (100, 100, 200), (255, 255, 255))
+                                      (50, 50, 150), (100, 100, 200), (255, 255, 255),
+                                      image=button_image2trim)
+        # Assuming sprite sheet is horizontal strip of frames, e.g. 5 frames
+        self.frame_width = self.frame_spritesheet.get_width() // 12
+        self.frame_height = self.frame_spritesheet.get_height()
+        self.frames = []
+        for i in range(12):
+            frame = self.frame_spritesheet.subsurface(
+                (i * self.frame_width, 0, self.frame_width, self.frame_height))
+            frame = pygame.transform.scale(frame, self.window_size)  # scale frame to window size
+            self.frames.append(frame)
+
+        self.current_frame = 0
+        self.frame_timer = 0
+        self.frame_delay = 175  # milliseconds between frames
 
     def handle_events(self, events):
         for event in events:
@@ -600,9 +628,17 @@ class MainMenu:
             if self.register_button.is_clicked(pygame.mouse.get_pos(), event):
                 return "register_page"
         return None
+    
+    def update(self, dt):
+        # Update animation timer
+        self.frame_timer += dt
+        if self.frame_timer >= self.frame_delay:
+            self.frame_timer = 0
+            self.current_frame = (self.current_frame + 1) % len(self.frames)
 
     def draw(self):
-        self.screen.fill((0, 0, 30))
+        # Draw current animated frame as background
+        self.screen.blit(self.frames[self.current_frame], (0, 0))
         title = self.font.render("Pawland Boy", True, (255, 255, 255))
         self.screen.blit(title, (self.window_size[0] // 2 - title.get_width() // 2, 100))
         self.login_button.draw(self.screen)
@@ -905,7 +941,7 @@ class TutorialManager:
 tutorial = TutorialManager(font, tutorial_pages, screen.get_size())
 
 class LoginPage:
-    def __init__(self, screen, user_system, window_size):
+    def __init__(self, screen, user_system, window_size,button_imagetrim = None):
         self.screen = screen
         self.user_system = user_system
         self.window_size = window_size
@@ -913,6 +949,25 @@ class LoginPage:
         self.back_button = Button(20, 20, 100, 40, "Back",
                                   (100, 100, 100), (150, 150, 150), (255, 255, 255))
         self.username_rects = []  # Store clickable rects
+        self.frame_spritesheet = pygame.image.load("haojun/image/background image.png").convert_alpha()
+        self.frame_width = self.frame_spritesheet.get_width() // 12
+        self.frame_height = self.frame_spritesheet.get_height()
+        self.frames = [
+            pygame.transform.scale(
+                self.frame_spritesheet.subsurface((i * self.frame_width, 0, self.frame_width, self.frame_height)),
+                self.window_size
+            ) for i in range(12)
+        ]
+        self.current_frame = 0
+        self.frame_timer = 0
+        self.frame_delay = 200  # milliseconds between frames
+        self.user_button_image = button_imagetrim
+    
+    def update(self, dt):
+        self.frame_timer += dt
+        if self.frame_timer >= self.frame_delay:
+            self.frame_timer = 0
+            self.current_frame = (self.current_frame + 1) % len(self.frames)
 
     def handle_events(self, events):
         for event in events:
@@ -929,7 +984,7 @@ class LoginPage:
         return None
 
     def draw(self):
-        self.screen.fill((20, 20, 20))
+        self.screen.blit(self.frames[self.current_frame], (0, 0))
         self.username_rects.clear()
 
         title = self.font.render("Select Profile", True, (255, 255, 255))
@@ -962,9 +1017,8 @@ class LoginPage:
                 color = (150, 150, 150)
 
             # Draw button background
-            pygame.draw.rect(self.screen, color, rect, border_radius=8)
-            pygame.draw.rect(self.screen, (255, 255, 255), rect, 2, border_radius=8)
-
+            button_scaled = pygame.transform.scale(self.user_button_image, (160, 40))
+            self.screen.blit(button_scaled, (x, y))
             # Render username centered in the button
             label = self.font.render(username, True, (255, 255, 255))
             label_x = rect.centerx - label.get_width() // 2
@@ -977,20 +1031,38 @@ class LoginPage:
         pygame.display.flip()
 
 class RegisterPage:
-    def __init__(self, screen, user_system, window_size,tutorial):
+    def __init__(self, screen, user_system, window_size,tutorial,button_image2trim=None):
         self.tutorial = tutorial
         self.screen = screen
         self.user_system = user_system
         self.window_size = window_size
         self.font = pygame.font.SysFont(None, 36)
         self.username_input = ""
-        self.input_rect = pygame.Rect(window_size[0] // 2 - 100, 160, 200, 40)
+        self.input_rect = pygame.Rect(window_size[0] // 2 - 100, 160, 220, 40)
         self.active_input = False
         self.register_button = Button(window_size[0] // 2 - 60, 220, 120, 40, "Create Profile",
-                                      (50, 100, 150), (100, 150, 200), (255, 255, 255))
+                                      (50, 100, 150), (100, 150, 200), (255, 255, 255),image=button_image2trim)
         self.back_button = Button(20, 20, 100, 40, "Back",
                                   (100, 100, 100), (150, 150, 150), (255, 255, 255))
         self.message = ""
+        self.frame_spritesheet = pygame.image.load("haojun/image/background image.png").convert_alpha()
+        self.frame_width = self.frame_spritesheet.get_width() // 12
+        self.frame_height = self.frame_spritesheet.get_height()
+        self.frames = [
+            pygame.transform.scale(
+                self.frame_spritesheet.subsurface((i * self.frame_width, 0, self.frame_width, self.frame_height)),
+                self.window_size
+            ) for i in range(12)
+        ]
+        self.current_frame = 0
+        self.frame_timer = 0
+        self.frame_delay = 200  # milliseconds between frames
+
+    def update(self, dt):
+        self.frame_timer += dt
+        if self.frame_timer >= self.frame_delay:
+            self.frame_timer = 0
+            self.current_frame = (self.current_frame + 1) % len(self.frames)
 
     def handle_events(self, events):
         for event in events:
@@ -1022,7 +1094,7 @@ class RegisterPage:
         return None
 
     def draw(self):
-        self.screen.fill((30, 0, 0))
+        self.screen.blit(self.frames[self.current_frame], (0, 0))
         title = self.font.render("Create New Profile", True, (255, 255, 255))
         self.screen.blit(title, (self.window_size[0] // 2 - title.get_width() // 2, 80))
 
@@ -1431,7 +1503,7 @@ class SettingsMenu:
     
 
 class Button:
-    def __init__(self, x, y, width, height, text, color, hover_color, text_color, font_size=24):
+    def __init__(self, x, y, width, height, text, color, hover_color, text_color, font_size=24, image = None):
         self.rect = pygame.Rect(x, y, width, height)
         self.text = text
         self.color = color
@@ -1439,12 +1511,20 @@ class Button:
         self.text_color = text_color
         self.font = pygame.font.SysFont(None, font_size)
         self.is_hovered = False
+        if image:
+            self.image = pygame.transform.scale(image, (width, height))
+        else:
+            self.image = None
         
     def draw(self, surface):
-        color = self.hover_color if self.is_hovered else self.color
-        pygame.draw.rect(surface, color, self.rect, border_radius=5)
-        pygame.draw.rect(surface, (0, 0, 0), self.rect, 2, border_radius=5)
-        
+        if self.image:
+            surface.blit(self.image, self.rect)
+        else:
+            color = self.hover_color if self.is_hovered else self.color
+            pygame.draw.rect(surface, color, self.rect, border_radius=5)
+            pygame.draw.rect(surface, (0, 0, 0), self.rect, 2, border_radius=5)
+
+        # Draw the text over the image or background
         text_surf = self.font.render(self.text, True, self.text_color)
         text_rect = text_surf.get_rect(center=self.rect.center)
         surface.blit(text_surf, text_rect)
@@ -2017,7 +2097,7 @@ class Player:
 
     def calculate_exp_needed(self, level):
         # You can tweak the formula for difficulty scaling
-        return 50 * level
+        return 45 * level
 
     def add_exp(self, amount):
         if self.level >= 20:
@@ -2193,13 +2273,6 @@ class Player:
                 reduction = factor
         return reduction
     
-def trim_surface(surface):
-    """Remove transparent padding around the surface."""
-    mask = pygame.mask.from_surface(surface)
-    rect = mask.get_bounding_rects()[0] if mask.get_bounding_rects() else surface.get_rect()
-    trimmed_surface = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
-    trimmed_surface.blit(surface, (0, 0), rect)
-    return trimmed_surface   
 
 class AchievementSystem:
     def __init__(self, on_unlock_callback=None, inventory=None):
@@ -3122,9 +3195,9 @@ def quit_game():
     pygame.quit()
     sys.exit()
     
-main_menu = MainMenu(screen, window_size)
-login_page = LoginPage(screen, user_system, window_size)
-register_page = RegisterPage(screen, user_system, window_size,tutorial)
+main_menu = MainMenu(screen, window_size,button_image2trim,button_imagetrim)
+login_page = LoginPage(screen, user_system, window_size,button_imagetrim)
+register_page = RegisterPage(screen, user_system, window_size,tutorial,button_image2trim)
 current_screen = "main_menu"
 current_user = None
 in_game = False
@@ -3148,6 +3221,7 @@ ARMOR_PROTECTION = {
     "Armor(Diamond)": 0.50,  # 50% damage reduction
 }
 while not in_game:
+    dt = clock.tick(60)  # milliseconds passed since last frame
     events = pygame.event.get()
     for event in events:
         if event.type == pygame.QUIT:
@@ -3158,6 +3232,8 @@ while not in_game:
         result = main_menu.handle_events(events)
         if result:
             current_screen = result
+
+        main_menu.update(dt)  
         main_menu.draw()
 
     elif current_screen == "login_page":
@@ -3180,6 +3256,7 @@ while not in_game:
                 in_game = True  # EXIT this loop and start game
             else:
                 current_screen = result
+        login_page.update(dt)
         login_page.draw()
 
     elif current_screen == "register_page":
@@ -3202,6 +3279,7 @@ while not in_game:
                 in_game = True  # EXIT this loop and start game
             else:
                 current_screen = result
+        register_page.update(dt)
         register_page.draw()
 
     pygame.display.flip()
