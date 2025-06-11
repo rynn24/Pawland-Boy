@@ -1506,7 +1506,7 @@ class Player:
         self.base_weapon_damage = {
             'hand': 5,
             'axe': 15,
-            'sword': 300
+            'sword': 10
         }
         self.weapon_damage = self.base_weapon_damage.copy()
         self.update_weapon_damage()
