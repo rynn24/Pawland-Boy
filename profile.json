@@ -526,17 +526,16 @@
   "fish": {
     "health": 1154,
     "position": [
-      1302.3299999999965,
-      1162.6779999999958
+      1494.570000000001,
+      193.85399999999956
     ],
     "inventory": {
       "Fish": 21,
       "Big Fish": 17,
-      "Crystal": 50,
+      "Crystal": 40,
       "Armor(Gold)": 1,
       "Twinfin Delight": 34,
-      "Fruit": 16,
-      "Wood": 2
+      "Fruit": 16
     },
     "level": 20,
     "exp": 90,
@@ -557,12 +556,12 @@
       "Fisherman (4 fish)": false
     },
     "shown_achievements": [
-      "Fisherman (10 fish)",
-      "Fruit Picker (5 fruit)",
-      "First Kill",
       "Crystal Hunter (1 crystal)",
+      "Level 5 Achieved",
       "Lumberjack (10 wood)",
-      "Level 5 Achieved"
+      "First Kill",
+      "Fruit Picker (5 fruit)",
+      "Fisherman (10 fish)"
     ],
     "stats": {
       "zombie_kills": 3,

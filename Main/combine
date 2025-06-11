@@ -3801,6 +3801,7 @@ class BoatBuildingUI:
 
         if self.current_wood >= self.max_wood and self.boat_crystals >= self.max_crystals:
             self.message = "All materials added!"
+            self.save_progress()
             return
 
         wood_count = self.inventory.get_item_count("Wood")
@@ -3826,7 +3827,21 @@ class BoatBuildingUI:
             self.message = "Not enough materials!"
         else:
             self.message = "Materials added!"
+    def save_progress(self, filename="boat_progress.json"):
+        data = {
+            "boat_progress": self.boat_progress,
+            "boat_crystals": self.boat_crystals
+        }
+        with open(filename, "w") as f:
+            json.dump(data, f)
 
+    def load_progress(self, filename="boat_progress.json"):
+        if os.path.exists(filename):
+            with open(filename, "r") as f:
+                data = json.load(f)
+                self.boat_progress = data.get("boat_progress", 0)
+                self.boat_crystals = data.get("boat_crystals", 0)
+                self.current_wood = self.boat_progress  # keep it in sync
 class ArmorUpgradeUI:
     def __init__(self, inventory, player):
         self.inventory = inventory
@@ -3932,6 +3947,7 @@ class ArmorUpgradeUI:
 day_count = current_day       
 player=player_instance
 boat_ui = BoatBuildingUI(player.inventory, day, player, boat_progress, boat_crystals)
+boat_ui.load_progress()
 recipe_ui = RecipeBookUI("images/house/recipe.png", (600, 120, 30, 30), font)
 # Main loop
 running = True
@@ -4425,7 +4441,9 @@ while running:
         # Show mouse position on screen
         mouse_pos_text = font.render(f"Mouse: {mouse_x}, {mouse_y}", True, (255, 255, 255))
         screen.blit(mouse_pos_text, (10, 10))
-
+        
+    boat_ui.save_progress()
+    
     if game_state == "achievements":
         achievement_page.visible = True
         achievement_page.draw(screen)
