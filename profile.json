@@ -2,13 +2,15 @@
   "2": {
     "health": 300,
     "position": [
-      539.0680000000015,
-      808.1024999999937
+      528.732000000001,
+      902.3424999999929
     ],
     "inventory": {},
     "level": 3,
     "exp": 5,
-    "day": 1,
+    "day": null,
+    "boat_progress": 0,
+    "boat_crystals": 0,
     "achievements": {
       "First Kill": false,
       "Zombie Slayer (20 kills)": false,
