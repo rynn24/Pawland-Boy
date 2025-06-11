@@ -31,7 +31,6 @@ camera = pygame.Rect(0, 0, camera_width, camera_height)
 zoom_surface = pygame.Surface((camera_width, camera_height))
 player_position = pygame.Vector2(1500, 125)
 speed = 2
-
 # Player restricted area
 restricted_zones = [
     # Pond area
@@ -107,6 +106,18 @@ LIGHT_GRAY = (200, 200, 200)
 DARK_BLUE = (30, 30, 50)
 RED = (255, 50, 50)
 
+def trim_surface(surface):
+    """Remove transparent padding around the surface."""
+    mask = pygame.mask.from_surface(surface)
+    rect = mask.get_bounding_rects()[0] if mask.get_bounding_rects() else surface.get_rect()
+    trimmed_surface = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
+    trimmed_surface.blit(surface, (0, 0), rect)
+    return trimmed_surface   
+
+button_image = pygame.image.load("haojun/image/login.png").convert_alpha()
+button_image2 = pygame.image.load("haojun/image/register.png").convert_alpha()
+button_imagetrim = trim_surface(button_image)
+button_image2trim = trim_surface(button_image2)
 
 def scale_sprite(sprite, scale):
     if scale == 1.0:
@@ -550,7 +561,7 @@ class UserSystem:
 
         return inventory_dict
 
-    def save_progress(self, username, health, position, inventory_dict, level, day, exp, achievements=None, shown_achievements=None, stats=None):
+    def save_progress(self, username, health, position, inventory_dict, level, exp, achievements=None, shown_achievements=None, stats=None, day=None):
         print(f"[DEBUG] save_progress called for username: {username}")
         if username in self.users:
             # Convert position to list if it's a Vector2
@@ -576,19 +587,38 @@ class UserSystem:
                 self.users[username]["shown_achievements"] = list(shown_achievements)  # Save set as list
             if stats is not None:
                 self.users[username]["stats"] = stats  # ⬅ Save player progress stats
+            if day is not None:
+                self.users[username]["day"] = day
+            print(f"Saving data for {username}: {self.users[username]}")  # Debug print
             self.save_users()
         else:
             print(f"Username {username} not found in users!")  # Add this debug line!
 
 class MainMenu:
-    def __init__(self, screen, window_size):
+    def __init__(self, screen, window_size, button_imagetrim=None, button_image2trim=None):
         self.screen = screen
         self.window_size = window_size
         self.font = pygame.font.SysFont(None, 48)
+        self.frame_spritesheet = pygame.image.load("haojun/image/background image.png").convert_alpha()
         self.login_button = Button(window_size[0] // 2 - 100, 200, 200, 50, "Choose Profile",
-                                   (50, 150, 50), (100, 200, 100), (255, 255, 255))
+                                   (50, 150, 50), (100, 200, 100), (255, 255, 255),
+                                   image=button_imagetrim)
         self.register_button = Button(window_size[0] // 2 - 100, 270, 200, 50, "Create Profile",
-                                      (50, 50, 150), (100, 100, 200), (255, 255, 255))
+                                      (50, 50, 150), (100, 100, 200), (255, 255, 255),
+                                      image=button_image2trim)
+        # Assuming sprite sheet is horizontal strip of frames, e.g. 5 frames
+        self.frame_width = self.frame_spritesheet.get_width() // 12
+        self.frame_height = self.frame_spritesheet.get_height()
+        self.frames = []
+        for i in range(12):
+            frame = self.frame_spritesheet.subsurface(
+                (i * self.frame_width, 0, self.frame_width, self.frame_height))
+            frame = pygame.transform.scale(frame, self.window_size)  # scale frame to window size
+            self.frames.append(frame)
+
+        self.current_frame = 0
+        self.frame_timer = 0
+        self.frame_delay = 175  # milliseconds between frames
 
     def handle_events(self, events):
         for event in events:
@@ -597,9 +627,17 @@ class MainMenu:
             if self.register_button.is_clicked(pygame.mouse.get_pos(), event):
                 return "register_page"
         return None
+    
+    def update(self, dt):
+        # Update animation timer
+        self.frame_timer += dt
+        if self.frame_timer >= self.frame_delay:
+            self.frame_timer = 0
+            self.current_frame = (self.current_frame + 1) % len(self.frames)
 
     def draw(self):
-        self.screen.fill((0, 0, 30))
+        # Draw current animated frame as background
+        self.screen.blit(self.frames[self.current_frame], (0, 0))
         title = self.font.render("Pawland Boy", True, (255, 255, 255))
         self.screen.blit(title, (self.window_size[0] // 2 - title.get_width() // 2, 100))
         self.login_button.draw(self.screen)
@@ -892,7 +930,7 @@ class TutorialManager:
 tutorial = TutorialManager(font, tutorial_pages, screen.get_size())
 
 class LoginPage:
-    def __init__(self, screen, user_system, window_size):
+    def __init__(self, screen, user_system, window_size,button_imagetrim = None):
         self.screen = screen
         self.user_system = user_system
         self.window_size = window_size
@@ -900,6 +938,25 @@ class LoginPage:
         self.back_button = Button(20, 20, 100, 40, "Back",
                                   (100, 100, 100), (150, 150, 150), (255, 255, 255))
         self.username_rects = []  # Store clickable rects
+        self.frame_spritesheet = pygame.image.load("haojun/image/background image.png").convert_alpha()
+        self.frame_width = self.frame_spritesheet.get_width() // 12
+        self.frame_height = self.frame_spritesheet.get_height()
+        self.frames = [
+            pygame.transform.scale(
+                self.frame_spritesheet.subsurface((i * self.frame_width, 0, self.frame_width, self.frame_height)),
+                self.window_size
+            ) for i in range(12)
+        ]
+        self.current_frame = 0
+        self.frame_timer = 0
+        self.frame_delay = 200  # milliseconds between frames
+        self.user_button_image = button_imagetrim
+    
+    def update(self, dt):
+        self.frame_timer += dt
+        if self.frame_timer >= self.frame_delay:
+            self.frame_timer = 0
+            self.current_frame = (self.current_frame + 1) % len(self.frames)
 
     def handle_events(self, events):
         for event in events:
@@ -916,7 +973,7 @@ class LoginPage:
         return None
 
     def draw(self):
-        self.screen.fill((20, 20, 20))
+        self.screen.blit(self.frames[self.current_frame], (0, 0))
         self.username_rects.clear()
 
         title = self.font.render("Select Profile", True, (255, 255, 255))
@@ -949,9 +1006,8 @@ class LoginPage:
                 color = (150, 150, 150)
 
             # Draw button background
-            pygame.draw.rect(self.screen, color, rect, border_radius=8)
-            pygame.draw.rect(self.screen, (255, 255, 255), rect, 2, border_radius=8)
-
+            button_scaled = pygame.transform.scale(self.user_button_image, (160, 40))
+            self.screen.blit(button_scaled, (x, y))
             # Render username centered in the button
             label = self.font.render(username, True, (255, 255, 255))
             label_x = rect.centerx - label.get_width() // 2
@@ -964,20 +1020,38 @@ class LoginPage:
         pygame.display.flip()
 
 class RegisterPage:
-    def __init__(self, screen, user_system, window_size,tutorial):
+    def __init__(self, screen, user_system, window_size,tutorial,button_image2trim=None):
         self.tutorial = tutorial
         self.screen = screen
         self.user_system = user_system
         self.window_size = window_size
         self.font = pygame.font.SysFont(None, 36)
         self.username_input = ""
-        self.input_rect = pygame.Rect(window_size[0] // 2 - 100, 160, 200, 40)
+        self.input_rect = pygame.Rect(window_size[0] // 2 - 100, 160, 220, 40)
         self.active_input = False
         self.register_button = Button(window_size[0] // 2 - 60, 220, 120, 40, "Create Profile",
-                                      (50, 100, 150), (100, 150, 200), (255, 255, 255))
+                                      (50, 100, 150), (100, 150, 200), (255, 255, 255),image=button_image2trim)
         self.back_button = Button(20, 20, 100, 40, "Back",
                                   (100, 100, 100), (150, 150, 150), (255, 255, 255))
         self.message = ""
+        self.frame_spritesheet = pygame.image.load("haojun/image/background image.png").convert_alpha()
+        self.frame_width = self.frame_spritesheet.get_width() // 12
+        self.frame_height = self.frame_spritesheet.get_height()
+        self.frames = [
+            pygame.transform.scale(
+                self.frame_spritesheet.subsurface((i * self.frame_width, 0, self.frame_width, self.frame_height)),
+                self.window_size
+            ) for i in range(12)
+        ]
+        self.current_frame = 0
+        self.frame_timer = 0
+        self.frame_delay = 200  # milliseconds between frames
+
+    def update(self, dt):
+        self.frame_timer += dt
+        if self.frame_timer >= self.frame_delay:
+            self.frame_timer = 0
+            self.current_frame = (self.current_frame + 1) % len(self.frames)
 
     def handle_events(self, events):
         for event in events:
@@ -1009,7 +1083,7 @@ class RegisterPage:
         return None
 
     def draw(self):
-        self.screen.fill((30, 0, 0))
+        self.screen.blit(self.frames[self.current_frame], (0, 0))
         title = self.font.render("Create New Profile", True, (255, 255, 255))
         self.screen.blit(title, (self.window_size[0] // 2 - title.get_width() // 2, 80))
 
@@ -1313,8 +1387,7 @@ class SettingsMenu:
         self.font = pygame.font.SysFont(None, 36)
         self.small_font = pygame.font.SysFont(None, 24)
         self.screen_size = screen_size  # Save the initial screen size
-        self.armor = "None"
-        
+
         # Initialize music
         pygame.mixer.init()
         try:
@@ -1379,7 +1452,7 @@ class SettingsMenu:
         
         y_text += title.get_height() + 10
 
-        vol_text = self.font.render(f"Music Volume: {int(self.music_volume * 100)}%", True, (255, 255, 255))
+        vol_text = self.font.render(f"Music Volume: {round(self.music_volume * 100)}%", True, (255, 255, 255))
         screen.blit(vol_text, (w // 2 - vol_text.get_width() // 2, y_text))
 
         y_text += vol_text.get_height() + 5
@@ -1419,7 +1492,7 @@ class SettingsMenu:
     
 
 class Button:
-    def __init__(self, x, y, width, height, text, color, hover_color, text_color, font_size=24):
+    def __init__(self, x, y, width, height, text, color, hover_color, text_color, font_size=24, image = None):
         self.rect = pygame.Rect(x, y, width, height)
         self.text = text
         self.color = color
@@ -1427,12 +1500,20 @@ class Button:
         self.text_color = text_color
         self.font = pygame.font.SysFont(None, font_size)
         self.is_hovered = False
+        if image:
+            self.image = pygame.transform.scale(image, (width, height))
+        else:
+            self.image = None
         
     def draw(self, surface):
-        color = self.hover_color if self.is_hovered else self.color
-        pygame.draw.rect(surface, color, self.rect, border_radius=5)
-        pygame.draw.rect(surface, (0, 0, 0), self.rect, 2, border_radius=5)
-        
+        if self.image:
+            surface.blit(self.image, self.rect)
+        else:
+            color = self.hover_color if self.is_hovered else self.color
+            pygame.draw.rect(surface, color, self.rect, border_radius=5)
+            pygame.draw.rect(surface, (0, 0, 0), self.rect, 2, border_radius=5)
+
+        # Draw the text over the image or background
         text_surf = self.font.render(self.text, True, self.text_color)
         text_rect = text_surf.get_rect(center=self.rect.center)
         surface.blit(text_surf, text_rect)
@@ -1447,30 +1528,12 @@ class Button:
         return False
     
 class Player:
-    def __init__(self, position, speed, username, level, exp, achievement_system=None):
+    def __init__(self, position, speed, username, level, exp, achievement_system=None, ):
         self.username = username
         self.user_system = UserSystem()
+        self.health, self.position, self.inventory, self.level, self.exp, self.day, self.boat_progress, self.boat_crystals = self.user_system.get_player_data(self.username)
+        print(f"Loaded player data for {self.username}: health={self.health}, position={self.position}, inventory={self.inventory},level={self.level}, exp={self.exp}")
 
-        # Load all user data at once
-        (
-            self.health,
-            self.position,
-            self.inventory,
-            self.level,
-            self.exp,
-            self.day,
-            self.boat_progress,
-            self.boat_crystals,
-        ) = self.user_system.get_player_data(self.username)
-
-        print(f"Loaded player data for {self.username}:")
-        print(f"  health = {self.health}")
-        print(f"  position = {self.position}")
-        print(f"  inventory = {self.inventory}")
-        print(f"  level = {self.level}")
-        print(f"  exp = {self.exp}")
-        print(f"  day = {self.day}")
-        print(f"  boat_progress = {self.boat_progress}")
         self.position = pygame.Vector2(self.position[0], self.position[1])
         self.speed = 2
         if isinstance(self.position, list) or isinstance(self.position, tuple):
@@ -1491,6 +1554,7 @@ class Player:
         self.last_update = pygame.time.get_ticks()
         self.animation_cooldown = 100
         self.level = level
+        self.day = day
         self.exp = exp
         self.exp_to_next_level = self.calculate_exp_needed(self.level)
         self.max_health= 100*self.level
@@ -2042,7 +2106,7 @@ class Player:
         if self.dead:
             return
 
-        percent = int((self.exp["current"] / self.exp_to_next_level) * 100)
+        percent = int((self.exp / self.exp_to_next_level) * 100)
         percent = max(0, min(100, (percent // 10) * 10))  # Round to nearest 10%
 
         rounded_percent = min(self.exp_bar_frames.keys(), key=lambda k: abs(k - percent))
@@ -2151,6 +2215,7 @@ class Player:
         
 
     def gain_speed(self, amount):
+        duration = 0 
         self.speed += amount
         self.speed_timer = time.time() + duration
         print(f"[DEBUG] Speed increased by {amount} for {duration} seconds. Current speed: {self.speed}")
@@ -2197,14 +2262,6 @@ class Player:
             if inventory.has_item(armor_name) and factor < reduction:
                 reduction = factor
         return reduction
-    
-def trim_surface(surface):
-    """Remove transparent padding around the surface."""
-    mask = pygame.mask.from_surface(surface)
-    rect = mask.get_bounding_rects()[0] if mask.get_bounding_rects() else surface.get_rect()
-    trimmed_surface = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
-    trimmed_surface.blit(surface, (0, 0), rect)
-    return trimmed_surface   
 
 class AchievementSystem:
     def __init__(self, on_unlock_callback=None, inventory=None):
@@ -3110,15 +3167,14 @@ def quit_game():
         player_instance.exp,
         achievement_system.achievements,
         achievement_system.shown_achievements,
-        stats=player_instance.stats,
-        day=current_day
+        stats=player_instance.stats
     )
     pygame.quit()
     sys.exit()
     
-main_menu = MainMenu(screen, window_size)
-login_page = LoginPage(screen, user_system, window_size)
-register_page = RegisterPage(screen, user_system, window_size,tutorial)
+main_menu = MainMenu(screen, window_size, button_imagetrim, button_image2trim)
+login_page = LoginPage(screen, user_system, window_size,button_imagetrim)
+register_page = RegisterPage(screen, user_system, window_size,tutorial,button_image2trim)
 current_screen = "main_menu"
 current_user = None
 in_game = False
@@ -3142,6 +3198,7 @@ ARMOR_PROTECTION = {
     "Armor(Diamond)": 0.50,  # 50% damage reduction
 }
 while not in_game:
+    dt = clock.tick(60)  # milliseconds passed since last frame
     events = pygame.event.get()
     for event in events:
         if event.type == pygame.QUIT:
@@ -3152,6 +3209,8 @@ while not in_game:
         result = main_menu.handle_events(events)
         if result:
             current_screen = result
+
+        main_menu.update(dt)  
         main_menu.draw()
 
     elif current_screen == "login_page":
@@ -3174,6 +3233,7 @@ while not in_game:
                 in_game = True  # EXIT this loop and start game
             else:
                 current_screen = result
+        login_page.update(dt)
         login_page.draw()
 
     elif current_screen == "register_page":
@@ -3196,6 +3256,7 @@ while not in_game:
                 in_game = True  # EXIT this loop and start game
             else:
                 current_screen = result
+        register_page.update(dt)
         register_page.draw()
 
     pygame.display.flip()
@@ -3690,20 +3751,27 @@ class CraftingTable:
         
 print("game_state is:", game_state, type(game_state))
 
+import pygame
+
 class BoatBuildingUI:
-    def __init__(self, inventory, day_count, boat_progress=0):
+    def __init__(self, inventory, day_count, boat_progress=0, boat_crystals=0):
+        print("BoatBuildingUI received inventory:", inventory, type(inventory))
         self.inventory = inventory
         self.visible = False
-        self.total_levels = 25
-        self.boat_progress = boat_progress  # Total wood contributed
+        self.boat_progress = boat_progress  # wood contributed
+        self.boat_crystals = boat_crystals
+        self.level = 20
         self.day_count = day_count
-        self.frames = self.load_sprite_frames('images/map-sprite/boat-sprite.png', self.total_levels)
+        self.frames = self.load_sprite_frames('images/map-sprite/boat-sprite.png', 25)
         self.frame_width = self.frames[0].get_width()
         self.frame_height = self.frames[0].get_height()
         self.font = pygame.font.SysFont(None, 24)
-        self.close_button = pygame.Rect(0, 0, 1, 1)  # Placeholder
+        self.close_button = pygame.Rect(0, 0, 1, 1)
         self.add_button = pygame.Rect(0, 0, 1, 1)
-        self.max_wood = 100
+        self.current_wood = boat_progress
+        self.max_wood = 50
+        self.max_crystals = 5
+        self.message = ""
 
     def load_sprite_frames(self, path, num_frames):
         sheet = pygame.image.load(path).convert_alpha()
@@ -3712,11 +3780,19 @@ class BoatBuildingUI:
                 for i in range(num_frames)]
 
     def toggle(self):
-        self.visible = True
+        self.visible = not self.visible
 
     def handle_event(self, event):
         if not self.visible:
             return False
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if self.close_button.collidepoint(event.pos):
+                self.toggle()
+                return True
+            elif self.add_button.collidepoint(event.pos):
+                self.try_add_materials()
+                return True
+        return False
 
     def draw(self, surface):
         if not self.visible:
@@ -3726,68 +3802,81 @@ class BoatBuildingUI:
         overlay.fill((0, 0, 0, 180))
         surface.blit(overlay, (0, 0))
 
-        menu_rect = pygame.Rect(
-            surface.get_width() // 2 - 200,
-            surface.get_height() // 2 - 150,
-            400, 300
-        )
+        menu_rect = pygame.Rect(surface.get_width() // 2 - 200, surface.get_height() // 2 - 150, 400, 300)
         pygame.draw.rect(surface, (100, 70, 40), menu_rect)
         pygame.draw.rect(surface, (200, 180, 100), menu_rect, 3)
 
-        # Title
         title = pygame.font.SysFont(None, 36).render("Build Boat", True, (255, 255, 255))
         surface.blit(title, (menu_rect.centerx - title.get_width() // 2, menu_rect.y + 20))
 
-        # Level & unlocked limits
-        level = min(self.boat_progress // 5, self.total_levels - 1)
+        level = min(self.boat_progress // 2, self.total_levels - 1)
         unlocked_levels = min(self.day_count // 2, self.total_levels)
-        max_addable = unlocked_levels * 5
+        surface.blit(self.font.render(f"Level: {level + 1}", True, (255, 255, 255)), (menu_rect.x + 50, menu_rect.y + 70))
+        surface.blit(self.font.render(f"Unlocked Levels: {unlocked_levels}", True, (255, 255, 255)), (menu_rect.x + 50, menu_rect.y + 100))
 
-        # Boat sprite frame
         sprite = self.frames[level]
         sprite_pos = (menu_rect.centerx - self.frame_width // 2, menu_rect.y + 130)
         surface.blit(sprite, sprite_pos)
 
-        # Status Texts
-        surface.blit(self.font.render(f"Level: {level + 1}", True, (255, 255, 255)), (menu_rect.x + 50, menu_rect.y + 70))
-        surface.blit(self.font.render(f"Unlocked Levels: {unlocked_levels}", True, (255, 255, 255)), (menu_rect.x + 50, menu_rect.y + 100))
-        surface.blit(self.font.render(f"Max Allowed Wood: {max_addable}/100", True, (255, 255, 255)), (menu_rect.x + 50, menu_rect.y + 220))
-        surface.blit(self.font.render(f"Your Progress: {self.boat_progress}/100", True, (255, 255, 255)), (menu_rect.x + 50, menu_rect.y + 250))
-        wood_count = self.inventory.get_item_count("Wood")
-        surface.blit(self.font.render(f"Inventory Wood: {wood_count}", True, (255, 255, 255)), (menu_rect.x + 50, menu_rect.y + 280))
+        surface.blit(self.font.render(f"Wood: {self.current_wood}/50", True, (255, 255, 255)), (menu_rect.x + 50, menu_rect.y + 250))
+        surface.blit(self.font.render(f"Crystals: {self.boat_crystals}/5", True, (255, 255, 255)), (menu_rect.x + 200, menu_rect.y + 250))
 
-        # Close Button
+        if level < 19:
+            warning_box = pygame.Rect(menu_rect.centerx - 140, menu_rect.y + 210, 280, 30)
+            pygame.draw.rect(surface, (80, 0, 0), warning_box)
+            pygame.draw.rect(surface, (255, 0, 0), warning_box, 2)
+            warning_text = self.font.render("Level too low to build the boat!", True, (255, 50, 50))
+            surface.blit(warning_text, (warning_box.centerx - warning_text.get_width() // 2,
+                                        warning_box.centery - warning_text.get_height() // 2))
+            self.add_button = pygame.Rect(0, 0, 0, 0)
+        elif level == 19:
+            self.add_button = pygame.Rect(menu_rect.centerx - 100, menu_rect.y + 210, 200, 30)
+            pygame.draw.rect(surface, (50, 150, 50), self.add_button)
+            add_text = self.font.render("Add Materials", True, (255, 255, 255))
+            surface.blit(add_text, (self.add_button.centerx - add_text.get_width() // 2,
+                                    self.add_button.centery - add_text.get_height() // 2))
+            if self.message:
+                msg = self.font.render(self.message, True, (255, 255, 100))
+                surface.blit(msg, (menu_rect.centerx - msg.get_width() // 2, menu_rect.y + 250))
+        else:
+            done_text = self.font.render("Boat fully constructed!", True, (255, 255, 0))
+            surface.blit(done_text, (menu_rect.centerx - done_text.get_width() // 2, menu_rect.y + 215))
+            self.add_button = pygame.Rect(0, 0, 0, 0)
+
         self.close_button = pygame.Rect(menu_rect.right - 30, menu_rect.y + 10, 20, 20)
         pygame.draw.rect(surface, (150, 0, 0), self.close_button)
         x_text = self.font.render("X", True, (255, 255, 255))
         surface.blit(x_text, (self.close_button.centerx - x_text.get_width() // 2,
                               self.close_button.centery - x_text.get_height() // 2))
 
-        # Add Button
-        self.add_button = pygame.Rect(menu_rect.centerx - 100, menu_rect.y + 180, 200, 30)
-        pygame.draw.rect(surface, (50, 150, 50), self.add_button)
-        add_text = self.font.render("Add Wood", True, (255, 255, 255))
-        surface.blit(add_text, (self.add_button.centerx - add_text.get_width() // 2,
-                                self.add_button.centery - add_text.get_height() // 2))
-
     def try_add_materials(self):
-        wood_count = self.inventory.get_item_count("Wood")
-        unlocked_levels = min(self.day_count // 2, self.total_levels)
-        max_addable = unlocked_levels * 5
+        self.message = ""
+        if self.current_wood >= self.max_wood and self.boat_crystals >= self.max_crystals:
+            self.message = "All materials added!"
+            return
 
-        if wood_count > 0 and self.boat_progress < self.max_wood:
-            if self.boat_progress < max_addable:
-                to_add = min(wood_count, max_addable - self.boat_progress, self.max_wood - self.boat_progress)
-                removed = self.inventory.remove_items("Wood", to_add)
-                if removed:
-                    self.boat_progress += to_add
-                    print(f"Added {to_add} wood to the boat")
-                else:
-                    print("Failed to remove wood from inventory")
-            else:
-                print("You've reached the max allowed wood for your level.")
-        else:
-            print("Not enough wood or boat is complete.")
+        wood_count = self.inventory.get_item_count("Wood")
+        crystal_count = self.inventory.get_item_count("Crystal")
+
+        if wood_count == 0 and crystal_count == 0:
+            self.message = "Not enough materials!"
+            return
+
+        added = False
+        if self.current_wood < self.max_wood and wood_count > 0:
+            if self.inventory.remove_items("Wood", 1):
+                self.current_wood += 1
+                self.boat_progress += 1
+                added = True
+
+        elif self.boat_crystals < self.max_crystals and crystal_count > 0:
+            if self.inventory.remove_items("Crystal", 1):
+                self.boat_crystals += 1
+                added = True
+
+        if not added:
+            self.message = "Not enough materials!"
+
 
 
 
@@ -3797,104 +3886,39 @@ class ArmorUpgradeUI:
         self.player = player
         self.visible = False
         self.armor_levels = {
-            "Iron": {"wood": 20, "crystals": 2, "unlocked": True},
-            "Gold": {"wood": 30, "crystals": 4, "unlocked": False},
-            "Diamond": {"wood": 40, "crystals": 6, "unlocked": False}
+            "Iron": {"wood": 20, "crystals": 2},
+            "Gold": {"wood": 40, "crystals": 4},
+            "Diamond": {"wood": 60, "crystals": 6}
         }
+        self.armor_type = "iron"
         self.close_button = pygame.Rect(0, 0, 1, 1)  # Placeholder, updated in draw()
+        self.add_button = pygame.Rect(0, 0, 1, 1)
         self.font = pygame.font.SysFont(None, 24)
         
     def handle_event(self, event):
         if not self.visible:
             return False
-            
-        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            # Get mouse position
-            mouse_pos = pygame.mouse.get_pos()
-            
-            # Check if close button was clicked
-            if self.close_button.collidepoint(mouse_pos):
-                self.visible = False
-                return True
-                
-            # Temporary surface for getting button rects
-            temp_surface = pygame.Surface((1, 1))
-            button_rects, _ = self.draw(temp_surface) # Draw to get rects without showing
-
-            for rect, armor_type in button_rects:
-                if rect.collidepoint(mouse_pos):
-                    self.upgrade_armor(armor_type)
-                    return True
-                    
-        return False
         
-    def upgrade_armor(self, armor_type):
-        # Check if player already has this armor or better
-        current_armor = self.player.armor_type
-        armor_order = ["Iron", "Gold", "Diamond"]
-        
-        try:
-            current_index = armor_order.index(current_armor)
-            target_index = armor_order.index(armor_type)
-            
-            # If player already has this armor or better
-            if current_index >= target_index:
-                print(f"Already have {armor_type} or better armor.")
-                return
-                
-            # Check if player has enough resources
-            costs = self.armor_levels[armor_type]
-            if (self.inventory.wood >= costs["wood"] and 
-                self.inventory.crystals >= costs["crystals"]):
-                
-                # Deduct resources
-                self.inventory.wood -= costs["wood"]
-                self.inventory.crystals -= costs["crystals"]
-                
-                # Upgrade armor
-                self.player.armor_type = armor_type
-                print(f"Upgraded to {armor_type} armor!")
-                
-                # Update unlocked status
-                self.armor_levels[armor_type]["unlocked"] = True
-                
-                # If this was gold, unlock diamond for viewing
-                if armor_type == "Gold":
-                    self.armor_levels["Diamond"]["unlocked"] = True
-            else:
-                print(f"Not enough resources for {armor_type}. Need wood: {costs['wood']}, crystals: {costs['crystals']}. Have wood: {self.inventory.wood}, crystals: {self.inventory.crystals}")
-        except ValueError:
-            # Handle case where armor_type isn't in the order list
-            print(f"Error: Unknown armor type '{armor_type}'")
-            pass
         
     def toggle(self):
-        self.visible = not self.visible
-        
-        # Update unlocked status based on current armor when opening
-        if self.visible:
-            current_armor = self.player.armor_type
-            armor_order = ["Iron", "Gold", "Diamond"]
-            
-            try:
-                current_index = armor_order.index(current_armor)
-                # Unlock all armors up to current level + 1
-                for i, armor in enumerate(armor_order):
-                    if i <= current_index + 1:
-                        self.armor_levels[armor]["unlocked"] = True
-            except ValueError:
-                # If armor_type isn't in the order, assume Iron
-                self.armor_levels["Iron"]["unlocked"] = True
-                self.armor_levels["Gold"]["unlocked"] = True
+        self.visible = True
         
     def draw(self, surface):
         if not self.visible:
-            return [], None # Return empty list and None if not visible
+            return
             
         # Darken background
         overlay = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
         overlay.fill((0, 0, 0, 180))
         surface.blit(overlay, (0, 0))
+        
+        armor_order = ["Iron", "Gold", "Diamond"]
+        current_type = self.player.armor_type if self.player.armor_type in armor_order else "Iron"
+        current_index = armor_order.index(current_type)
+
+        for level, costs in self.armor_levels.items():
+            level_index = armor_order.index(level)
+            can_upgrade = level_index > current_index
         
         # Draw menu
         menu_rect = pygame.Rect(
@@ -3915,25 +3939,10 @@ class ArmorUpgradeUI:
         button_rects = []
         
         y_offset = 70
-        armor_order = ["Iron", "Gold", "Diamond"]
-        
-        for level in armor_order:
-            if not self.armor_levels[level]["unlocked"]:
-                continue
-                
-            costs = self.armor_levels[level]
+        for level, costs in self.armor_levels.items():
+            # Check if player already has this armor or higher
             current_armor = self.player.armor_type
-            
-            # Determine if this is an upgrade option
-            try:
-                current_index = armor_order.index(current_armor)
-                level_index = armor_order.index(level)
-                is_upgrade = level_index > current_index
-                is_current = level_index == current_index
-            except ValueError:
-                # If current armor isn't in the order, treat as Iron
-                is_upgrade = level != "Iron"
-                is_current = level == "Iron"
+            can_upgrade = True
             
             # Draw armor option
             armor_rect = pygame.Rect(
@@ -3942,53 +3951,40 @@ class ArmorUpgradeUI:
                 300, 60
             )
             
-            # Set color based on status
-            if is_current:
-                color = (100, 200, 100)  # Currently equipped
-            elif is_upgrade:
-                # Check if player can afford
-                can_afford = (self.inventory.wood >= costs["wood"] and 
-                              self.inventory.crystals >= costs["crystals"])
-                color = (70, 120, 70) if can_afford else (120, 70, 70)  # Green if affordable, red if not
+            # Set color based on availability
+            if current_armor == level:
+                color = (100, 200, 100)  # Already owned
+            elif can_upgrade:
+                color = (70, 70, 120)  # Available
             else:
-                color = (50, 50, 50)  # Already surpassed
+                color = (50, 50, 50)  # Not available
                 
             pygame.draw.rect(surface, color, armor_rect)
-            pygame.draw.rect(surface, (200, 180, 100), armor_rect, 2)
             
             # Draw armor info
             armor_text = option_font.render(f"{level} Armor", True, (255, 255, 255))
-            
-            status_text = ""
-            if is_current:
-                status_text = "(Equipped)"
-            elif is_upgrade:
-                can_afford_display = (self.inventory.wood >= costs["wood"] and 
-                                      self.inventory.crystals >= costs["crystals"])
-                status_text = "(Upgrade Available)" if can_afford_display else "(Need More Resources)"
-            
-            cost_text = option_font.render(f"{costs['wood']} Wood, {costs['crystals']} Crystals {status_text}", True, (255, 255, 255))
+            cost_text = option_font.render(f"{costs['wood']} Wood, {costs['crystals']} Crystals", True, (255, 255, 255))
             
             surface.blit(armor_text, (armor_rect.x + 10, armor_rect.y + 10))
             surface.blit(cost_text, (armor_rect.x + 10, armor_rect.y + 30))
             
-            if is_upgrade or is_current: # Only add clickable rects for upgradeable or current
-                button_rects.append((armor_rect, level))
+            button_rects.append((armor_rect, level))
             y_offset += 70
             
-        # Draw close button
-        self.close_button = pygame.Rect(menu_rect.right - 30, menu_rect.y + 10, 20, 20)
-        pygame.draw.rect(surface, (150, 0, 0), self.close_button)
-        x_text = self.font.render("X", True, (255, 255, 255))
-        surface.blit(x_text, (self.close_button.centerx - x_text.get_width() // 2,
-                            self.close_button.centery - x_text.get_height() // 2))
+            # Update close button rect
+            self.close_button = pygame.Rect(menu_rect.right - 30, menu_rect.y + 10, 20, 20)
+            pygame.draw.rect(surface, (150, 0, 0), self.close_button)
+            x_text = self.font.render("X", True, (255, 255, 255))
+            surface.blit(x_text, (self.close_button.centerx - x_text.get_width() // 2,
+                                self.close_button.centery - x_text.get_height() // 2))
         
         return button_rects, self.close_button
 
 
+
 day_count = current_day       
 player=player_instance
-boat_ui = BoatBuildingUI(player.inventory, day_count, boat_progress)
+boat_ui = BoatBuildingUI(player.inventory, day, boat_progress, boat_crystals )
 recipe_ui = RecipeBookUI("images/house/recipe.png", (600, 120, 30, 30), font)
 # Main loop
 running = True
@@ -4292,7 +4288,7 @@ while running:
         inventory_menu.draw(screen)
     if show_house_prompt and not in_house:
         text = font.render("Press J to enter house", True, (255, 255, 255))
-        text_rect = text.get_rect(center=(screen.get_width()//2, screen.get_height()-150))
+        text_rect = text.get_rect(center=(screen.get_width()//2, screen.get_height()-10))
         screen.blit(text, text_rect)
     
     if not in_house:  # Only process these if player is outside
@@ -4429,11 +4425,9 @@ while running:
             boat_ui.draw(screen)
             if mouse_clicked: 
                 if boat_ui.close_button.collidepoint(mouse_pos):
-                    print("Closed boat UI")
                     boat_ui.visible = False  # Close the boat UI
                 elif boat_ui.add_button.collidepoint(mouse_pos):
                     # Try to add materials
-                    print("press add material")
                     boat_ui.try_add_materials()
                     
         elif armor_ui.visible:
