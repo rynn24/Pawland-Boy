@@ -600,7 +600,7 @@ class Player:
         self.weapon_damage = {
             'hand': 5,
             'axe': 15,
-            'sword': 300
+            'sword': 10
         }
         
         self.weapon_range = {

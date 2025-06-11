@@ -587,7 +587,7 @@ class UserSystem:
 
         return inventory_dict
 
-    def save_progress(self, username, health, position, inventory_dict, level, exp, achievements=None, shown_achievements=None, stats=None, day=None, boat_built=None, boss_defeated=None):
+    def save_progress(self, username, health, position, inventory_dict, level, exp, achievements=None, shown_achievements=None, stats=None, day=None, boat_built=False, boss_defeated=False):
         print(f"[DEBUG] save_progress called for username: {username}")
         if username in self.users:
             # Convert position to list if it's a Vector2
@@ -615,10 +615,6 @@ class UserSystem:
                 self.users[username]["stats"] = stats  # ⬅ Save player progress stats
             print(f"Saving data for {username}: {self.users[username]}")  # Debug print
             self.save_users()
-            if boat_built is not None:
-                self.users[username]["boat_built"] = boat_built
-            if boss_defeated is not None:
-                self.users[username]["boss_defeated"] = boss_defeated
 
         else:
             print(f"Username {username} not found in users!")  # Add this debug line!
@@ -3948,7 +3944,7 @@ class BoatBuildingUI:
                 self.boat_progress = data.get("boat_progress", 0)
                 self.boat_crystals = data.get("boat_crystals", 0)
                 self.current_wood = self.boat_progress  # keep it in sync
-
+                
 class ArmorUpgradeUI:
     def __init__(self, inventory, player):
         self.inventory = inventory
