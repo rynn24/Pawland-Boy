@@ -164,6 +164,18 @@ night_duration = cycle_duration * 0.34  # 34% night → 20.4 seconds
 time_counter = 0
 current_day = 1
 
+def load_day(file_path="day_data.json"):
+    try:
+        with open(file_path, "r") as f:
+            data = json.load(f)
+            return data.get("current_day", 1)
+    except FileNotFoundError:
+        return 1  # default to day 1 if file doesn't exist
+
+current_day = load_day()
+def save_day(day, file_path="day_data.json"):
+    with open(file_path, "w") as f:
+        json.dump({"current_day": day}, f)
 
 # Minimap settings
 minimap_radius = 60
@@ -1186,7 +1198,7 @@ class InventoryMenu:
             "Fruit": "Restores a small amount of health.",
             "Fish": "A basic fish.",
             "Big Fish": "A bigger and longer fish , maybe can unlock some dishes ?",
-            "Crystal": "Looks valuable.",
+            "Crystal": "Shiny rock.",
             "Boat": "Used for traveling across water.",
             "Firefly": "Cute bugs that glows in the dark.",
             "FishBone_Clip":"A stylish clip. Might smell fishy.",
@@ -3879,6 +3891,7 @@ class BoatBuildingUI:
 
         if self.current_wood >= self.max_wood and self.boat_crystals >= self.max_crystals:
             self.message = "All materials added!"
+            self.save_progress()
             return
 
         wood_count = self.inventory.get_item_count("Wood")
@@ -3904,6 +3917,22 @@ class BoatBuildingUI:
             self.message = "Not enough materials!"
         else:
             self.message = "Materials added!"
+
+    def save_progress(self, filename="boat_progress.json"):
+        data = {
+            "boat_progress": self.boat_progress,
+            "boat_crystals": self.boat_crystals
+        }
+        with open(filename, "w") as f:
+            json.dump(data, f)
+
+    def load_progress(self, filename="boat_progress.json"):
+        if os.path.exists(filename):
+            with open(filename, "r") as f:
+                data = json.load(f)
+                self.boat_progress = data.get("boat_progress", 0)
+                self.boat_crystals = data.get("boat_crystals", 0)
+                self.current_wood = self.boat_progress  # keep it in sync
 
 class ArmorUpgradeUI:
     def __init__(self, inventory, player):
@@ -4010,6 +4039,7 @@ class ArmorUpgradeUI:
 day_count = current_day       
 player=player_instance
 boat_ui = BoatBuildingUI(player.inventory, day, player, boat_progress, boat_crystals)
+boat_ui.load_progress()
 recipe_ui = RecipeBookUI("images/house/recipe.png", (600, 120, 30, 30), font)
 # Main loop
 running = True
@@ -4018,8 +4048,9 @@ crafting_ui = CraftingTable(game_state, position)
 while running:
     dt = clock.tick(60) / 1000
     if time_counter >= cycle_duration:
-        time_counter = 0  
-        current_day += 1  
+        time_counter = 0
+        current_day += 1
+        save_day(current_day)
     current_time = pygame.time.get_ticks() / 1000
     events = pygame.event.get()
     for event in events:
@@ -4503,6 +4534,8 @@ while running:
         # Show mouse position on screen
         mouse_pos_text = font.render(f"Mouse: {mouse_x}, {mouse_y}", True, (255, 255, 255))
         screen.blit(mouse_pos_text, (10, 10))
+
+    boat_ui.save_progress()
 
     if game_state == "achievements":
         achievement_page.visible = True
