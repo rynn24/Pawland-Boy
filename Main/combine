@@ -31,6 +31,7 @@ camera = pygame.Rect(0, 0, camera_width, camera_height)
 zoom_surface = pygame.Surface((camera_width, camera_height))
 player_position = pygame.Vector2(1500, 125)
 speed = 2
+
 # Player restricted area
 restricted_zones = [
     # Pond area
@@ -660,7 +661,16 @@ def loading_screen(screen, font):
         screen.blit(text, (screen.get_width() // 2 - text.get_width() // 2,
                            screen.get_height() // 2 - text.get_height() // 2))
         pygame.display.flip()
-
+        spritesheets = {
+            "movement": pygame.image.load("minting/TWALK.png").convert_alpha(),
+            "attack": pygame.image.load("minting/TATTACK.png").convert_alpha(),
+            "inventory": pygame.image.load("minting/TINVENTORY.png").convert_alpha(),
+            "fishing": pygame.image.load("minting/TFISH.png").convert_alpha(),
+            "enemy": pygame.image.load("minting/TENEMY.png").convert_alpha(),
+            "weapon": pygame.image.load("minting/TWEAPON.png").convert_alpha(),
+            "cook": pygame.image.load("minting/TCOOK.png").convert_alpha(),
+            "exp": pygame.image.load("minting/TEXP.png").convert_alpha(),
+        }
         # Load tutorial frames (only once)
         tutorial_frames = {
             "movement": [f"minting/Twalk/walk_{i:03}.png" for i in range(40)],
@@ -676,7 +686,7 @@ def loading_screen(screen, font):
         loading = False  # Exit loop after loading once
         clock.tick(60)
 
-    return tutorial_frames
+    return spritesheets
 
 # Setup screen and font before calling loading screen
 
@@ -684,13 +694,30 @@ def loading_screen(screen, font):
 tutorial_frame_paths = loading_screen(screen, font)
 
 class TutorialPage:
-    def __init__(self, title, text, image_paths):
+    def __init__(self, title, text, spritesheet_surface, frame_width, frame_height):
         self.title = title
         self.text = text
-        self.frames = self._load_frames(image_paths)
+        self.frames = []
         self.frame_index = 0
         self.frame_timer = 0
         self.frame_delay = 0.10
+
+        if spritesheet_surface:  # Check if path is not None/empty
+            self.frames = self._extract_frames(spritesheet_surface, frame_width, frame_height)
+
+    def _extract_frames(self, spritesheet_surface, frame_width, frame_height):
+        frames = []
+        try:
+            sheet_width, sheet_height = spritesheet_surface.get_size()
+            
+            for y in range(0, sheet_height, frame_height):
+                for x in range(0, sheet_width, frame_width):
+                    frame = spritesheet_surface.subsurface(pygame.Rect(x, y, frame_width, frame_height))
+                    frames.append(frame)
+        except Exception as e:
+            print(f"Error loading spritesheet: {e}")
+        return frames
+
 
     def _load_frames(self, paths):
         return [pygame.image.load(p).convert_alpha() for p in paths]
