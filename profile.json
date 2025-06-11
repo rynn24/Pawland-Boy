@@ -276,8 +276,8 @@
   "666": {
     "health": 280,
     "position": [
-      478.0399999999991,
-      828.9870000000017
+      1498.264000000002,
+      198.9470000000066
     ],
     "inventory": {
       "Wood": 38,
@@ -288,6 +288,8 @@
     "level": 3,
     "exp": 20,
     "day": 1,
+    "boat_progress": 0,
+    "boat_crystals": 0,
     "achievements": {
       "First Kill": false,
       "Zombie Slayer (20 kills)": false,
@@ -305,8 +307,8 @@
     "shown_achievements": [
       "First Kill",
       "Fruit Picker (5 fruit)",
-      "Lumberjack (10 wood)",
-      "Zombie Slayer (10 kills)"
+      "Zombie Slayer (10 kills)",
+      "Lumberjack (10 wood)"
     ],
     "stats": {
       "zombie_kills": 0,

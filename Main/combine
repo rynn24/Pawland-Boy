@@ -3287,15 +3287,6 @@ class ArmorUpgradeUI:
             surface.blit(msg_surf, (surface.get_width() // 2 - msg_surf.get_width() // 2, surface.get_height() - 60))
 
     def attempt_upgrade(self, target_level):
-        print("\n🔍 Upgrade Attempt Debug:")
-        print(f"Player armor: {self.player.armor_type}")
-        print(f"Current inventory reference: {id(self.inventory)}")
-        print(f"Inventory contents: {dict(self.inventory.items)}")  # Convert to dict for safety
-        print(f"All armor items: {[i for i in self.inventory.items if 'armor' in i.lower()]}")
-        print(f"Current armor: {self.player.armor_type}")
-        print(f"Target level: {target_level}")
-        print(f"Inventory items: {self.inventory.items}")
-        print(f"Armor UI inventory reference: {id(self.inventory)}")
         # More robust armor detection
         current_type = self.player.armor_type or "Iron"
         armor_item = f"Armor({current_type})"
