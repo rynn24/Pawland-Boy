@@ -1575,7 +1575,7 @@ class Player:
         self.base_weapon_damage = {
             'hand': 5,
             'axe': 15,
-            'sword': 10
+            'sword': 300
         }
         self.weapon_damage = self.base_weapon_damage.copy()
         self.update_weapon_damage()
@@ -2233,18 +2233,18 @@ class Player:
         #food only
         if action == "eat" and self.inventory.item_icons[name]["category"] == "food":
             if name == "Fish Soup":
-                self.gain_health(30)
-            elif name == "Grilled Fish":
-                self.gain_health(20)
-            elif name == "Special Dish":
                 self.gain_health(50)
+            elif name == "Grilled Fish":
+                self.gain_health(120)
+            elif name == "Special Dish":
+                self.gain_health(200)
             elif name == "Fruit Jam":
                 self.gain_speed(1.5, duration = 20)
             elif name == "Reef Medly":
-                self.gain_health(30)
+                self.gain_health(200)
                 self.gain_speed(1.5, duration = 30)
             elif name == "Twinfin Delight":
-                self.gain_health(100)
+                self.gain_health(300)
             self.inventory.remove_item(index, 1)
             
         elif name == "Fruit" and action == "eat":
@@ -2784,6 +2784,18 @@ class Zombie(pygame.sprite.Sprite):
         # Green health fill
         fill_rect = pygame.Rect(x, y, fill, bar_height)
         pygame.draw.rect(surface, (0, 255, 0), fill_rect, border_radius=3)
+
+show_boat = False
+boat_rect = pygame.Rect(418, 159, 100, 100)  # adjust size to match your boat image
+show_press_j_message = False
+game_ended = False
+end_sprite_index = 0
+end_sprite_timer = 0
+end_sprite_speed = 0.15
+
+boat_image = pygame.image.load("images/craft-icon/boat.png").convert_alpha()
+end_game_frames = [pygame.image.load(f"images/map-sprite/tree-sprite.png").convert_alpha() for i in range(7)]
+# REPLACE ENDING SPRITESHEET HERE AFTER DONE DRAWING!!! 😀😀😀
 
 class Boss(pygame.sprite.Sprite):
     def __init__(self, x, y, player, area_rect):
@@ -3769,7 +3781,7 @@ class BoatBuildingUI:
         self.max_wood = 50
         self.max_crystals = 5
         self.message = ""
-
+        self.boat_complete = False
     def load_sprite_frames(self, path, num_frames):
         sheet = pygame.image.load(path).convert_alpha()
         frame_width = sheet.get_width() // num_frames
@@ -3828,13 +3840,14 @@ class BoatBuildingUI:
                                     self.add_button.centery - add_text.get_height() // 2))
         else:
             done_text = self.font.render("Boat fully constructed!", True, (255, 255, 0))
+            self.boat_complete = True
             surface.blit(done_text, (menu_rect.centerx - done_text.get_width() // 2, menu_rect.y + 145))
 
         # Show boat sprite only if wood/crystals have been added
         if self.current_wood > 0 or self.boat_crystals > 0:
             frame_index = min((self.current_wood + self.boat_crystals * 10) // 2, len(self.frames) - 1)
             sprite = self.frames[frame_index]
-            sprite_pos = (menu_rect.centerx - self.frame_width // 2, menu_rect.y + 10)
+            sprite_pos = (menu_rect.centerx - self.frame_width // 2, menu_rect.y + 100)
             surface.blit(sprite, sprite_pos)
 
         if self.message:
@@ -4141,7 +4154,44 @@ while running:
 
         zombie_group.update()
         boss.update()
+        if boss.is_dead and boat_ui.boat_complete and not show_boat:
+            print("boat built")
+            print("Boss dead")
+            show_boat = True
+            if show_boat:
+                print("Show boat")
+                screen.blit(boat_image, (boat_rect.x - camera.x, boat_rect.y - camera.y))
 
+            # Check if player is near boat
+            if player.rect.colliderect(boat_rect.inflate(100, 100)) and show_boat: 
+                print("INSIDE BOAT AREA")
+                show_press_j_message = True
+                if keys[pygame.K_j]:
+                    game_ended = True
+                    end_sprite_index = 0
+                    end_sprite_timer = time.time()
+            else:
+                show_press_j_message = False
+
+            if show_press_j_message:
+                msg = font.render("Press J to use boat", True, (255, 255, 255))
+                screen.blit(msg, text_rect = text_surface.get_rect(center=(screen.get_width() // 2, screen.get_height() - 100)))
+                
+        # GAME ENDING        
+        if game_ended:
+            current_time = time.time()
+            if current_time - end_sprite_timer > end_sprite_speed and end_sprite_index < len(end_game_frames):
+                end_sprite_index += 1
+                end_sprite_timer = current_time
+
+            if end_sprite_index >= len(end_game_frames):
+                end_sprite_index = len(end_game_frames) - 1  # freeze on last frame
+
+            screen.blit(end_game_frames[end_sprite_index], (player.rect.centerx - 200, player.rect.centery - 200))  # adjust position
+
+            end_text = font.render("Game Ended", True, (255, 255, 255))
+            screen.blit(end_text, (screen.get_width() // 2 - end_text.get_width() // 2, 50))
+        
         # Movement with restriction zone logic
         proposed_position = player_instance.position.copy()
         for direction in ["w", "s", "a", "d"]:
