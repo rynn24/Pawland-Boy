@@ -210,6 +210,7 @@ boss_ult_frames = load_frames_from_sheet("haojun/image/boss ult.png", 76, 76, 1,
 
 class Inventory:
     def __init__(self, max_slots=16):
+        print("⚠️ NEW Inventory created!", id(self))
         self.items = {}
         self.max_slots = max_slots
         self.slots = [None] * self.max_slots  # Initial empty slots
@@ -3172,6 +3173,193 @@ class PondArea:
             self.spritesheet = self.night_spritesheet
         self.frames = self.load_frames()  # Reload frames for the new spritesheet 
                   
+class ArmorUpgradeUI:
+    def __init__(self, player_instance, inventory):
+        self.inventory = inventory
+        self.player = player_instance
+        print(f"🔍 ArmorUI INIT - Inventory has: {dict(inventory.items)}")  # Debug line
+        self.visible = False
+        self.armor_levels = {
+            "Gold": {"wood": 40, "crystals": 4},
+            "Diamond": {"wood": 60, "crystals": 6}
+        }
+        self.armor_type = "Iron"
+        self.close_button = pygame.Rect(0, 0, 1, 1)  # Placeholder
+        self.current_button_rects = []  # Initialize button rects list
+        self.current_close_button = pygame.Rect(0, 0, 1, 1)  # Initialize close button
+        self.font = pygame.font.SysFont(None, 24)
+        self.message = ""
+        self.message_timer = 0
+
+    def handle_event(self, event):
+        if not self.visible or event.type != pygame.MOUSEBUTTONDOWN or event.button != 1:
+            return False
+
+        mouse_pos = pygame.mouse.get_pos()
+
+        # Close button
+        if self.current_close_button.collidepoint(mouse_pos):
+            self.visible = False
+            return True
+
+        # Handle armor upgrade buttons
+        for button_rect, level in self.current_button_rects:
+            if button_rect.collidepoint(mouse_pos):
+                return self.attempt_upgrade(level)
+
+        return False
+        
+    def toggle(self):
+        self.visible = not self.visible  # Changed to toggle instead of just setting to True
+        
+    def draw(self, surface):
+        if not self.visible:
+            return
+
+        # Darken background
+        overlay = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 180))
+        surface.blit(overlay, (0, 0))
+
+        armor_order = ["Iron", "Gold", "Diamond"]
+        current_type = self.player.armor_type if self.player.armor_type in armor_order else "Iron"
+        current_index = armor_order.index(current_type)
+
+        # Draw menu
+        menu_rect = pygame.Rect(
+            surface.get_width() // 2 - 200,
+            surface.get_height() // 2 - 150,
+            400, 300
+        )
+        pygame.draw.rect(surface, (100, 70, 40), menu_rect)
+        pygame.draw.rect(surface, (200, 180, 100), menu_rect, 3)
+
+        # Draw title
+        title_font = pygame.font.SysFont(None, 36)
+        title = title_font.render("Upgrade Armor", True, (255, 255, 255))
+        surface.blit(title, (menu_rect.centerx - title.get_width() // 2, menu_rect.y + 20))
+
+        # Draw armor options
+        option_font = pygame.font.SysFont(None, 24)
+        self.current_button_rects = []  # Reset button rects each draw
+
+        y_offset = 70
+        for level, costs in self.armor_levels.items():
+            level_index = armor_order.index(level)
+            can_upgrade = level_index == current_index + 1  # Only allow direct next upgrade
+
+            # Skip showing levels the player already owns or has passed
+            if level_index <= current_index:
+                continue
+
+            # Draw armor option
+            armor_rect = pygame.Rect(
+                menu_rect.centerx - 150,
+                menu_rect.y + y_offset,
+                300, 60
+            )
+
+            # Set color based on availability
+            color = (70, 70, 120) if can_upgrade else (50, 50, 50)
+            pygame.draw.rect(surface, color, armor_rect)
+
+            # Draw armor info
+            armor_text = option_font.render(f"{level} Armor", True, (255, 255, 255))
+            cost_text = option_font.render(f"{costs['wood']} Wood, {costs['crystals']} Crystals", True, (255, 255, 255))
+
+            surface.blit(armor_text, (armor_rect.x + 10, armor_rect.y + 10))
+            surface.blit(cost_text, (armor_rect.x + 10, armor_rect.y + 30))
+
+            if can_upgrade:
+                self.current_button_rects.append((armor_rect, level))
+
+            y_offset += 70
+
+        # Draw close button
+        self.current_close_button = pygame.Rect(menu_rect.right - 30, menu_rect.y + 10, 20, 20)
+        pygame.draw.rect(surface, (150, 0, 0), self.current_close_button)
+        x_text = self.font.render("X", True, (255, 255, 255))
+        surface.blit(x_text, (self.current_close_button.centerx - x_text.get_width() // 2,
+                            self.current_close_button.centery - x_text.get_height() // 2))
+        
+        if self.message and time.time() - self.message_timer < 2.5:
+            msg_surf = self.font.render(self.message, True, (255, 255, 0))
+            surface.blit(msg_surf, (surface.get_width() // 2 - msg_surf.get_width() // 2, surface.get_height() - 60))
+
+    def attempt_upgrade(self, target_level):
+        print("\n🔍 Upgrade Attempt Debug:")
+        print(f"Player armor: {self.player.armor_type}")
+        print(f"Current inventory reference: {id(self.inventory)}")
+        print(f"Inventory contents: {dict(self.inventory.items)}")  # Convert to dict for safety
+        print(f"All armor items: {[i for i in self.inventory.items if 'armor' in i.lower()]}")
+        print(f"Current armor: {self.player.armor_type}")
+        print(f"Target level: {target_level}")
+        print(f"Inventory items: {self.inventory.items}")
+        print(f"Armor UI inventory reference: {id(self.inventory)}")
+        # More robust armor detection
+        current_type = self.player.armor_type or "Iron"
+        armor_item = f"Armor({current_type})"
+
+        if not self.inventory.has_item(armor_item):
+            self.message = f"{armor_item} not in inventory!"
+            self.message_timer = time.time()
+            return False
+
+        current_type = self.player.armor_type
+        armor_order = ["Iron", "Gold", "Diamond"]
+
+        # Handle case where player has no armor equipped yet
+        if current_type is None and "Iron" in armor_item:
+            current_type = "Iron"
+
+        if armor_order.index(target_level) <= armor_order.index(current_type):
+            self.message = "Already upgraded!"
+            self.message_timer = time.time()
+            return False
+
+        required = self.armor_levels[target_level]
+        if (self.has_item_quantity("Wood", required["wood"]) and 
+            self.has_item_quantity("Crystal", required["crystals"]) and 
+            self.has_item_quantity(armor_item, 1)):
+
+            self.remove_items_locally("Wood", required["wood"])
+            self.remove_items_locally("Crystal", required["crystals"])
+            self.remove_items_locally(armor_item, 1)
+
+            # Add new armor - match your naming convention
+            new_armor_name = f"Armor({target_level})"
+            self.inventory.add_item(new_armor_name, 1)
+            self.player.armor_type = target_level
+
+            self.message = f"Upgraded to {target_level} armor!"
+            self.message_timer = time.time()
+            return True
+        else:
+            self.message = "Not enough materials!"
+            self.message_timer = time.time()
+            return False
+
+    def has_item_quantity(self, item_name, quantity):
+        count = 0
+        for slot in self.inventory.slots:
+            if slot and isinstance(slot, (tuple, list)) and slot[0] == item_name:
+                count += slot[1]
+                if count >= quantity:
+                    return True
+        return False
+
+    def remove_items_locally(self, item_name, quantity):
+        remaining = quantity
+        for i, slot in enumerate(self.inventory.slots):
+            if slot and isinstance(slot, (tuple, list)) and slot[0] == item_name:
+                if slot[1] > remaining:
+                    self.inventory.slots[i] = (slot[0], slot[1] - remaining)
+                    return
+                else:
+                    remaining -= slot[1]
+                    self.inventory.slots[i] = None
+                if remaining <= 0:
+                    return
 
 def quit_game():
     print("[DEBUG] Quit triggered")
@@ -3202,7 +3390,6 @@ current_screen = "main_menu"
 current_user = None
 in_game = False
 inventory = Inventory() 
-player_inventory = Inventory()
 
 
 default_achievements = {
@@ -3376,6 +3563,7 @@ player_instance.inventory = inventory  # Assign filled inventory
 
 # Now create inventory_menu with player
 inventory_menu = InventoryMenu(inventory, window_size, player_instance)
+armor_ui = ArmorUpgradeUI(player_instance, player_instance.inventory)
 
 class CookingUI:
     def __init__(self, inventory, screen_width, screen_height):
@@ -3689,7 +3877,7 @@ class CraftingTable:
         
     def interact(self):
         self.visible = True
-        
+       
     def draw(self, surface):
         if self.visible:
             # Darken background
@@ -3905,115 +4093,15 @@ class BoatBuildingUI:
         else:
             self.message = "Materials added!"
 
-class ArmorUpgradeUI:
-    def __init__(self, inventory, player):
-        self.inventory = inventory
-        self.player = player
-        self.visible = False
-        self.armor_levels = {
-            "Iron": {"wood": 20, "crystals": 2},
-            "Gold": {"wood": 40, "crystals": 4},
-            "Diamond": {"wood": 60, "crystals": 6}
-        }
-        self.armor_type = "iron"
-        self.close_button = pygame.Rect(0, 0, 1, 1)  # Placeholder, updated in draw()
-        self.add_button = pygame.Rect(0, 0, 1, 1)
-        self.font = pygame.font.SysFont(None, 24)
         
-    def handle_event(self, event):
-        if not self.visible:
-            return False
-        
-        
-    def toggle(self):
-        self.visible = True
-        
-    def draw(self, surface):
-        if not self.visible:
-            return
-            
-        # Darken background
-        overlay = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
-        overlay.fill((0, 0, 0, 180))
-        surface.blit(overlay, (0, 0))
-        
-        armor_order = ["Iron", "Gold", "Diamond"]
-        current_type = self.player.armor_type if self.player.armor_type in armor_order else "Iron"
-        current_index = armor_order.index(current_type)
-
-        for level, costs in self.armor_levels.items():
-            level_index = armor_order.index(level)
-            can_upgrade = level_index > current_index
-        
-        # Draw menu
-        menu_rect = pygame.Rect(
-            surface.get_width()//2 - 200,
-            surface.get_height()//2 - 150,
-            400, 300
-        )
-        pygame.draw.rect(surface, (100, 70, 40), menu_rect)
-        pygame.draw.rect(surface, (200, 180, 100), menu_rect, 3)
-        
-        # Draw title
-        title_font = pygame.font.SysFont(None, 36)
-        title = title_font.render("Upgrade Armor", True, (255, 255, 255))
-        surface.blit(title, (menu_rect.centerx - title.get_width()//2, menu_rect.y + 20))
-        
-        # Draw armor options
-        option_font = pygame.font.SysFont(None, 24)
-        button_rects = []
-        
-        y_offset = 70
-        for level, costs in self.armor_levels.items():
-            # Check if player already has this armor or higher
-            current_armor = self.player.armor_type
-            can_upgrade = True
-            
-            # Draw armor option
-            armor_rect = pygame.Rect(
-                menu_rect.centerx - 150,
-                menu_rect.y + y_offset,
-                300, 60
-            )
-            
-            # Set color based on availability
-            if current_armor == level:
-                color = (100, 200, 100)  # Already owned
-            elif can_upgrade:
-                color = (70, 70, 120)  # Available
-            else:
-                color = (50, 50, 50)  # Not available
-                
-            pygame.draw.rect(surface, color, armor_rect)
-            
-            # Draw armor info
-            armor_text = option_font.render(f"{level} Armor", True, (255, 255, 255))
-            cost_text = option_font.render(f"{costs['wood']} Wood, {costs['crystals']} Crystals", True, (255, 255, 255))
-            
-            surface.blit(armor_text, (armor_rect.x + 10, armor_rect.y + 10))
-            surface.blit(cost_text, (armor_rect.x + 10, armor_rect.y + 30))
-            
-            button_rects.append((armor_rect, level))
-            y_offset += 70
-            
-            # Update close button rect
-            self.close_button = pygame.Rect(menu_rect.right - 30, menu_rect.y + 10, 20, 20)
-            pygame.draw.rect(surface, (150, 0, 0), self.close_button)
-            x_text = self.font.render("X", True, (255, 255, 255))
-            surface.blit(x_text, (self.close_button.centerx - x_text.get_width() // 2,
-                                self.close_button.centery - x_text.get_height() // 2))
-        
-        return button_rects, self.close_button
-
-
-
 day_count = current_day       
 player=player_instance
 boat_ui = BoatBuildingUI(player.inventory, day, player, boat_progress, boat_crystals)
 recipe_ui = RecipeBookUI("images/house/recipe.png", (600, 120, 30, 30), font)
+
+
 # Main loop
 running = True
-armor_ui = ArmorUpgradeUI(inventory, player)
 crafting_ui = CraftingTable(game_state, position)
 while running:
     dt = clock.tick(60) / 1000
@@ -4024,6 +4112,9 @@ while running:
     events = pygame.event.get()
     for event in events:
         tutorial.handle_event(event)
+        # ✅ Handle armor UI button click
+        if armor_ui.visible:
+            armor_ui.handle_event(event)
         if event.type == pygame.QUIT:
             # Save progress before exiting
             inventory_dict = inventory.get_inventory_dict()
@@ -4493,7 +4584,6 @@ while running:
                     boat_ui.try_add_materials()
                     
         elif armor_ui.visible:
-            armor_ui.handle_event(event)
             armor_ui.draw(screen)
             if mouse_clicked:
                 if armor_ui.close_button.collidepoint(mouse_pos):
