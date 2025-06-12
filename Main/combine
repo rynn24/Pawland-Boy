@@ -3957,20 +3957,6 @@ class CraftingTable:
             pygame.draw.rect(surface, (100, 70, 40), menu_rect)
             pygame.draw.rect(surface, (200, 180, 100), menu_rect, 3)
 
-            # --- Circular Close Button (X) ---
-            close_center = (screen.get_width() // 2 + 150, screen.get_height() // 2 - 135)            
-            close_radius = 15
-
-            # Draw circle (background and border)
-            pygame.draw.circle(surface, (150, 0, 0), close_center, close_radius)        # Red circle
-            pygame.draw.circle(surface, (255, 255, 255), close_center, close_radius, 2) # White border
-
-            # Draw "X" text in center
-            x_font = pygame.font.SysFont(None, 28)
-            x_text = x_font.render("X", True, (255, 255, 255))
-            x_text_rect = x_text.get_rect(center=close_center)
-            surface.blit(x_text, x_text_rect)
-
             # Draw title
             title_font = pygame.font.SysFont(None, 40)
             title = title_font.render("Crafting Table", True, (255, 255, 255))
@@ -4345,7 +4331,7 @@ while running:
                     character_scale = fullscreen_scale  # Increase size
                     settings_menu.create_buttons(screen.get_size())
                 else:
-                    screen = pygame.display.set_mode(window_size)
+                    screen = pygame.display.set_mode((BASE_WIDTH, BASE_HEIGHT))
                     character_scale = 1.0  # Normal size
                     
                 screen_width, screen_height = screen.get_size()    
@@ -4740,11 +4726,24 @@ while running:
                         
         if crafting_ui.visible:
             crafting_ui.draw(screen)
-            # Close button logic (circle at (435, 115), radius 15)
+        # --- Circular Close Button (X) ---
             close_center = (435, 115)
             close_radius = 15
+            pygame.draw.circle(screen, (150, 0, 0), close_center, close_radius)        # Red circle
+            pygame.draw.circle(screen, (255, 255, 255), close_center, close_radius, 2) # White border
+
+            x_font = pygame.font.SysFont(None, 28)
+            x_text = x_font.render("X", True, (255, 255, 255))
+            x_text_rect = x_text.get_rect(center=close_center)
+            screen.blit(x_text, x_text_rect)
+
+            # Close button logic (circle click detection)
             dx = mouse_pos[0] - close_center[0]
             dy = mouse_pos[1] - close_center[1]
+            
+            if mouse_clicked and dx*dx + dy*dy <= close_radius*close_radius:
+                print("Closed crafting UI")
+                crafting_ui.visible = False
             # Check if click is inside the circle
             if mouse_clicked and dx*dx + dy*dy <= close_radius*close_radius:
                 if crafting_ui.visible:

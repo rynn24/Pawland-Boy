@@ -2,8 +2,8 @@
   "1": {
     "health": 625,
     "position": [
-      424.0819999999909,
-      492.2639999999944
+      1499.937999999993,
+      190.2399999999956
     ],
     "inventory": {
       "Wood": 950,
@@ -20,7 +20,7 @@
     "boat_progress": 100,
     "boat_crystals": 0,
     "boat_built": false,
-    "boss_defeated": true,
+    "boss_defeated": false,
     "achievements": {
       "First Kill": true,
       "Zombie Slayer (20 kills)": false,
@@ -32,8 +32,8 @@
       "Fisherman (10 fish)": false
     },
     "shown_achievements": [
-      "Level 5 Achieved",
-      "First Kill"
+      "First Kill",
+      "Level 5 Achieved"
     ],
     "stats": {
       "zombie_kills": 7,
