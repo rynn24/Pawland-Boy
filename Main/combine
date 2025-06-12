@@ -119,9 +119,9 @@ boat_riding_frames = []  # Will store your sprite sheet frames
 current_boat_frame = 0
 boat_anim_timer = 0
 boat_frame_duration = 200  # milliseconds per frame
-boat_riding_sheet = pygame.image.load("images/map-sprite/firefly.png").convert_alpha()
-frame_width = 100
-frame_height = 100
+boat_riding_sheet = pygame.image.load("images/map-sprite/ending-sprite.png").convert_alpha()
+frame_width = 620
+frame_height = 480
 num_frames = 7  # Adjust based on your sprite sheet
 
 for i in range(num_frames):
@@ -4307,7 +4307,7 @@ while running:
                 overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
                 inventory_menu.update_layout(screen.get_size())
                 tutorial.update_layout(screen.get_size())
-            
+                
                 achievement_page.update_layout(screen.get_size())
             elif event.key == pygame.K_b:
                 inventory_menu.toggle()
