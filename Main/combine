@@ -17,6 +17,24 @@ clock = pygame.time.Clock()
 # Scaling variables
 character_scale = 1.0  # Normal size
 fullscreen_scale = 2.0  # Scale factor when in fullscreen
+BASE_WIDTH = 620
+BASE_HEIGHT = 480
+
+def scale_rect(x, y, w, h, x_scale, y_scale):
+    return pygame.Rect(int(x * x_scale), int(y * y_scale), int(w * x_scale), int(h * y_scale))
+
+def update_ui_rects(screen_size):
+    x_scale = screen_size[0] / BASE_WIDTH
+    y_scale = screen_size[1] / BASE_HEIGHT
+
+    crafting_ui_area = scale_rect(122, 232, 90, 86, x_scale, y_scale)
+    boat_rect = scale_rect(205, 180, 220, 80, x_scale, y_scale)
+    armor_rect = scale_rect(205, 280, 220, 80, x_scale, y_scale)
+    paper_zone_rect = scale_rect(25, 95, 81, 50, x_scale, y_scale)
+    cooking_area = scale_rect(398, 256, 85, 80, x_scale, y_scale)
+    recipe_book_rect = scale_rect(161, 125, 53, 18, x_scale, y_scale)
+
+    return crafting_ui_area, boat_rect, armor_rect, paper_zone_rect, cooking_area, recipe_book_rect
 
 # fonts
 font = pygame.font.SysFont(None, 24)
@@ -3019,6 +3037,9 @@ class Boss(pygame.sprite.Sprite):
                 self.last_animation_time = current_time
             else:
                 self.kill()
+                if user_system.current_user:
+                    user_system.users[user_system.current_user]["boss_defeated"] = True
+                    user_system.save_users()
                 return True
         return False
 
@@ -3590,9 +3611,6 @@ class CookingUI:
         self.dragging_item = None
         self.drag_offset = (0, 0)
         
-        # Cooking area dimensions
-        self.cooking_area = pygame.Rect(398, 256, 85, 80)
-        
         # UI elements
         self.ingredients_panel = pygame.Rect(40, 120, 350, 250) #Ingredients box
         self.cooking_pot_panel = pygame.Rect(420, 180, 150, 150) #Pot box
@@ -3742,7 +3760,7 @@ class CookingUI:
         
         # Draw title
         title = self.font.render("Ingredients", True, (255, 255, 255))
-        screen.blit(title, (self.ingredients_panel.x + 10, self.ingredients_panel.y - 35))
+        screen.blit(title, (self.ingredients_panel.x + 10, self.ingredients_panel.y - 60))
         
         # Draw ingredient slots
         for slot in self.ingredient_slots:
@@ -3832,6 +3850,45 @@ class CookingUI:
 
     def close(self):
         self.visible = False
+    
+    def update_layout(self, screen_size):
+        self.screen_width, self.screen_height = screen_size
+
+        x_scale = self.screen_width / BASE_WIDTH
+        y_scale = self.screen_height / BASE_HEIGHT
+
+        # Panels
+        self.ingredients_panel = pygame.Rect(
+            int(40 * x_scale), int(100 * y_scale),
+            int(350 * x_scale), int(250 * y_scale)
+        )
+        self.cooking_pot_panel = pygame.Rect(
+            int(420 * x_scale), int(180 * y_scale),
+            int(150 * x_scale), int(150 * y_scale)
+        )
+        self.cook_button = pygame.Rect(
+            int(445 * x_scale), int(350 * y_scale),
+            int(100 * x_scale), int(40 * y_scale)
+        )
+        self.close_button_rect = pygame.Rect(
+            int(40 * x_scale), int(35 * y_scale),
+            int(80 * x_scale), int(30 * y_scale)
+        )
+
+        # Slot size & margin
+        self.slot_size = int(60 * x_scale)
+        self.slot_margin = int(10 * x_scale)
+
+        # Resize pot image
+        self.pot_image = pygame.image.load("images/house/pot.png").convert_alpha()
+        self.pot_image = pygame.transform.scale(self.pot_image, (self.cooking_pot_panel.width, self.cooking_pot_panel.height))
+
+        # Resize font
+        font_size = max(12, int(24 * x_scale))
+        self.font = pygame.font.SysFont("Times New Roman", font_size)
+
+        # Update ingredient positions
+        self.update_ingredient_slots()
 
 # Cooking
 cooking_ui = CookingUI(inventory, screen.get_width(), screen.get_height())
@@ -3839,46 +3896,81 @@ cooking_ui = CookingUI(inventory, screen.get_width(), screen.get_height())
 # Recipe book
 class RecipeBookUI:
     def __init__(self, image_path, close_button_rect, font):
-        self.image = pygame.image.load("images/house/recipe.png").convert_alpha()
+        self.image = pygame.image.load(image_path).convert_alpha()
         self.visible = False
         self.font = font
-        self.close_button = pygame.Rect(0, 0, 1, 1)
-        
-        # Position and size for the UI window
+
         self.window_rect = pygame.Rect(100, 100, self.image.get_width() + 40, self.image.get_height() + 80)
-        
-        # Close button rect (you can customize position/size)
-        self.close_button_rect = pygame.Rect(close_button_rect)
-        
+        self.close_button = pygame.Rect(0, 0, 25, 30)  # Will be updated later
+        self.screen_width = 0
+        self.screen_height = 0
+
     def open(self):
         self.visible = True
-        
+
     def close(self):
         self.visible = False
-        
+
     def handle_event(self, event):
         if not self.visible:
             return
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            if self.close_button_rect.collidepoint(event.pos):
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            if self.close_button.collidepoint(event.pos):
                 self.close()
-    
+
+    def update_close_button(self):
+        # Scale close button size based on screen size
+        x_scale = self.screen_width / BASE_WIDTH
+        y_scale = self.screen_height / BASE_HEIGHT
+
+        button_width = int(25 * x_scale)
+        button_height = int(30 * y_scale)
+
+        x = self.window_rect.right - button_width - int(10 * x_scale)
+        y = self.window_rect.top + int(10 * y_scale)
+
+        self.close_button = pygame.Rect(x, y, button_width, button_height)
+
+    def update_layout(self, screen_size):
+        self.screen_width, self.screen_height = screen_size
+        window_width = int(self.screen_width * 0.7)
+        window_height = int(self.screen_height * 0.7)
+        # Recalculate window_rect to center on screen
+        window_width = self.image.get_width() + 40
+        window_height = self.image.get_height() + 80
+        window_x = (self.screen_width - window_width) // 2
+        window_y = (self.screen_height - window_height) // 2
+        self.window_rect = pygame.Rect(window_x, window_y, window_width, window_height)
+        font_size = max(18, int(24 * (self.screen_width / BASE_WIDTH)))
+        self.font = pygame.font.SysFont(None, font_size)
+        self.update_close_button()
+
     def draw(self, surface):
         if not self.visible:
             return
-        
-        # Draw the image centered inside the window with some padding
-        image_pos = (self.window_rect.x - 100 , self.window_rect.y - 70)
-        surface.blit(self.image, image_pos)
-        
-        #close button
-        self.close_button = pygame.Rect(560, 90, 25, 30)
-        pygame.draw.rect(surface, (150, 0, 0), self.close_button)
+
+        # Scale the recipe image to fit the window (minus padding)
+        scaled_image = pygame.transform.scale(
+            self.image,
+            (self.window_rect.width - 40, self.window_rect.height - 80)
+        )
+
+        # Blit the image with padding
+        surface.blit(scaled_image, (self.window_rect.x + 20, self.window_rect.y + 40))
+
+        # Draw the close button
+        pygame.draw.rect(surface, (150, 0, 0), self.close_button, border_radius=4)
         x_text = self.font.render("X", True, (255, 255, 255))
-        surface.blit(x_text, (self.close_button.centerx - x_text.get_width() // 2,
-                            self.close_button.centery - x_text.get_height() // 2))
+        surface.blit(
+            x_text,
+            (
+                self.close_button.centerx - x_text.get_width() // 2,
+                self.close_button.centery - x_text.get_height() // 2
+            )
+        )
 
-
+    
+    
 class CraftingTable:
     def __init__(self, position, size):
         x, y = position if isinstance(position, (list, tuple)) and len(position) == 2 else (0, 0)
@@ -3889,91 +3981,101 @@ class CraftingTable:
         self.armor_upgraded = False
         self.boat_icon = pygame.image.load("images/craft-icon/build.png").convert_alpha()
         self.armor_icon = pygame.image.load("images/craft-icon/upgrade.png").convert_alpha()     
-        
+        self.close_button = pygame.Rect(0, 0, 1, 1)  # Will be updated in draw
+
     def interact(self):
         self.visible = True
        
     def draw(self, surface):
-        if self.visible:
-            # Darken background
-            overlay = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
-            overlay.fill((0, 0, 0, 180))
-            surface.blit(overlay, (0, 0))
+        if not self.visible:
+            return
 
-            # Draw crafting menu background
-            menu_rect = pygame.Rect(
-                surface.get_width()//2 - 150,
-                surface.get_height()//2 - 150,
-                300, 300
+        screen_width, screen_height = surface.get_size()
+        x_scale = screen_width / BASE_WIDTH
+        y_scale = screen_height / BASE_HEIGHT
+
+        # Darken background
+        overlay = pygame.Surface((screen_width, screen_height), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 180))
+        surface.blit(overlay, (0, 0))
+
+        # Scale the crafting menu
+        menu_width = int(300 * x_scale)
+        menu_height = int(300 * y_scale)
+        menu_rect = pygame.Rect(
+            screen_width // 2 - menu_width // 2,
+            screen_height // 2 - menu_height // 2,
+            menu_width, menu_height
+        )
+        pygame.draw.rect(surface, (100, 70, 40), menu_rect, border_radius=10)
+        pygame.draw.rect(surface, (200, 180, 100), menu_rect, 3, border_radius=10)
+
+        # Title font
+        title_font = pygame.font.SysFont(None, int(40 * x_scale))
+        title = title_font.render("Crafting Table", True, (255, 255, 255))
+        surface.blit(title, (menu_rect.centerx - title.get_width() // 2, menu_rect.y + int(30 * y_scale)))
+
+        # Option font
+        option_font = pygame.font.SysFont(None, int(28 * x_scale))
+
+        # --- Boat Button ---
+        boat_rect = pygame.Rect(
+            menu_rect.centerx - int(110 * x_scale),
+            menu_rect.centery - int(60 * y_scale),
+            int(220 * x_scale),
+            int(80 * y_scale)
+        )
+        pygame.draw.rect(surface, (70, 50, 30), boat_rect, border_radius=6)
+
+        boat_text = option_font.render("Build Boat", True, (255, 255, 255))
+        if self.boat_icon:
+            icon = pygame.transform.scale(self.boat_icon, (int(50 * x_scale), int(50 * y_scale)))
+            icon_x = boat_rect.x + int(10 * x_scale)
+            icon_y = boat_rect.centery - icon.get_height() // 2
+            surface.blit(icon, (icon_x, icon_y))
+            surface.blit(boat_text, (icon_x + icon.get_width() + 10, boat_rect.centery - boat_text.get_height() // 2))
+        else:
+            surface.blit(boat_text, (boat_rect.centerx - boat_text.get_width() // 2, boat_rect.centery - 10))
+
+        # --- Armor Button ---
+        armor_rect = pygame.Rect(
+            menu_rect.centerx - int(110 * x_scale),
+            menu_rect.centery + int(40 * y_scale),
+            int(220 * x_scale),
+            int(80 * y_scale)
+        )
+        pygame.draw.rect(surface, (100, 100, 100), armor_rect, border_radius=6)
+
+        armor_text = option_font.render("Upgrade Armor", True, (255, 255, 255))
+        if self.armor_icon:
+            icon = pygame.transform.scale(self.armor_icon, (int(50 * x_scale), int(50 * y_scale)))
+            icon_x = armor_rect.x + int(10 * x_scale)
+            icon_y = armor_rect.centery - icon.get_height() // 2
+            surface.blit(icon, (icon_x, icon_y))
+            surface.blit(armor_text, (icon_x + icon.get_width() + 10, armor_rect.centery - armor_text.get_height() // 2))
+        else:
+            surface.blit(armor_text, (armor_rect.centerx - armor_text.get_width() // 2, armor_rect.centery - 10))
+
+        # --- Close Button ---
+        close_btn_width = int(40 * x_scale)
+        close_btn_height = int(40 * y_scale)
+        close_btn_x = menu_rect.right - close_btn_width - int(10 * x_scale)
+        close_btn_y = menu_rect.top + int(10 * y_scale)
+        self.close_button = pygame.Rect(close_btn_x, close_btn_y, close_btn_width, close_btn_height)
+
+        pygame.draw.rect(surface, (150, 0, 0), self.close_button, border_radius=6)
+        close_font = pygame.font.SysFont(None, int(28 * x_scale))
+        x_text = close_font.render("X", True, (255, 255, 255))
+        surface.blit(
+            x_text,
+            (
+                self.close_button.centerx - x_text.get_width() // 2,
+                self.close_button.centery - x_text.get_height() // 2
             )
-            pygame.draw.rect(surface, (100, 70, 40), menu_rect)
-            pygame.draw.rect(surface, (200, 180, 100), menu_rect, 3)
+        )
 
-            menu_rect = pygame.Rect(
-            surface.get_width()//2 - 150,
-            surface.get_height()//2 - 150,
-            300, 300
-            )
-            pygame.draw.rect(surface, (100, 70, 40), menu_rect)
-            pygame.draw.rect(surface, (200, 180, 100), menu_rect, 3)
+        return boat_rect, armor_rect
 
-            # --- Circular Close Button (X) ---
-            close_center = (menu_rect.right - 25, menu_rect.top + 25)  # Circle center
-            close_radius = 15
-
-            # Draw circle (background and border)
-            pygame.draw.circle(surface, (150, 0, 0), close_center, close_radius)        # Red circle
-            pygame.draw.circle(surface, (255, 255, 255), close_center, close_radius, 2) # White border
-
-            # Draw "X" text in center
-            x_font = pygame.font.SysFont(None, 28)
-            x_text = x_font.render("X", True, (255, 255, 255))
-            x_text_rect = x_text.get_rect(center=close_center)
-            surface.blit(x_text, x_text_rect)
-
-            # Draw title
-            title_font = pygame.font.SysFont(None, 40)
-            title = title_font.render("Crafting Table", True, (255, 255, 255))
-            surface.blit(title, (menu_rect.centerx - title.get_width()//2, menu_rect.y + 30))
-
-            # Font for options
-            option_font = pygame.font.SysFont(None, 28)
-
-            # --- Boat Option ---
-            boat_rect = pygame.Rect(menu_rect.centerx - 105, menu_rect.centery - 60, 220, 80)
-            pygame.draw.rect(surface, (70, 50, 30), boat_rect)
-            boat_text = option_font.render("Build Boat", True, (255, 255, 255))
-            
-            # Draw boat icon
-            if hasattr(self, 'boat_icon'):
-                icon = pygame.transform.scale(self.boat_icon, (50, 50))
-                icon_x = boat_rect.x + 10
-                icon_y = boat_rect.centery - icon.get_height() // 2
-                surface.blit(icon, (icon_x, icon_y))
-
-                # Text beside icon
-                surface.blit(boat_text, (icon_x + 60, boat_rect.centery - 10))
-            else:
-                surface.blit(boat_text, (boat_rect.centerx - boat_text.get_width()//2, boat_rect.centery - 10))
-
-            # --- Armor Option ---
-            armor_rect = pygame.Rect(menu_rect.centerx - 105, menu_rect.centery + 40, 220, 80)
-            pygame.draw.rect(surface, (100, 100, 100), armor_rect)
-            armor_text = option_font.render("Upgrade Armor", True, (255, 255, 255))
-
-            # Draw armor icon
-            if hasattr(self, 'armor_icon'):
-                icon = pygame.transform.scale(self.armor_icon, (50, 50))
-                icon_x = armor_rect.x + 10
-                icon_y = armor_rect.centery - icon.get_height() // 2
-                surface.blit(icon, (icon_x, icon_y))
-
-                # Text beside icon
-                surface.blit(armor_text, (icon_x + 50, armor_rect.centery - 10))
-            else:
-                surface.blit(armor_text, (armor_rect.centerx - armor_text.get_width()//2, armor_rect.centery - 10))
-
-            return boat_rect, armor_rect
         
 print("game_state is:", game_state, type(game_state))
 
@@ -4020,59 +4122,87 @@ class BoatBuildingUI:
         if not self.visible:
             return
 
-        overlay = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
+        screen_width, screen_height = surface.get_size()
+        x_scale = screen_width / BASE_WIDTH
+        y_scale = screen_height / BASE_HEIGHT
+
+        overlay = pygame.Surface((screen_width, screen_height), pygame.SRCALPHA)
         overlay.fill((0, 0, 0, 180))
         surface.blit(overlay, (0, 0))
 
-        menu_rect = pygame.Rect(surface.get_width() // 2 - 200, surface.get_height() // 2 - 150, 400, 300)
-        pygame.draw.rect(surface, (100, 70, 40), menu_rect)
-        pygame.draw.rect(surface, (200, 180, 100), menu_rect, 3)
+        menu_width = int(400 * x_scale)
+        menu_height = int(300 * y_scale)
+        menu_rect = pygame.Rect(
+            screen_width // 2 - menu_width // 2,
+            screen_height // 2 - menu_height // 2,
+            menu_width, menu_height
+        )
+        pygame.draw.rect(surface, (100, 70, 40), menu_rect, border_radius=10)
+        pygame.draw.rect(surface, (200, 180, 100), menu_rect, 3, border_radius=10)
 
-        title = pygame.font.SysFont(None, 36).render("Build Boat", True, (255, 255, 255))
-        surface.blit(title, (menu_rect.centerx - title.get_width() // 2, menu_rect.y + 20))
+        # Title
+        title_font = pygame.font.SysFont(None, int(36 * x_scale))
+        title = title_font.render("Build Boat", True, (255, 255, 255))
+        surface.blit(title, (menu_rect.centerx - title.get_width() // 2, menu_rect.y + int(20 * y_scale)))
 
-        level = player.level
-        surface.blit(self.font.render(f"Level: {level}", True, (255, 255, 255)), (menu_rect.x + 50, menu_rect.y + 70))
+        # Stats & Level
+        label_font = pygame.font.SysFont(None, int(24 * x_scale))
+        surface.blit(label_font.render(f"Level: {self.player.level}", True, (255, 255, 255)),
+                    (menu_rect.x + int(40 * x_scale), menu_rect.y + int(70 * y_scale)))
+        surface.blit(label_font.render(f"Wood: {self.boat_progress}/50", True, (255, 255, 255)),
+                    (menu_rect.x + int(40 * x_scale), menu_rect.y + int(100 * y_scale)))
+        surface.blit(label_font.render(f"Crystals: {self.boat_crystals}/5", True, (255, 255, 255)),
+                    (menu_rect.x + int(200 * x_scale), menu_rect.y + int(100 * y_scale)))
 
-        surface.blit(self.font.render(f"Wood: {self.boat_progress}/50", True, (255, 255, 255)), (menu_rect.x + 50, menu_rect.y + 100))
-        surface.blit(self.font.render(f"Crystals: {self.boat_crystals}/5", True, (255, 255, 255)), (menu_rect.x + 200, menu_rect.y + 100))
-
-        if level < 20:
-            warning_box = pygame.Rect(menu_rect.centerx - 140, menu_rect.y + 140, 280, 30)
+        # Add Button or Done Text
+        if self.player.level < 20:
+            warning_box = pygame.Rect(menu_rect.centerx - int(140 * x_scale), menu_rect.y + int(140 * y_scale),
+                                    int(280 * x_scale), int(30 * y_scale))
             pygame.draw.rect(surface, (80, 0, 0), warning_box)
             pygame.draw.rect(surface, (255, 0, 0), warning_box, 2)
-            warning_text = self.font.render("Build Boat unlocks at level 20!", True, (255, 50, 50))
+            warning_text = label_font.render("Build Boat unlocks at level 20!", True, (255, 50, 50))
             surface.blit(warning_text, (warning_box.centerx - warning_text.get_width() // 2,
                                         warning_box.centery - warning_text.get_height() // 2))
-            self.add_button = pygame.Rect(0, 0, 0, 0)
-            
+            self.add_button = pygame.Rect(0, 0, 0, 0)  # disable
         elif self.boat_progress < self.max_wood or self.boat_crystals < self.max_crystals:
-            self.add_button = pygame.Rect(menu_rect.centerx - 100, menu_rect.y + 140, 200, 30)
-            pygame.draw.rect(surface, (50, 150, 50), self.add_button)
-            add_text = self.font.render("Add Materials", True, (255, 255, 255))
+            self.add_button = pygame.Rect(menu_rect.centerx - int(100 * x_scale), menu_rect.y + int(140 * y_scale),
+                                        int(200 * x_scale), int(30 * y_scale))
+            pygame.draw.rect(surface, (50, 150, 50), self.add_button, border_radius=6)
+            add_text = label_font.render("Add Materials", True, (255, 255, 255))
             surface.blit(add_text, (self.add_button.centerx - add_text.get_width() // 2,
                                     self.add_button.centery - add_text.get_height() // 2))
         else:
-            done_text = self.font.render("Boat fully constructed!", True, (255, 255, 0))
+            done_text = label_font.render("Boat fully constructed!", True, (255, 255, 0))
             self.boat_complete = True
-            surface.blit(done_text, (menu_rect.centerx - done_text.get_width() // 2, menu_rect.y + 145))
+            surface.blit(done_text, (menu_rect.centerx - done_text.get_width() // 2, menu_rect.y + int(145 * y_scale)))
+            if user_system.current_user:
+                user_system.users[user_system.current_user]["boat_built"] = True
+                user_system.save_users()
 
-        # Show boat sprite only if wood/crystals have been added
+        # Boat sprite
         if self.boat_progress > 0 or self.boat_crystals > 0:
             frame_index = min((self.boat_progress + self.boat_crystals * 10) // 2, len(self.frames) - 1)
             sprite = self.frames[frame_index]
-            sprite_pos = (menu_rect.centerx - self.frame_width // 2, menu_rect.y + 100)
+            sprite_pos = (
+                menu_rect.centerx - self.frame_width // 2,
+                menu_rect.y + int(180 * y_scale)
+            )
             surface.blit(sprite, sprite_pos)
 
+        # Message
         if self.message:
-            msg = self.font.render(self.message, True, (255, 255, 100))
-            surface.blit(msg, (menu_rect.centerx - msg.get_width() // 2, menu_rect.y + 270))
+            msg = label_font.render(self.message, True, (255, 255, 100))
+            surface.blit(msg, (menu_rect.centerx - msg.get_width() // 2, menu_rect.y + int(270 * y_scale)))
 
-        self.close_button = pygame.Rect(menu_rect.right - 30, menu_rect.y + 10, 20, 20)
-        pygame.draw.rect(surface, (150, 0, 0), self.close_button)
-        x_text = self.font.render("X", True, (255, 255, 255))
+        # Close Button (Top-right)
+        close_btn_size = int(36 * x_scale)
+        close_btn_x = menu_rect.right - close_btn_size - int(10 * x_scale)
+        close_btn_y = menu_rect.top + int(10 * y_scale)
+        self.close_button = pygame.Rect(close_btn_x, close_btn_y, close_btn_size, close_btn_size)
+        pygame.draw.rect(surface, (150, 0, 0), self.close_button, border_radius=6)
+        x_text = label_font.render("X", True, (255, 255, 255))
         surface.blit(x_text, (self.close_button.centerx - x_text.get_width() // 2,
-                              self.close_button.centery - x_text.get_height() // 2))
+                            self.close_button.centery - x_text.get_height() // 2))
 
     def try_add_materials(self):
         self.message = ""
@@ -4149,84 +4279,109 @@ class ArmorUpgradeUI:
     def draw(self, surface):
         if not self.visible:
             return
-            
-        # Darken background
-        overlay = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
+
+        screen_width, screen_height = surface.get_size()
+        x_scale = screen_width / BASE_WIDTH
+        y_scale = screen_height / BASE_HEIGHT
+
+        # Background dim
+        overlay = pygame.Surface((screen_width, screen_height), pygame.SRCALPHA)
         overlay.fill((0, 0, 0, 180))
         surface.blit(overlay, (0, 0))
-        
+
+        # Menu box (like Boat UI)
+        menu_width = int(400 * x_scale)
+        menu_height = int(300 * y_scale)
+        menu_rect = pygame.Rect(
+            screen_width // 2 - menu_width // 2,
+            screen_height // 2 - menu_height // 2,
+            menu_width,
+            menu_height
+        )
+        pygame.draw.rect(surface, (100, 70, 40), menu_rect, border_radius=10)
+        pygame.draw.rect(surface, (200, 180, 100), menu_rect, 3, border_radius=10)
+
+        # Title
+        title_font = pygame.font.SysFont(None, int(36 * x_scale))
+        title = title_font.render("Upgrade Armor", True, (255, 255, 255))
+        surface.blit(title, (
+            menu_rect.centerx - title.get_width() // 2,
+            menu_rect.y + int(20 * y_scale)
+        ))
+
+        # Font for options
+        option_font = pygame.font.SysFont(None, int(24 * x_scale))
+
+        # Armor progression
         armor_order = ["Iron", "Gold", "Diamond"]
         current_type = self.player.armor_type if self.player.armor_type in armor_order else "Iron"
         current_index = armor_order.index(current_type)
 
-        for level, costs in self.armor_levels.items():
+        # Button generation
+        button_rects = []
+        y_offset = menu_rect.y + int(70 * y_scale)
+        button_height = int(60 * y_scale)
+        spacing = int(10 * y_scale)
+
+        for level in armor_order:
+            costs = self.armor_levels[level]
             level_index = armor_order.index(level)
             can_upgrade = level_index > current_index
-        
-        # Draw menu
-        menu_rect = pygame.Rect(
-            surface.get_width()//2 - 200,
-            surface.get_height()//2 - 150,
-            400, 300
-        )
-        pygame.draw.rect(surface, (100, 70, 40), menu_rect)
-        pygame.draw.rect(surface, (200, 180, 100), menu_rect, 3)
-        
-        # Draw title
-        title_font = pygame.font.SysFont(None, 36)
-        title = title_font.render("Upgrade Armor", True, (255, 255, 255))
-        surface.blit(title, (menu_rect.centerx - title.get_width()//2, menu_rect.y + 20))
-        
-        # Draw armor options
-        option_font = pygame.font.SysFont(None, 24)
-        button_rects = []
-        
-        y_offset = 70
-        for level, costs in self.armor_levels.items():
-            # Check if player already has this armor or higher
-            current_armor = self.player.armor_type
-            can_upgrade = True
-            
-            # Draw armor option
+
             armor_rect = pygame.Rect(
-                menu_rect.centerx - 150,
-                menu_rect.y + y_offset,
-                300, 60
+                menu_rect.centerx - int(110 * x_scale),
+                y_offset,
+                int(220 * x_scale),
+                button_height
             )
-            
-            # Set color based on availability
-            if current_armor == level:
-                color = (100, 200, 100)  # Already owned
+
+            # Color logic
+            if current_type == level:
+                color = (100, 200, 100)  # Owned
             elif can_upgrade:
-                color = (70, 70, 120)  # Available
+                color = (70, 70, 120)    # Available
             else:
-                color = (50, 50, 50)  # Not available
-                
-            pygame.draw.rect(surface, color, armor_rect)
-            
-            # Draw armor info
+                color = (50, 50, 50)     # Locked
+
+            pygame.draw.rect(surface, color, armor_rect, border_radius=6)
+
+            # Text labels
             armor_text = option_font.render(f"{level} Armor", True, (255, 255, 255))
-            cost_text = option_font.render(f"{costs['wood']} Wood, {costs['crystals']} Crystals", True, (255, 255, 255))
-            
-            surface.blit(armor_text, (armor_rect.x + 10, armor_rect.y + 10))
-            surface.blit(cost_text, (armor_rect.x + 10, armor_rect.y + 30))
-            
+            cost_text = option_font.render(
+                f"{costs['wood']} Wood, {costs['crystals']} Crystals", True, (255, 255, 255)
+            )
+
+            surface.blit(armor_text, (armor_rect.x + int(10 * x_scale), armor_rect.y + int(10 * y_scale)))
+            surface.blit(cost_text, (armor_rect.x + int(10 * x_scale), armor_rect.y + int(32 * y_scale)))
+
             button_rects.append((armor_rect, level))
-            y_offset += 70
-            
-            # Update close button rect
-            self.close_button = pygame.Rect(menu_rect.right - 30, menu_rect.y + 10, 20, 20)
-            pygame.draw.rect(surface, (150, 0, 0), self.close_button)
-            x_text = self.font.render("X", True, (255, 255, 255))
-            surface.blit(x_text, (self.close_button.centerx - x_text.get_width() // 2,
-                                self.close_button.centery - x_text.get_height() // 2))
-        
+            y_offset += button_height + spacing
+
+        # Close button in top-right corner
+        close_btn_size = int(36 * x_scale)
+        close_btn_x = menu_rect.right - close_btn_size - int(10 * x_scale)
+        close_btn_y = menu_rect.top + int(10 * y_scale)
+        self.close_button = pygame.Rect(close_btn_x, close_btn_y, close_btn_size, close_btn_size)
+
+        pygame.draw.rect(surface, (150, 0, 0), self.close_button, border_radius=6)
+        x_text = option_font.render("X", True, (255, 255, 255))
+        surface.blit(
+            x_text,
+            (
+                self.close_button.centerx - x_text.get_width() // 2,
+                self.close_button.centery - x_text.get_height() // 2
+            )
+        )
+
         return button_rects, self.close_button
+
+
 
      
 player=player_instance
 boat_ui = BoatBuildingUI(player.inventory, player, boat_progress=0, boat_crystals=0)
 recipe_ui = RecipeBookUI("images/house/recipe.png", (600, 120, 30, 30), font)
+crafting_ui_area, boat_rect, armor_rect, paper_zone_rect, cooking_area, recipe_book_rect = update_ui_rects(screen.get_size())
 
 
 # Main loop
@@ -4294,21 +4449,30 @@ while running:
             elif event.key == pygame.K_TAB:
                 player_instance.switch_weapon(event.key)
             
-            elif event.key == pygame.K_f:  # F key to toggle fullscreen
+            elif event.key == pygame.K_f:
                 is_fullscreen = not is_fullscreen
                 if is_fullscreen:
                     screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
-                    character_scale = fullscreen_scale  # Increase size
-                    settings_menu.create_buttons(screen.get_size())
+                    character_scale = fullscreen_scale
+                    
                 else:
-                    screen = pygame.display.set_mode(window_size)
-                    character_scale = 1.0  # Normal sizee
-                settings_menu.create_buttons(screen.get_size())
-                overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
-                inventory_menu.update_layout(screen.get_size())
-                tutorial.update_layout(screen.get_size())
-                achievement_page.update_layout(screen.get_size())
-            
+                    screen = pygame.display.set_mode((BASE_WIDTH, BASE_HEIGHT))
+                    character_scale = 1.0
+
+                screen_width, screen_height = screen.get_size()
+                
+                # Update scaled UI rects correctly
+                crafting_ui_area, boat_rect, armor_rect, paper_zone_rect, cooking_area, recipe_book_rect = update_ui_rects((screen_width, screen_height))
+
+                # Also update other screen-size dependent stuff
+                settings_menu.create_buttons((screen_width, screen_height))
+                overlay = pygame.Surface((screen_width, screen_height), pygame.SRCALPHA)
+                inventory_menu.update_layout((screen_width, screen_height))
+                tutorial.update_layout((screen_width, screen_height))
+                achievement_page.update_layout((screen_width, screen_height))
+                recipe_ui.update_layout((screen_width, screen_height))
+                cooking_ui.update_layout((screen_width, screen_height))
+
             elif event.key == pygame.K_b:
                 inventory_menu.toggle()
 
@@ -4589,9 +4753,15 @@ while running:
                     # Add any other state you want to preserve
                 }
             break
+    
               
     if in_house:
-        screen_width, screen_height = screen.get_size()
+        if is_fullscreen:
+            crafting_ui_area, boat_rect, armor_rect, paper_zone_rect, cooking_area, recipe_book_rect = update_ui_rects(screen.get_size())
+        else:
+            crafting_ui_area = pygame.Rect(122, 232, 90, 86)
+            boat_rect = pygame.Rect(205, 180, 220, 80)
+            armor_rect = pygame.Rect(205, 280, 220, 80)
         scaled_house = pygame.transform.scale(house_image, (screen_width, screen_height))
         screen.blit(scaled_house, (0, 0))
 
@@ -4610,7 +4780,7 @@ while running:
                 cooking_ui.handle_event(event)
 
         # Open UI only on clicking pot and if not already open
-        if mouse_clicked and cooking_ui.cooking_area.collidepoint(mouse_pos) and not cooking_ui.visible:
+        if mouse_clicked and cooking_area.collidepoint(mouse_pos) and not cooking_ui.visible:
             cooking_ui.open()
 
         # Always draw UI if it's visible
@@ -4639,7 +4809,7 @@ while running:
             player_position = paused_world_state["player_pos"]
             time_counter = paused_world_state["time_counter"]
         
-        recipe_book_rect = pygame.Rect(161, 125, 53, 18)
+        
         if recipe_book_rect.collidepoint(mouse_x, mouse_y) and mouse_clicked and not recipe_ui.visible:
             print("open recipe book")
             recipe_ui.open()
@@ -4650,46 +4820,62 @@ while running:
                     recipe_ui.visible = False  # Close the boat UI
            
         #  Paper Zone (clickable wall area)
-        paper_zone_rect = pygame.Rect(25, 95, 81, 50)  # Adjust coords and size
         if paper_zone_rect.collidepoint(mouse_x, mouse_y) and mouse_clicked and not paper_visible:
             paper_visible = True
 
-        #  Paper UI
         if paper_visible:
-            scaled_paper = pygame.transform.scale(paper_image, (screen_width, screen_height))
-            screen.blit(scaled_paper, (0, 0))
+            frame_width = int(screen_width * 0.6)
+            frame_height = int(screen_height * 0.6)
+            frame_x = (screen_width - frame_width) // 2
+            frame_y = (screen_height - frame_height) // 2
+            frame_rect = pygame.Rect(frame_x, frame_y, frame_width, frame_height)
 
-            close_width, close_height = 100, 40
-            close_x = screen_width // 2 - close_width // 2
-            close_y = 400
-            close_button_rect = pygame.Rect(260, 400, 100, 25)
-            pygame.draw.rect(screen, (220, 220, 220), (close_x, close_y, close_width, close_height))
-            close_text = font.render("Close", True, (0, 0, 0))
-            close_text_rect = close_text.get_rect(center=(close_x + close_width // 2, close_y + close_height // 2))
+            # --- Draw background frame ---
+            pygame.draw.rect(screen, (240, 240, 240), frame_rect, border_radius=12)  # Light paper color
+            pygame.draw.rect(screen, (100, 100, 100), frame_rect, 4, border_radius=12)  # Border
+
+            # --- Scale and draw paper image inside the frame ---
+            padding = 20
+            image_width = frame_width - 2 * padding
+            image_height = frame_height - 2 * padding
+            scaled_paper = pygame.transform.scale(paper_image, (image_width, image_height))
+            screen.blit(scaled_paper, (frame_x + padding, frame_y + padding))
+
+
+            # --- Scale close button size and position ---
+            button_width = int(100 * (screen_width / BASE_WIDTH))
+            button_height = int(40 * (screen_height / BASE_HEIGHT))
+            button_x = screen_width // 2 - button_width // 2
+            button_y = int(400 * (screen_height / BASE_HEIGHT))
+
+            close_button_rect = pygame.Rect(button_x, button_y, button_width, button_height)
+
+            # Draw button
+            pygame.draw.rect(screen, (220, 220, 220), close_button_rect, border_radius=6)
+            
+            # Scaled font (optional)
+            scaled_font_size = int(24 * (screen_width / BASE_WIDTH))
+            paper_font = pygame.font.SysFont(None, scaled_font_size)
+
+            # Draw text
+            close_text = paper_font.render("Close", True, (0, 0, 0))
+            close_text_rect = close_text.get_rect(center=close_button_rect.center)
             screen.blit(close_text, close_text_rect)
 
+            # Handle click
             if close_button_rect.collidepoint(mouse_x, mouse_y) and mouse_clicked:
                 paper_visible = False
                 
-        crafting_ui_area = pygame.Rect(122, 232, 90, 86)
-        boat_rect = pygame.Rect(205, 180, 220, 80)
-        armor_rect = pygame.Rect(205, 280, 220, 80)
         if mouse_clicked and crafting_ui_area.collidepoint(mouse_pos) and not crafting_ui.visible:
             print("Craft pressed")
             crafting_ui.visible = True
                         
         if crafting_ui.visible:
             crafting_ui.draw(screen)
-            # Close button logic (circle at (435, 115), radius 15)
-            close_center = (435, 115)
-            close_radius = 15
-            dx = mouse_pos[0] - close_center[0]
-            dy = mouse_pos[1] - close_center[1]
-            # Check if click is inside the circle
-            if mouse_clicked and dx*dx + dy*dy <= close_radius*close_radius:
-                if crafting_ui.visible:
-                    print("Closed crafting UI")
-                    crafting_ui.visible = False  
+            if mouse_clicked and crafting_ui.close_button.collidepoint(mouse_pos):
+                print("Closed crafting UI")
+                crafting_ui.visible = False
+            # Check if click is inside the circle  
             if mouse_clicked and boat_rect.collidepoint(mouse_pos) and not boat_ui.visible:                
                 print("Boat pressed")
                 boat_ui.visible = True
@@ -4738,7 +4924,8 @@ while running:
     achievement_display.update()
     
     # Check if it's time to show escape UI
-    if boat_built and boss_defeated and not escape_ui_triggered:
+    current_user_data = user_system.users[user_system.current_user]
+    if current_user_data.get("boat_built") and current_user_data.get("boss_defeated") and not escape_ui_triggered:
         show_escape_ui = True
         escape_ui_triggered = True
 
