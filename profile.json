@@ -1,14 +1,14 @@
 {
   "2": {
-    "health": 300,
+    "health": 100,
     "position": [
-      528.732000000001,
-      902.3424999999929
+      1500.0,
+      125.0
     ],
     "inventory": {},
-    "level": 3,
-    "exp": 5,
-    "day": null,
+    "level": 1,
+    "exp": 0,
+    "day": 1,
     "boat_progress": 0,
     "boat_crystals": 0,
     "achievements": {
@@ -25,9 +25,9 @@
       "Fisherman (4 fish)": false
     },
     "shown_achievements": [
+      "Lumberjack (10 wood)",
       "Fruit Picker (5 fruit)",
-      "First Kill",
-      "Lumberjack (10 wood)"
+      "First Kill"
     ],
     "stats": {
       "zombie_kills": 0,
@@ -268,22 +268,27 @@
     }
   },
   "666": {
-    "health": 280,
+    "health": 100,
     "position": [
-      478.0399999999991,
-      828.9870000000017
+      1364.1119999999978,
+      385.83199999999965
     ],
     "inventory": {
       "Wood": 38,
       "FishBone_Clip": 1,
       "Fruit": 3,
-      "ZombiePaw": 1
+      "ZombiePaw": 1,
+      "Big Fish": 2,
+      "Fish": 1,
+      "Armor(Iron)": 1
     },
-    "level": 3,
-    "exp": 20,
-    "day": 1,
+    "level": 1,
+    "exp": 0,
+    "day": 2,
+    "boat_progress": 0,
+    "boat_crystals": 0,
     "achievements": {
-      "First Kill": false,
+      "First Kill": true,
       "Zombie Slayer (20 kills)": false,
       "Level 5 Achieved": false,
       "Wood Collector (10 wood)": false,
@@ -297,16 +302,18 @@
       "Fisherman (4 fish)": false
     },
     "shown_achievements": [
+      "Lumberjack (10 wood)",
       "First Kill",
       "Fruit Picker (5 fruit)",
-      "Lumberjack (10 wood)",
       "Zombie Slayer (10 kills)"
     ],
     "stats": {
-      "zombie_kills": 0,
+      "zombie_kills": 3,
       "wood_collected": 14,
       "fruit_collected": 8,
-      "days_survived": 0
+      "days_survived": 0,
+      "fish_collected": 3,
+      "crystals_collected": 0
     }
   },
   "666\r": {
@@ -528,8 +535,8 @@
   "fish": {
     "health": 700,
     "position": [
-      1217.7799999999922,
-      434.41599999999966
+      1490.1639999999961,
+      198.96800000000027
     ],
     "inventory": {
       "Fish": 21,
@@ -542,7 +549,7 @@
     },
     "level": 7,
     "exp": 90,
-    "day": 3,
+    "day": 2,
     "boat_progress": 0,
     "boat_crystals": 0,
     "achievements": {
@@ -561,10 +568,10 @@
     "shown_achievements": [
       "Fruit Picker (5 fruit)",
       "Fisherman (10 fish)",
+      "Lumberjack (10 wood)",
       "Level 5 Achieved",
-      "First Kill",
       "Crystal Hunter (1 crystal)",
-      "Lumberjack (10 wood)"
+      "First Kill"
     ],
     "stats": {
       "zombie_kills": 2,
