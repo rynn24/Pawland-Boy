@@ -6,10 +6,10 @@
       193.58399999999563
     ],
     "inventory": {
-      "Wood": 950,
+      "Wood": 900,
       "Fruit": 41,
       "Fish": 2,
-      "Crystal": 995,
+      "Crystal": 990,
       "Armor(Diamond)": 1,
       "Big Fish": 3,
       "Fish Soup": 100,
@@ -32,8 +32,8 @@
       "Fisherman (10 fish)": false
     },
     "shown_achievements": [
-      "First Kill",
-      "Level 5 Achieved"
+      "Level 5 Achieved",
+      "First Kill"
     ],
     "stats": {
       "zombie_kills": 7,
