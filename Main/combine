@@ -145,7 +145,8 @@ frame_height = 240
 num_frames = 33  # Adjust based on your sprite sheet
 
 for i in range(num_frames):
-    frame = boat_riding_sheet.subsurface((i * frame_width, 0, frame_width, frame_height))
+    frame_rect = pygame.Rect(i * frame_width, 0, frame_width, frame_height)
+    frame = boat_riding_sheet.subsurface(frame_rect)
     boat_riding_frames.append(frame)
 
 def trim_surface(surface):
@@ -1169,7 +1170,7 @@ class InventoryMenu:
         self.inventory = inventory  # Reference to your Inventory instance
         self.window_size = window_size
         self.font = pygame.font.SysFont("Arial", 24)
-        
+        self.speed=2
         # Define window rect for the bag display area
         self.window_rect = pygame.Rect(
             window_size[0]//2 - 250, window_size[1]//2 - 200,
@@ -1378,7 +1379,17 @@ class InventoryMenu:
                 if "rect" in btn and btn["rect"].collidepoint(pos):
                     action = btn["action"]
                     self.perform_action(action, self.selected_index)
-    
+
+    def gain_speed(self, amount, duration):
+        self.speed = base_speed + amount
+        self.speed_buff_end_time = time.time() + duration
+        print(f"[DEBUG] Speed increased by {amount} for {duration} seconds. Current speed: {self.speed}")
+
+    def update_speed(self):
+        if self.speed != base_speed and time.time() > self.speed_buff_end_time:
+            self.speed = base_speed
+            print(f"[DEBUG] Speed buff ended. Speed reset to {self.speed}")
+            
     def perform_action(self, action, index):
         item = self.inventory.slots[index]
         if not item:
@@ -1394,18 +1405,20 @@ class InventoryMenu:
 
         elif action == "eat" and self.inventory.item_icons[name]["categories"] == "food":
             if name == "Fish Soup":
-                self.player_instance.gain_health(30)
-            elif name == "Grilled Fish":
-                self.player_instance.gain_health(20)
-            elif name == "Special Dish":
                 self.player_instance.gain_health(50)
+            elif name == "Grilled Fish":
+                self.player_instance.gain_health(120)
+            elif name == "Sweet Sailor":
+                self.player_instance.gain_health(300)
+            elif name == "Special Dish":
+                self.player_instance.gain_health(200)
+            elif name == "Fruit Jam":
+                self.gain_speed(1.5,20)
             elif name == "Reef Medley":
-                self.player_instance.gain_health(30)
-                self.player_instance.gain_speed(1.5, 30)
+                self.player_instance.gain_health(200)
+                self.gain_speed(1.5,30)
             elif name == "Twinfin Delight":
-                self.player_instance.gain_health(100)
-                self.player_instance.gain_speed(1.5, 20)
-            self.inventory.remove_item(index, 1)
+                self.player_instance.gain_health(300)
 
         elif action == "drop":
             print(f"Dropping {name}")
@@ -2192,10 +2205,12 @@ class Player:
             self.weapon_damage[weapon] = int(base_damage * multiplier)
 
     def gain_health(self, amount):
+        print(f"[DEBUG] Requested heal amount: {amount}")
+        old_health = self.health
         self.health += amount
         if self.health > self.max_health:
             self.health = self.max_health
-        print(f"Health restored! Current health: {self.health}")
+        print(f"Health restored! {old_health} → {self.health} (+{self.health - old_health})")
 
     def get_zombieskin_frame(self):
         if not self.equipped_zombieskin:
@@ -2284,40 +2299,6 @@ class Player:
             speed_timer = 0
             print(f"[DEBUG] Global speed boost ended. Speed reset to {speed}")
 
-    # In the Player class, modify the perform_action method in InventoryMenu:
-    def perform_action(self, action, index):
-        item = self.inventory.slots[index]
-        if not item:
-            print("No item in slot!")
-            return
-
-        name, count = item
-        
-        #food only
-        if action == "eat" and self.inventory.item_icons[name]["category"] == "food":
-            if name == "Fish Soup":
-                self.gain_health(50)
-            elif name == "Grilled Fish":
-                self.gain_health(120)
-            elif name == "Special Dish":
-                self.gain_health(200)
-            elif name == "Fruit Jam":
-                self.gain_speed(1.5, duration = 20)
-            elif name == "Reef Medley":
-                self.gain_health(200)
-                self.gain_speed(1.5, duration = 30)
-            elif name == "Twinfin Delight":
-                self.gain_health(300)
-            self.inventory.remove_item(index, 1)
-            
-        elif name == "Fruit" and action == "eat":
-            self.gain_health(5)
-            self.inventory.remove_item(index, 1)
-        elif action == "drop":
-            self.inventory.remove_item(index, 1)
-        elif action == "use":
-            print(f"Using {name}")
-            self.inventory.remove_item(index, 1)
 
     def get_armor_reduction_factor(self):
         reduction = 1.0  # Default: full damage
@@ -4515,17 +4496,18 @@ while running:
         # GAME ENDING        
         if game_ended:
             current_time = time.time()
-            if current_time - end_sprite_timer > end_sprite_speed and end_sprite_index < len(end_game_frames):
+            if current_time - end_sprite_timer > end_sprite_speed and end_sprite_index < len(boat_riding_frames):
                 end_sprite_index += 1
                 end_sprite_timer = current_time
 
-            if end_sprite_index >= len(end_game_frames):
-                end_sprite_index = len(end_game_frames) - 1  # freeze on last frame
-
-            screen.blit(end_game_frames[end_sprite_index], (player.rect.centerx - 200, player.rect.centery - 200))  # adjust position
-
+            if end_sprite_index >= len(boat_riding_frames):
+                end_sprite_index = len(boat_riding_frames) - 1  # freeze on last frame
+            
+            screen.blit(boat_riding_frames)[end_sprite_index], (player.rect.centerx - 200, player.rect.centery - 200)  # adjust position
             end_text = font.render("Game Ended", True, (255, 255, 255))
             screen.blit(end_text, (screen.get_width() // 2 - end_text.get_width() // 2, 50))
+
+
         
         # Movement with restriction zone logic
         proposed_position = player_instance.position.copy()
