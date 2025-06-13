@@ -4799,7 +4799,7 @@ while running:
                     if boat_ui.wood >= boat_ui.max_wood and boat_ui.crystal >= boat_ui.max_crystal:
                         boat_built = True
                         
-        if boss.is_dead:
+        if boss and boss.is_dead:
             boss_defeated = True
             
         # Show mouse position on screen
