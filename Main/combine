@@ -3545,11 +3545,9 @@ player_instance = Player(player_position, speed, current_user, level, exp, achie
 # Sprite groups
 all_sprites = pygame.sprite.Group()
 zombie_group = pygame.sprite.Group()
-boss = None
-if not user_system.users[user_system.current_user].get("boss_defeated", False):
-    boss_area = pygame.Rect(240, 144, 342, 129)  # x, y, width, height
-    boss = Boss(399, 145, player_instance, boss_area)
-    all_sprites.add(boss)
+boss_area = pygame.Rect(240, 144, 342, 129)  # x, y, width, height
+boss = Boss(399, 145, player_instance, boss_area)
+all_sprites.add(boss)
 game_state = "game"
 spawn_delay = 3
 last_spawn_time = time.time()
@@ -3925,63 +3923,78 @@ cooking_ui = CookingUI(inventory, screen.get_width(), screen.get_height())
 # Recipe book
 class RecipeBookUI:
     def __init__(self, image_path, close_button_rect, font):
-        self.image = pygame.image.load("images/house/recipe.png").convert_alpha()
+        self.image = pygame.image.load(image_path).convert_alpha()
         self.visible = False
         self.font = font
-        self.close_button = pygame.Rect(0, 0, 1, 1)
-        
-        # Position and size for the UI window
+
         self.window_rect = pygame.Rect(100, 100, self.image.get_width() + 40, self.image.get_height() + 80)
-        
-        # Close button rect (you can customize position/size)
-        self.close_button_rect = pygame.Rect(close_button_rect)
-        
+        self.close_button = pygame.Rect(0, 0, 25, 30)  # Will be updated later
+        self.screen_width = 0
+        self.screen_height = 0
+
     def open(self):
         self.visible = True
-        
+
     def close(self):
         self.visible = False
-        
+
     def handle_event(self, event):
         if not self.visible:
             return
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            if self.close_button_rect.collidepoint(event.pos):
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            if self.close_button.collidepoint(event.pos):
                 self.close()
-    
-    def draw(self, surface):
-        if not self.visible:
-            return
-        
-        # Draw the image centered inside the window with some padding
-        image_pos = (self.window_rect.x - 100 , self.window_rect.y - 70)
-        surface.blit(self.image, image_pos)
-        
-        #close button
-        self.close_button = pygame.Rect(560, 90, 25, 30)
-        pygame.draw.rect(surface, (150, 0, 0), self.close_button)
-        x_text = self.font.render("X", True, (255, 255, 255))
-        surface.blit(x_text, (self.close_button.centerx - x_text.get_width() // 2,
-                            self.close_button.centery - x_text.get_height() // 2))
 
     def update_close_button(self):
-        button_width, button_height = 25, 30
-        x = self.window_rect.right - button_width - 15  # 15px padding from the right
-        y = self.window_rect.top + 15  # 15px padding from the top
+        # Scale close button size based on screen size
+        x_scale = self.screen_width / BASE_WIDTH
+        y_scale = self.screen_height / BASE_HEIGHT
+
+        button_width = int(25 * x_scale)
+        button_height = int(30 * y_scale)
+
+        x = self.window_rect.right - button_width - int(10 * x_scale)
+        y = self.window_rect.top + int(10 * y_scale)
+
         self.close_button = pygame.Rect(x, y, button_width, button_height)
 
     def update_layout(self, screen_size):
         self.screen_width, self.screen_height = screen_size
-
-        # Recalculate window_rect position
+        window_width = int(self.screen_width * 0.7)
+        window_height = int(self.screen_height * 0.7)
+        # Recalculate window_rect to center on screen
         window_width = self.image.get_width() + 40
         window_height = self.image.get_height() + 80
         window_x = (self.screen_width - window_width) // 2
         window_y = (self.screen_height - window_height) // 2
         self.window_rect = pygame.Rect(window_x, window_y, window_width, window_height)
-
-        # Update close button position
+        font_size = max(18, int(24 * (self.screen_width / BASE_WIDTH)))
+        self.font = pygame.font.SysFont(None, font_size)
         self.update_close_button()
+
+    def draw(self, surface):
+        if not self.visible:
+            return
+
+        # Scale the recipe image to fit the window (minus padding)
+        scaled_image = pygame.transform.scale(
+            self.image,
+            (self.window_rect.width - 40, self.window_rect.height - 80)
+        )
+
+        # Blit the image with padding
+        surface.blit(scaled_image, (self.window_rect.x + 20, self.window_rect.y + 40))
+
+        # Draw the close button
+        pygame.draw.rect(surface, (150, 0, 0), self.close_button, border_radius=4)
+        x_text = self.font.render("X", True, (255, 255, 255))
+        surface.blit(
+            x_text,
+            (
+                self.close_button.centerx - x_text.get_width() // 2,
+                self.close_button.centery - x_text.get_height() // 2
+            )
+        )
 
     
     
@@ -4436,9 +4449,8 @@ while running:
             last_spawn_time = current_time
 
         zombie_group.update()
-        if boss:
-            boss.update()
-        if boss and boss.is_dead and boat_ui.boat_complete and not show_boat:
+        boss.update()
+        if boss.is_dead and boat_ui.boat_complete and not show_boat:
             print("boat built")
             print("Boss dead")
             show_boat = True
@@ -4528,7 +4540,7 @@ while running:
     pond.update(player_instance.rect.center, keys)
    
         # Boss draw
-    if boss and boss.alive():  # Check if boss hasn't been killed
+    if boss.alive():  # Check if boss hasn't been killed
         boss_rect_on_screen = boss.rect.move(-camera.x, -camera.y)
         zoom_surface.blit(boss.image, boss_rect_on_screen)
         if not boss.is_dead:
