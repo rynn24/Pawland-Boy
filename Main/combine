@@ -49,6 +49,8 @@ camera = pygame.Rect(0, 0, camera_width, camera_height)
 zoom_surface = pygame.Surface((camera_width, camera_height))
 player_position = pygame.Vector2(1500, 125)
 speed = 2
+base_speed = 2
+speed_timer = 0
 
 # Player restricted area
 restricted_zones = [
@@ -262,7 +264,6 @@ class Inventory:
             "Big Fish": {"image": pygame.image.load("images/pond/fish_2.png").convert_alpha(), "categories": ["ingredient"]},
             "Crystal": {"image": pygame.image.load("images/pond/crystal.png").convert_alpha(), "categories": ["material"]},
             "Boat": {"image": pygame.image.load("minting/Boat.png").convert_alpha(), "categories": ["tool"]},
-            "Firefly": {"image": pygame.image.load("minting/Firefly.jpg").convert_alpha(), "categories": ["material"]},
             "Armor(Iron)":{"image":pygame.image.load("haojun/image/armor(iron).png").convert_alpha(), "categories": ["tool"]},
             "Armor(Gold)":{"image":pygame.image.load("haojun/image/armor(gold).png").convert_alpha(), "categories": ["tool"]},
             "Armor(Diamond)":{"image":pygame.image.load("haojun/image/armor(diamond).png").convert_alpha(), "categories": ["tool"]},
@@ -1205,7 +1206,7 @@ class InventoryMenu:
                 {"label": "Eat", "action": "eat"},
                 {"label": "Drop", "action": "drop"},
             ],
-            "Reef Medly": [
+            "Reef Medley": [
                 {"label": "Eat", "action": "eat"},
                 {"label": "Drop", "action": "drop"},
             ],
@@ -1233,7 +1234,6 @@ class InventoryMenu:
             "Big Fish": "A bigger and longer fish , maybe can unlock some dishes ?",
             "Crystal": "Shiny rock.",
             "Boat": "Used for traveling across water.",
-            "Firefly": "Cute bugs that glows in the dark.",
             "FishBone_Clip":"A stylish clip. Might smell fishy.",
             "Fish Soup": "A delicious soup made from fish and fruit. Restores 30 health.",
             "Grilled Fish": "Perfectly cooked fish. Restores 20 health.",
@@ -1399,12 +1399,12 @@ class InventoryMenu:
                 self.player_instance.gain_health(20)
             elif name == "Special Dish":
                 self.player_instance.gain_health(50)
-            elif name == "Reef Medly":
+            elif name == "Reef Medley":
                 self.player_instance.gain_health(30)
-                self.player_instance.gain_speed(1.5, duration = 30)
+                self.player_instance.gain_speed(1.5, 30)
             elif name == "Twinfin Delight":
                 self.player_instance.gain_health(100)
-                # Could add temporary buffs here
+                self.player_instance.gain_speed(1.5, 20)
             self.inventory.remove_item(index, 1)
 
         elif action == "drop":
@@ -1631,7 +1631,7 @@ class Player:
         self.base_weapon_damage = {
             'hand': 5,
             'axe': 15,
-            'sword':300
+            'sword': 10
         }
         self.weapon_damage = self.base_weapon_damage.copy()
         self.update_weapon_damage()
@@ -2120,6 +2120,7 @@ class Player:
         if self.speed_timer and time.time() > self.speed_timer:
             self.speed = self.original_speed
             self.speed_timer = 0
+            print(f"[DEBUG] Speed boost ended. Speed reset to {self.speed}")
 
     def draw(self, screen, offset):
         # get base sprite (player)
@@ -2270,11 +2271,18 @@ class Player:
             return frames[frame_index]
         
 
-    def gain_speed(self, amount):
-        self.speed += amount
-        self.speed_timer = time.time() + duration
-        print(f"[DEBUG] Speed increased by {amount} for {duration} seconds. Current speed: {self.speed}")
+    def gain_speed(self, amount, duration):
+        global speed, speed_timer
+        speed += amount
+        speed_timer = time.time() + duration
+        print(f"[DEBUG] Global speed increased by {amount} for {duration} seconds. Current speed: {speed}")
 
+    def update_speed():
+        global speed, speed_timer
+        if speed_timer and time.time() > speed_timer:
+            speed = base_speed
+            speed_timer = 0
+            print(f"[DEBUG] Global speed boost ended. Speed reset to {speed}")
 
     # In the Player class, modify the perform_action method in InventoryMenu:
     def perform_action(self, action, index):
@@ -2295,7 +2303,7 @@ class Player:
                 self.gain_health(200)
             elif name == "Fruit Jam":
                 self.gain_speed(1.5, duration = 20)
-            elif name == "Reef Medly":
+            elif name == "Reef Medley":
                 self.gain_health(200)
                 self.gain_speed(1.5, duration = 30)
             elif name == "Twinfin Delight":
