@@ -2,8 +2,8 @@
   "1": {
     "health": 40,
     "position": [
-      1004.2019999999943,
-      1175.7859999999962
+      1125.0419999999954,
+      682.545999999997
     ],
     "inventory": {
       "Wood": 789,
@@ -34,9 +34,9 @@
       "Fisherman (10 fish)": false
     },
     "shown_achievements": [
-      "Crystal Hunter (1 crystal)",
+      "Level 5 Achieved",
       "First Kill",
-      "Level 5 Achieved"
+      "Crystal Hunter (1 crystal)"
     ],
     "stats": {
       "zombie_kills": 7,
@@ -51,8 +51,8 @@
   "2": {
     "health": 100,
     "position": [
-      1479.3279999999997,
-      277.9120000000003
+      1442.6959999999992,
+      358.0159999999999
     ],
     "inventory": {
       "Wood": 43,
@@ -78,9 +78,9 @@
       "Fisherman (10 fish)": false
     },
     "shown_achievements": [
+      "Level 5 Achieved",
       "Crystal Hunter (1 crystal)",
-      "First Kill",
-      "Level 5 Achieved"
+      "First Kill"
     ],
     "stats": {
       "zombie_kills": 7,
