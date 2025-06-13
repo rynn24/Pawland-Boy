@@ -623,8 +623,8 @@ class UserSystem:
                 "exp": exp,
                 "boat_progress": boat_progress,
                 "boat_crystals": boat_crystals,
-                 "boat_built" : boat_built,
-                 "boss_defeated" : boss_defeated
+                "boat_built" : boat_built,
+                "boss_defeated" : boss_defeated
             }
             if achievements is not None:
                 self.users[username]["achievements"] = achievements
@@ -825,17 +825,17 @@ class TutorialPage:
 spritesheets = loading_screen(screen, font)
 
 tutorial_pages = [
-    TutorialPage("Tutorial", "tap the red colour book or use T key for open and close this tutorial.",[], 310, 240),
-    TutorialPage("Goal", "Build boat in at least 50 days , kill boss and escape Pawland!",[], 310, 240),
+    TutorialPage("Tutorial", "Tap the red colour book or use T key for open and close this tutorial.", [], 310, 240),
+    TutorialPage("Goal", "Build boat in at least 50 days, kill boss and escape Pawland !", [], 310, 240),
     TutorialPage("Movement", "Use W A S D to move.", spritesheets["movement"], 1440, 1080),
     TutorialPage("Attack & Chop", "Press SPACE to attack and chop.", spritesheets["attack"], 1440, 1080),
-    TutorialPage("Inventory", "Press B to open and close inventory.Try out different button for different item.",spritesheets["inventory"], 772, 590),
-    TutorialPage("Fishing", "Approach the pond and press J,random item will be given!!",spritesheets["fishing"],1440, 1080),
+    TutorialPage("Inventory", "Press B to open and close inventory. Try out different button for different item.", spritesheets["inventory"], 772, 590),
+    TutorialPage("Fishing", "Approach the pond and press J, random item will be given!!", spritesheets["fishing"], 1440, 1080),
     TutorialPage("Respawn", "You will respawn after getting killed. Beware the boss!", spritesheets["enemy"], 1440, 1080),
     TutorialPage("Weapon", "Use Tab to change weapon", spritesheets["weapon"], 1440, 1080),
-    TutorialPage("Cooking", "Tap and pull the ingredient to cook .Try different ingredients!", spritesheets["cook"], 1440, 1080),
-    TutorialPage("Level & exp", "Gain exp from trees and enemies. HP restores when leveling up!",spritesheets["exp"],1440, 1080),
- ]
+    TutorialPage("Cooking", "Tap and pull the ingredient to cook. Try different ingredients!", spritesheets["cook"], 1440, 1080),
+    TutorialPage("Level & exp", "Gain exp from trees and enemies. HP restores when leveling up!", spritesheets["exp"], 1440, 1080),
+]
 
 
 class TutorialManager:
@@ -4900,6 +4900,24 @@ while running:
         # Quit button click
         if pygame.mouse.get_pressed()[0]:
             if quit_button_rect.collidepoint(pygame.mouse.get_pos()):
+                inventory_dict = inventory.get_inventory_dict()
+                progress_data = {
+                    "position": [player_instance.position.x, player_instance.position.y],
+                    "health": player_instance.health,
+                    "inventory":inventory_dict
+                }
+                # Save the progress
+                user_system.save_progress(
+                        player_instance.username,
+                        player_instance.health,
+                        [player_instance.position.x, player_instance.position.y],
+                        inventory_dict,
+                        player_instance.level,
+                        player_instance.exp,
+                        achievement_system.achievements,
+                        achievement_system.shown_achievements,
+                        stats=player_instance.stats
+                    )
                 pygame.quit()
                 sys.exit()
 
