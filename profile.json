@@ -90,7 +90,7 @@
     }
   },
   "3": {
-    "health": 100,
+    "health": 2000,
     "position": [
       1500.0,
       200.69600000000025
@@ -116,6 +116,40 @@
     "stats": {
       "zombie_kills": 0,
       "wood_collected": 0,
+      "fruit_collected": 0,
+      "days_survived": 0
+    }
+  },
+  "145": {
+    "health": 70,
+    "position": [
+      1544.1200000000003,
+      202.9759999999999
+    ],
+    "inventory": {
+      "Wood": 2,
+      "Armor(Iron)": 1
+    },
+    "level": 1,
+    "exp": 35,
+    "boat_progress": 0,
+    "boat_crystals": 0,
+    "boat_built": false,
+    "boss_defeated": false,
+    "achievements": {
+      "First Kill": true,
+      "Zombie Slayer (20 kills)": false,
+      "Level 5 Achieved": false,
+      "Wood Collector (10 wood)": false,
+      "Fruit Picker (5 fruit)": false,
+      "Lumberjack (10 wood)": false,
+      "Crystal Hunter (1 crystal)": false,
+      "Fisherman (10 fish)": false
+    },
+    "shown_achievements": [],
+    "stats": {
+      "zombie_kills": 1,
+      "wood_collected": 2,
       "fruit_collected": 0,
       "days_survived": 0
     }
