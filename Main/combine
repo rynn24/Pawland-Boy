@@ -3555,11 +3555,9 @@ player_instance = Player(player_position, speed, current_user, level, exp, achie
 # Sprite groups
 all_sprites = pygame.sprite.Group()
 zombie_group = pygame.sprite.Group()
-boss = None
-if not user_system.users[user_system.current_user].get("boss_defeated", False):
-    boss_area = pygame.Rect(240, 144, 342, 129)  # x, y, width, height
-    boss = Boss(399, 145, player_instance, boss_area)
-    all_sprites.add(boss)
+boss_area = pygame.Rect(240, 144, 342, 129)  # x, y, width, height
+boss = Boss(399, 145, player_instance, boss_area)
+all_sprites.add(boss)
 game_state = "game"
 spawn_delay = 3
 last_spawn_time = time.time()
@@ -4486,9 +4484,8 @@ while running:
             last_spawn_time = current_time
 
         zombie_group.update()
-        if boss:
-            boss.update()
-        if boss and boss.is_dead and boat_ui.boat_complete and not show_boat:
+        boss.update()
+        if boss.is_dead and boat_ui.boat_complete and not show_boat:
             print("boat built")
             print("Boss dead")
             show_boat = True
@@ -4578,7 +4575,7 @@ while running:
     pond.update(player_instance.rect.center, keys)
    
         # Boss draw
-    if boss and boss.alive():  # Check if boss hasn't been killed
+    if boss.alive():  # Check if boss hasn't been killed
         boss_rect_on_screen = boss.rect.move(-camera.x, -camera.y)
         zoom_surface.blit(boss.image, boss_rect_on_screen)
         if not boss.is_dead:
