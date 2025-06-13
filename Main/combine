@@ -3921,6 +3921,7 @@ class CookingUI:
 cooking_ui = CookingUI(inventory, screen.get_width(), screen.get_height())
 
 # Recipe book
+
 class RecipeBookUI:
     def __init__(self, image_path, close_button_rect, font):
         self.image = pygame.image.load(image_path).convert_alpha()
@@ -3976,17 +3977,41 @@ class RecipeBookUI:
         if not self.visible:
             return
 
-        # Scale the recipe image to fit the window (minus padding)
-        scaled_image = pygame.transform.scale(
-            self.image,
-            (self.window_rect.width - 40, self.window_rect.height - 80)
+        screen_width, screen_height = surface.get_size()
+
+        # Set padding
+        padding_x = 40
+        padding_y = 80
+
+        # Calculate available size for the image
+        available_width = screen_width - padding_x
+        available_height = screen_height - padding_y
+
+        # Scale the image proportionally
+        img_width, img_height = self.image.get_size()
+        scale_ratio = min(available_width / img_width, available_height / img_height)
+
+        new_width = int(img_width * scale_ratio)
+        new_height = int(img_height * scale_ratio)
+
+        scaled_image = pygame.transform.scale(self.image, (new_width, new_height))
+
+        # Center the image on screen
+        image_x = (screen_width - new_width) // 2
+        image_y = (screen_height - new_height) // 2
+
+        surface.blit(scaled_image, (image_x, image_y))
+
+        # Draw the close button in top-right corner of the image
+        close_btn_size = 36
+        self.close_button = pygame.Rect(
+            image_x + new_width - close_btn_size - 10,
+            image_y + 10,
+            close_btn_size,
+            close_btn_size
         )
-
-        # Blit the image with padding
-        surface.blit(scaled_image, (self.window_rect.x + 20, self.window_rect.y + 40))
-
-        # Draw the close button
         pygame.draw.rect(surface, (150, 0, 0), self.close_button, border_radius=4)
+
         x_text = self.font.render("X", True, (255, 255, 255))
         surface.blit(
             x_text,
