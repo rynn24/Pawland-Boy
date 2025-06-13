@@ -28,12 +28,13 @@
       "Wood Collector (10 wood)": false,
       "Fruit Picker (5 fruit)": true,
       "Lumberjack (10 wood)": true,
-      "Crystal Hunter (1 crystal)": false,
+      "Crystal Hunter (1 crystal)": true,
       "Fisherman (10 fish)": false
     },
     "shown_achievements": [
-      "Level 5 Achieved",
-      "First Kill"
+      "Crystal Hunter (1 crystal)",
+      "First Kill",
+      "Level 5 Achieved"
     ],
     "stats": {
       "zombie_kills": 7,
