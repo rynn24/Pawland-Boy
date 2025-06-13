@@ -3923,65 +3923,105 @@ class CookingUI:
 cooking_ui = CookingUI(inventory, screen.get_width(), screen.get_height())
 
 # Recipe book
+
 class RecipeBookUI:
     def __init__(self, image_path, close_button_rect, font):
-        self.image = pygame.image.load("images/house/recipe.png").convert_alpha()
+        self.image = pygame.image.load(image_path).convert_alpha()
         self.visible = False
         self.font = font
-        self.close_button = pygame.Rect(0, 0, 1, 1)
-        
-        # Position and size for the UI window
+
         self.window_rect = pygame.Rect(100, 100, self.image.get_width() + 40, self.image.get_height() + 80)
-        
-        # Close button rect (you can customize position/size)
-        self.close_button_rect = pygame.Rect(close_button_rect)
-        
+        self.close_button = pygame.Rect(0, 0, 25, 30)  # Will be updated later
+        self.screen_width = 0
+        self.screen_height = 0
+
     def open(self):
         self.visible = True
-        
+
     def close(self):
         self.visible = False
-        
+
     def handle_event(self, event):
         if not self.visible:
             return
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            if self.close_button_rect.collidepoint(event.pos):
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            if self.close_button.collidepoint(event.pos):
                 self.close()
-    
-    def draw(self, surface):
-        if not self.visible:
-            return
-        
-        # Draw the image centered inside the window with some padding
-        image_pos = (self.window_rect.x - 100 , self.window_rect.y - 70)
-        surface.blit(self.image, image_pos)
-        
-        #close button
-        self.close_button = pygame.Rect(560, 90, 25, 30)
-        pygame.draw.rect(surface, (150, 0, 0), self.close_button)
-        x_text = self.font.render("X", True, (255, 255, 255))
-        surface.blit(x_text, (self.close_button.centerx - x_text.get_width() // 2,
-                            self.close_button.centery - x_text.get_height() // 2))
 
     def update_close_button(self):
-        button_width, button_height = 25, 30
-        x = self.window_rect.right - button_width - 15  # 15px padding from the right
-        y = self.window_rect.top + 15  # 15px padding from the top
+        # Scale close button size based on screen size
+        x_scale = self.screen_width / BASE_WIDTH
+        y_scale = self.screen_height / BASE_HEIGHT
+
+        button_width = int(25 * x_scale)
+        button_height = int(30 * y_scale)
+
+        x = self.window_rect.right - button_width - int(10 * x_scale)
+        y = self.window_rect.top + int(10 * y_scale)
+
         self.close_button = pygame.Rect(x, y, button_width, button_height)
 
     def update_layout(self, screen_size):
         self.screen_width, self.screen_height = screen_size
-
-        # Recalculate window_rect position
+        window_width = int(self.screen_width * 0.7)
+        window_height = int(self.screen_height * 0.7)
+        # Recalculate window_rect to center on screen
         window_width = self.image.get_width() + 40
         window_height = self.image.get_height() + 80
         window_x = (self.screen_width - window_width) // 2
         window_y = (self.screen_height - window_height) // 2
         self.window_rect = pygame.Rect(window_x, window_y, window_width, window_height)
-
-        # Update close button position
+        font_size = max(18, int(24 * (self.screen_width / BASE_WIDTH)))
+        self.font = pygame.font.SysFont(None, font_size)
         self.update_close_button()
+
+    def draw(self, surface):
+        if not self.visible:
+            return
+
+        screen_width, screen_height = surface.get_size()
+
+        # Set padding
+        padding_x = 40
+        padding_y = 80
+
+        # Calculate available size for the image
+        available_width = screen_width - padding_x
+        available_height = screen_height - padding_y
+
+        # Scale the image proportionally
+        img_width, img_height = self.image.get_size()
+        scale_ratio = min(available_width / img_width, available_height / img_height)
+
+        new_width = int(img_width * scale_ratio)
+        new_height = int(img_height * scale_ratio)
+
+        scaled_image = pygame.transform.scale(self.image, (new_width, new_height))
+
+        # Center the image on screen
+        image_x = (screen_width - new_width) // 2
+        image_y = (screen_height - new_height) // 2
+
+        surface.blit(scaled_image, (image_x, image_y))
+
+        # Draw the close button in top-right corner of the image
+        close_btn_size = 36
+        self.close_button = pygame.Rect(
+            image_x + new_width - close_btn_size - 10,
+            image_y + 10,
+            close_btn_size,
+            close_btn_size
+        )
+        pygame.draw.rect(surface, (150, 0, 0), self.close_button, border_radius=4)
+
+        x_text = self.font.render("X", True, (255, 255, 255))
+        surface.blit(
+            x_text,
+            (
+                self.close_button.centerx - x_text.get_width() // 2,
+                self.close_button.centery - x_text.get_height() // 2
+            )
+        )
 
     
     
@@ -4799,7 +4839,7 @@ while running:
                     if boat_ui.wood >= boat_ui.max_wood and boat_ui.crystal >= boat_ui.max_crystal:
                         boat_built = True
                         
-        if boss.is_dead:
+        if boss and boss.is_dead:
             boss_defeated = True
             
         # Show mouse position on screen
