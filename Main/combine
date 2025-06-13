@@ -827,17 +827,17 @@ class TutorialPage:
 spritesheets = loading_screen(screen, font)
 
 tutorial_pages = [
-    TutorialPage("Tutorial", "Tap the red colour book or use T key for open and close this tutorial.", [], 310, 240),
-    TutorialPage("Goal", "Build boat in at least 50 days, kill boss and escape Pawland !", [], 310, 240),
-    TutorialPage("Movement", "Use W A S D to move.", spritesheets["movement"], 1440, 1080),
-    TutorialPage("Attack & Chop", "Press SPACE to attack and chop.", spritesheets["attack"], 1440, 1080),
-    TutorialPage("Inventory", "Press B to open and close inventory. Try out different button for different item.", spritesheets["inventory"], 772, 590),
-    TutorialPage("Fishing", "Approach the pond and press J, random item will be given!!", spritesheets["fishing"], 1440, 1080),
-    TutorialPage("Respawn", "You will respawn after getting killed. Beware the boss!", spritesheets["enemy"], 1440, 1080),
-    TutorialPage("Weapon", "Use Tab to change weapon", spritesheets["weapon"], 1440, 1080),
+    TutorialPage("Tutorial", "Click on the red book or press T to open and close this tutorial.", [], 310, 240),
+    TutorialPage("Goal", "Stranded on a haunted island, you'll face relentless zombies and a fearsome boss. Craft a boat, conquer the darkness, and find your way home.", [], 310, 240),
+    TutorialPage("Movement", "Use W A S D to move and explore the island.", spritesheets["movement"], 1440, 1080),
+    TutorialPage("Attack & Chop", "Press SPACE to attack enemies and chop trees.", spritesheets["attack"], 1440, 1080),
+    TutorialPage("Inventory", "Press B to open and close your inventory. Different buttons interact with different items!", spritesheets["inventory"], 772, 590),
+    TutorialPage("Fishing", "Stand near the pond and press J to fish. You'll receive a random item. Goodluck!", spritesheets["fishing"], 1440, 1080),
+    TutorialPage("Respawn", "If you fall in battle, you'll respawn... but the boss won't wait forever.", spritesheets["enemy"], 1440, 1080),
+    TutorialPage("Weapon", "Press TAB to change between weapons.", spritesheets["weapon"], 1440, 1080),
     TutorialPage("Cooking", "Tap and pull the ingredient to cook. Try different ingredients!", spritesheets["cook"], 1440, 1080),
     TutorialPage("Level & exp", "Gain exp from trees and enemies. HP restores when leveling up!", spritesheets["exp"], 1440, 1080),
-    TutorialPage("Crafting", "Click on the table in the house to build boat or upgrade armor.", spritesheets["craft"], 800, 621)
+    TutorialPage("Crafting", "Click on the table inside house to build boat or upgrade armor. (Boat building is only eligible at Level 20.)", spritesheets["craft"], 800, 621)
 ]
 
 
@@ -1228,23 +1228,23 @@ class InventoryMenu:
             ],
         }
         self.item_descriptions = {
-            "Wood": "Can be used to build things.",
-            "Fruit": "Restores a small amount of health.",
-            "Fish": "A basic fish.",
-            "Big Fish": "A bigger and longer fish , maybe can unlock some dishes ?",
-            "Crystal": "Shiny rock.",
-            "Boat": "Used for traveling across water.",
-            "FishBone_Clip":"A stylish clip. Might smell fishy.",
-            "Fish Soup": "A delicious soup made from fish and fruit. Restores 30 health.",
-            "Grilled Fish": "Perfectly cooked fish. Restores 20 health.",
+            "Wood": "A sturdy piece of timber. Essential for upgrade and crafting.",
+            "Fruit": "Juicy and refreshing. Restores a small amount of health",
+            "Fish": "A fresh catch from the waters. Simple, but useful.",
+            "Big Fish": "A hefty catch! Might unlock unique recipes with the right ingredients",
+            "Crystal": "A luminous shard pulsing with mysterious energy. Valuable for upgrades and crafting.",
+            "Boat": "Your only way off this island. When completed, it will carry your hopes to freedom.",
+            "FishBone_Clip":"A quirky accessory with a fishy charm.. Might smell fishy.",
+            "Fish Soup": "A warm bowl of comfort brewed from fish and fruits. Restores health.",
+            "Grilled Fish": "Smoky, tender, and perfectly seasoned. Heals a good chunk of health.",
             "Armor(Iron)": "Sturdy protection for everyday survival. Reduces incoming damage by 10%.(This item cannot be drop or use)",
             "Armor(Gold)": "Shiny but practical. Lightweight defense that cuts damage by 30%.(This item cannot be drop or use)",
             "Armor(Diamond)": "Top-tier protection forged from rare diamonds. Reduces damage by 50%.(This item cannot be drop or use)",
-            "Sweet Sailor": "A gourmet meal. Restores 50 health",
-            "Fruit Jam": "Sweet fruit jam. Increases movement speed for 20 seconds. ",   
-            "Reef Medley": "A vibrant fusion of ocean flavours.",
+            "Sweet Sailor": "A luxury dish fit for seafarers with a sweet tooth. Delicious and energizing. ",
+            "Fruit Jam": "Sticky and sweet. Might perk you up with a burst of energy.",   
+            "Reef Medley": "An exotic seafood dish packed with flavors from the deep. Boosts health and movement.",
             "Twinfin Delight": "A harmonious dish crafted from 2 types of fish. " ,
-            "ZombiePaw" : "A costume get after killing a lot zombies ."         
+            "ZombiePaw" : "A grotesque trophy ripped from relentless battles. Wear it as proof of your survival."         
         }
         
     def toggle(self):
@@ -2885,8 +2885,6 @@ end_sprite_timer = 0
 end_sprite_speed = 0.15
 
 boat_image = pygame.image.load("images/craft-icon/boat.png").convert_alpha()
-end_game_frames = [pygame.image.load(f"images/map-sprite/tree-sprite.png").convert_alpha() for i in range(7)]
-# REPLACE ENDING SPRITESHEET HERE AFTER DONE DRAWING!!! 😀😀😀
 
 class Boss(pygame.sprite.Sprite):
     def __init__(self, x, y, player, area_rect):
@@ -3202,7 +3200,7 @@ class PondArea:
         if result["id"] != "nothing":
             inventory.add_item(result["name"], 1)
             self.fishing_sound.play()
-            self.player.add_exp(25) 
+            self.player.add_exp(15) 
             self.player.stats.setdefault("fish_collected", 0)
             self.player.stats.setdefault("crystal_collected", 0)
                         
@@ -3501,7 +3499,7 @@ while not in_game:
         if result:
             if isinstance(result, tuple) and result[0] == "game":
                 current_user = result[1]
-                user_system.current_user = current_user 
+                user_system.current_user = current_user
                 # ✅ Initialize achievements system
                 saved_achievements = user_system.users[current_user].get("achievements", {})
                 # Create a new dict merging default keys with saved values, prioritizing saved values
@@ -3525,7 +3523,7 @@ while not in_game:
         if result:
             if isinstance(result, tuple) and result[0] == "game":
                 current_user = result[1]
-                user_system.current_user = current_user 
+                user_system.current_user = current_user
                 # ✅ Initialize achievements system
                 saved_achievements = user_system.users[current_user].get("achievements", {})
                 # Create a new dict merging default keys with saved values, prioritizing saved values
@@ -4647,9 +4645,9 @@ while running:
     overlay.fill((0, 0, 50, alpha))
     screen.blit(overlay, (0, 0))
 
-    pos_text = f"X: {int(player_position.x)}  Y: {int(player_position.y)}"
-    text_surface = font.render(pos_text, True, (255, 255, 255))
-    screen.blit(text_surface, (10, screen.get_height() - 30))
+    #pos_text = f"X: {int(player_position.x)}  Y: {int(player_position.y)}"
+    #text_surface = font.render(pos_text, True, (255, 255, 255))
+    #screen.blit(text_surface, (10, screen.get_height() - 30))
 
     icon = player_instance.weapon_icons[player_instance.current_weapon]
     icon_scaled = pygame.transform.scale(icon, (60, 60))
@@ -4774,11 +4772,11 @@ while running:
             frame_y = (screen_height - frame_height) // 2
             frame_rect = pygame.Rect(frame_x, frame_y, frame_width, frame_height)
 
-            # --- Draw background frame ---
+            #Draw background frame
             pygame.draw.rect(screen, (240, 240, 240), frame_rect, border_radius=12)  # Light paper color
             pygame.draw.rect(screen, (100, 100, 100), frame_rect, 4, border_radius=12)  # Border
 
-            # --- Scale and draw paper image inside the frame ---
+            #Scale and draw paper image inside the frame
             padding = 20
             image_width = frame_width - 2 * padding
             image_height = frame_height - 2 * padding
@@ -4786,7 +4784,7 @@ while running:
             screen.blit(scaled_paper, (frame_x + padding, frame_y + padding))
 
 
-            # --- Scale close button size and position ---
+            #Scale close button size and position
             button_width = int(100 * (screen_width / BASE_WIDTH))
             button_height = int(40 * (screen_height / BASE_HEIGHT))
             button_x = screen_width // 2 - button_width // 2
@@ -4853,10 +4851,6 @@ while running:
                         
         if boss and boss.is_dead:
             boss_defeated = True
-            
-        # Show mouse position on screen
-        #mouse_pos_text = font.render(f"Mouse: {mouse_x}, {mouse_y}", True, (255, 255, 255))
-        #screen.blit(mouse_pos_text, (10, 10))
 
     boat_ui.save_progress()
 
@@ -4873,7 +4867,7 @@ while running:
         show_escape_ui = True
         escape_ui_triggered = True
 
-    # -------- ESCAPE UI (MESSAGE + BUTTON) --------
+    # Escape UI
     if show_escape_ui and not playing_boat_animation:
         # Draw message
         escape_font = pygame.font.SysFont(None, 60)  # Larger title font
@@ -4895,7 +4889,7 @@ while running:
                 boat_anim_timer = pygame.time.get_ticks()
                 current_boat_frame = 0
 
-    # -------- BOAT RIDING ANIMATION --------
+    # Escape island animation
     if playing_boat_animation:
         now = pygame.time.get_ticks()
         if now - boat_anim_timer > boat_frame_duration:
@@ -4912,7 +4906,7 @@ while running:
         scaled_frame = pygame.transform.scale(frame, (screen.get_width(), screen.get_height()))
         screen.blit(scaled_frame, (0, 0)) 
 
-    # -------- "THE END" SCREEN --------
+    # The end screen
     if show_the_end_screen:
         screen.fill((0, 0, 0))
 
