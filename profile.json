@@ -2,8 +2,8 @@
   "1": {
     "health": 70,
     "position": [
-      1500.0,
-      191.27200000000013
+      432.50399999999837,
+      94.9040000000001
     ],
     "inventory": {
       "Wood": 789,
@@ -33,14 +33,14 @@
       "Fisherman (10 fish)": false
     },
     "shown_achievements": [
+      "Level 5 Achieved",
       "Crystal Hunter (1 crystal)",
-      "First Kill",
-      "Level 5 Achieved"
+      "First Kill"
     ],
     "stats": {
       "zombie_kills": 7,
-      "wood_collected": 167,
-      "fruit_collected": 84,
+      "wood_collected": 185,
+      "fruit_collected": 100,
       "days_survived": 0,
       "fish_collected": 0,
       "crystals_collected": 0,
@@ -79,12 +79,13 @@
     "shown_achievements": [
       "Lumberjack (10 wood)",
       "First Kill",
-      "Fruit Picker (5 fruit)"
+      "Crystal Hunter (1 crystal)",
+      "Lumberjack (10 wood)"
     ],
     "stats": {
-      "zombie_kills": 5,
-      "wood_collected": 24,
-      "fruit_collected": 17,
+      "zombie_kills": 8,
+      "wood_collected": 43,
+      "fruit_collected": 30,
       "days_survived": 0,
       "fish_collected": 0,
       "crystals_collected": 0,
