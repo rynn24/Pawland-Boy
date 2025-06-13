@@ -1,17 +1,3 @@
 {
-  "1": {
-    "health": 100,
-    "position": [
-      1500,
-      125
-    ],
-    "inventory": {},
-    "level": 1,
-    "exp": 0,
-    "achievements": {},
-    "boat_progress": 0,
-    "boat_crystals": 0,
-    "boat_built": false,
-    "boss_defeated": false
-  }
+
 }
