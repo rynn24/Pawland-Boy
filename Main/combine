@@ -713,6 +713,7 @@ def loading_screen(screen, font):
             "weapon": pygame.image.load("minting/TWEAPON.png").convert_alpha(),
             "cook": pygame.image.load("minting/TCOOK.png").convert_alpha(),
             "exp": pygame.image.load("minting/TEXP.png").convert_alpha(),
+            "craft": pygame.image.load("minting/TCRAFT.png").convert_alpha()
         }
 
         loading = False  # Exit loop after loading once
@@ -835,6 +836,7 @@ tutorial_pages = [
     TutorialPage("Weapon", "Use Tab to change weapon", spritesheets["weapon"], 1440, 1080),
     TutorialPage("Cooking", "Tap and pull the ingredient to cook. Try different ingredients!", spritesheets["cook"], 1440, 1080),
     TutorialPage("Level & exp", "Gain exp from trees and enemies. HP restores when leveling up!", spritesheets["exp"], 1440, 1080),
+    TutorialPage("Crafting", "Click on the table in the house to build boat or upgrade armor.", spritesheets["craft"], 800, 621)
 ]
 
 
