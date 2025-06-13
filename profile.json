@@ -33,10 +33,9 @@
       "Fisherman (10 fish)": false
     },
     "shown_achievements": [
-      "Level 5 Achieved",
       "Crystal Hunter (1 crystal)",
-      "First Kill"
-    ],
+      "First Kill",
+      "Level 5 Achieved"
     "stats": {
       "zombie_kills": 7,
       "wood_collected": 185,
