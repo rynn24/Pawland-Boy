@@ -3501,6 +3501,7 @@ while not in_game:
         if result:
             if isinstance(result, tuple) and result[0] == "game":
                 current_user = result[1]
+                user_system.current_user = current_user 
                 # ✅ Initialize achievements system
                 saved_achievements = user_system.users[current_user].get("achievements", {})
                 # Create a new dict merging default keys with saved values, prioritizing saved values
@@ -3524,6 +3525,7 @@ while not in_game:
         if result:
             if isinstance(result, tuple) and result[0] == "game":
                 current_user = result[1]
+                user_system.current_user = current_user 
                 # ✅ Initialize achievements system
                 saved_achievements = user_system.users[current_user].get("achievements", {})
                 # Create a new dict merging default keys with saved values, prioritizing saved values
