@@ -838,17 +838,17 @@ class TutorialPage:
 spritesheets = loading_screen(screen, font)
 
 tutorial_pages = [
-    TutorialPage("Tutorial", "Click on the red book or press T to open and close this tutorial.", [], 310, 240),
-    TutorialPage("Goal", "Stranded on a haunted island, you'll face relentless zombies and a fearsome boss. Craft a boat, conquer the darkness, and find your way home.", [], 310, 240),
-    TutorialPage("Movement", "Use W A S D to move and explore the island.", spritesheets["movement"], 1440, 1080),
-    TutorialPage("Attack & Chop", "Press SPACE to attack enemies and chop trees.", spritesheets["attack"], 1440, 1080),
-    TutorialPage("Inventory", "Press B to open and close your inventory. Different buttons interact with different items!", spritesheets["inventory"], 772, 590),
+    TutorialPage("Tutorial", "Click on the red book or press T to open and close this tutorial.", [], 310, 240, max_frame_index=42),
+    TutorialPage("Goal", "Stranded on a haunted island, you'll face relentless zombies and a fearsome boss. Craft a boat, conquer the darkness, and find your way home.", [], 310, 240,max_frame_index=42),
+    TutorialPage("Movement", "Use W A S D to move and explore the island.", spritesheets["movement"], 1440, 1080, max_frame_index=24),
+    TutorialPage("Attack & Chop", "Press SPACE to attack enemies and chop trees.", spritesheets["attack"], 1440, 1080, max_frame_index=46),
+    TutorialPage("Inventory", "Press B to open and close your inventory. Different buttons interact with different items!", spritesheets["inventory"], 772, 590, max_frame_index=40),
     TutorialPage("Fishing", "Stand near the pond and press J to fish. You'll receive a random item. Goodluck!", spritesheets["fishing"], 1440, 1080, max_frame_index=42),
-    TutorialPage("Respawn", "If you fall in battle, you'll respawn... but the boss won't wait forever.", spritesheets["enemy"], 1440, 1080),
-    TutorialPage("Weapon", "Press TAB to change between weapons.", spritesheets["weapon"], 1440, 1080),
-    TutorialPage("Cooking", "Tap and pull the ingredient to cook. Try different ingredients!", spritesheets["cook"], 1440, 1080),
-    TutorialPage("Level & exp", "Gain exp from trees and enemies. HP restores when leveling up!", spritesheets["exp"], 1440, 1080),
-    TutorialPage("Crafting", "Click on the table inside house to build boat or upgrade armor. (Boat building is only eligible at Level 20.)", spritesheets["craft"], 800, 621)
+    TutorialPage("Respawn", "If you fall in battle, you'll respawn... but the boss won't wait forever.", spritesheets["enemy"], 1440, 1080, max_frame_index=59),
+    TutorialPage("Weapon", "Press TAB to change between weapons.", spritesheets["weapon"], 1440, 1080, max_frame_index=25),
+    TutorialPage("Cooking", "Tap and pull the ingredient to cook. Try different ingredients!", spritesheets["cook"], 1440, 1080, max_frame_index=49),
+    TutorialPage("Level & exp", "Gain exp from trees and enemies. HP restores when leveling up!", spritesheets["exp"], 1440, 1080, max_frame_index=25),
+    TutorialPage("Crafting", "Click on the table inside house to build boat or upgrade armor. (Boat building is only eligible at Level 20.)", spritesheets["craft"], 800, 621, max_frame_index=50)
 ]
 
 
