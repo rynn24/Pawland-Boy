@@ -135,14 +135,14 @@ show_the_end_screen = False
 boat_built = False  
 boss_defeated = False 
 
-boat_riding_frames = []  # Will store your sprite sheet frames
+boat_riding_frames = []
 current_boat_frame = 0
 boat_anim_timer = 0
 boat_frame_duration = 150  # milliseconds per frame
 boat_riding_sheet = pygame.image.load("minting/Endingg.png").convert_alpha()
 frame_width = 310
 frame_height = 240
-num_frames = 33  # Adjust based on your sprite sheet
+num_frames = 33 
 
 for i in range(num_frames):
     frame_rect = pygame.Rect(i * frame_width, 0, frame_width, frame_height)
@@ -838,17 +838,17 @@ class TutorialPage:
 spritesheets = loading_screen(screen, font)
 
 tutorial_pages = [
-    TutorialPage("Tutorial", "Click on the red book or press T to open and close this tutorial.", [], 310, 240, max_frame_index=42),
-    TutorialPage("Goal", "Stranded on a haunted island, you'll face relentless zombies and a fearsome boss. Craft a boat, conquer the darkness, and find your way home.", [], 310, 240,max_frame_index=42),
-    TutorialPage("Movement", "Use W A S D to move and explore the island.", spritesheets["movement"], 1440, 1080, max_frame_index=24),
-    TutorialPage("Attack & Chop", "Press SPACE to attack enemies and chop trees.", spritesheets["attack"], 1440, 1080, max_frame_index=46),
-    TutorialPage("Inventory", "Press B to open and close your inventory. Different buttons interact with different items!", spritesheets["inventory"], 772, 590, max_frame_index=40),
+    TutorialPage("Tutorial", "Click on the red book or press T to open and close this tutorial.", [], 310, 240, max_frame_index=32),
+    TutorialPage("Goal", "Stranded on a haunted island, you'll face relentless zombies and a fearsome boss. Craft a boat, conquer the darkness, and find your way home.", [], 310, 240,max_frame_index=32),
+    TutorialPage("Movement", "Use W A S D to move and explore the island.", spritesheets["movement"], 1440, 1080, max_frame_index=14),
+    TutorialPage("Attack & Chop", "Press SPACE to attack enemies and chop trees.", spritesheets["attack"], 1440, 1080, max_frame_index=36),
+    TutorialPage("Inventory", "Press B to open and close your inventory. Different buttons interact with different items!", spritesheets["inventory"], 772, 590, max_frame_index=30),
     TutorialPage("Fishing", "Stand near the pond and press J to fish. You'll receive a random item. Goodluck!", spritesheets["fishing"], 1440, 1080, max_frame_index=42),
-    TutorialPage("Respawn", "If you fall in battle, you'll respawn... but the boss won't wait forever.", spritesheets["enemy"], 1440, 1080, max_frame_index=59),
-    TutorialPage("Weapon", "Press TAB to change between weapons.", spritesheets["weapon"], 1440, 1080, max_frame_index=25),
-    TutorialPage("Cooking", "Tap and pull the ingredient to cook. Try different ingredients!", spritesheets["cook"], 1440, 1080, max_frame_index=49),
-    TutorialPage("Level & exp", "Gain exp from trees and enemies. HP restores when leveling up!", spritesheets["exp"], 1440, 1080, max_frame_index=25),
-    TutorialPage("Crafting", "Click on the table inside house to build boat or upgrade armor. (Boat building is only eligible at Level 20.)", spritesheets["craft"], 800, 621, max_frame_index=50)
+    TutorialPage("Respawn", "If you fall in battle, you'll respawn... but the boss won't wait forever. (Warning: Your level will reset when you respawn.)", spritesheets["enemy"], 1440, 1080, max_frame_index=55),
+    TutorialPage("Weapon", "Press TAB to change between weapons.", spritesheets["weapon"], 1440, 1080, max_frame_index=15),
+    TutorialPage("Cooking", "Tap and pull the ingredient to cook. Try different ingredients!", spritesheets["cook"], 1440, 1080, max_frame_index=47),
+    TutorialPage("Level & exp", "Gain exp from trees and enemies. HP restores when leveling up!", spritesheets["exp"], 1440, 1080, max_frame_index=15),
+    TutorialPage("Crafting", "Click on the table inside house to build boat or upgrade armor. (Boat building is only eligible at Level 20.)", spritesheets["craft"], 800, 621, max_frame_index=40)
 ]
 
 
@@ -2530,7 +2530,7 @@ class AchievementPage:
 
 
 user_system = UserSystem()  # Create UserSystem instance
-speed = 2.5  # Adjust as needed
+speed = 2.5 
 player_position = pygame.Vector2(1500, 125)
 
 class HouseUI:
@@ -2895,8 +2895,8 @@ class Boss(pygame.sprite.Sprite):
         self.attack_damage = 150
         self.last_attack_time = 0
         self.attack_cooldown = 1.2
-        self.hp = 2500
-        self.max_hp = 2500
+        self.hp = 5000
+        self.max_hp = 5000
         self.attack_duration = 0.5
         self.attack_animation_end_time = 0
         self.state = "idle"
@@ -3125,27 +3125,27 @@ class PondArea:
         "name": "Fish",
         "message": "You got a fish!",
         "image": pygame.image.load("images/pond/fish_1.png").convert_alpha(),
-        "chance": 0.4
+        "chance": 0.35
     },
     {
         "id": "fish_2",
         "name": "Big Fish",
         "message": "You got a fish!",
         "image": pygame.image.load("images/pond/fish_2.png").convert_alpha(),
-        "chance": 0.3
+        "chance": 0.33
     },
     {
         "id": "nothing",
         "name": "Nothing",
         "message": "You got nothing...",
-        "chance": 0.2
+        "chance": 0.19
     },
     {
         "id": "crystal",
         "name": "Crystal",
         "message": "Congratulations! You got a rare item!",
         "image": pygame.image.load("images/pond/crystal.png").convert_alpha(),
-        "chance": 0.1
+        "chance": 0.13
     }
 ]
 
@@ -3216,7 +3216,7 @@ class PondArea:
         else:
             if self.is_player_inside(player_position):
                 text_surface = font.render("Press J to fish", True, (255, 255, 255))  # White text
-                text_rect = text_surface.get_rect(center=(screen.get_width() // 2, screen.get_height() - 100))
+                text_rect = text_surface.get_rect(center=(screen.get_width() // 2, screen.get_height() - 160))
                 screen.blit(text_surface, text_rect)
         # Update spritesheet based on cycle 
         if self.fishing_result:
@@ -3230,7 +3230,7 @@ class PondArea:
 
                 # Draw the result message below the image
                 text_surface = reward_font.render(self.fishing_result["message"], True, (255, 255, 255))
-                text_rect = text_surface.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2 + 70))
+                text_rect = text_surface.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2 + 50))
                 screen.blit(text_surface, text_rect)
             else:
                 self.fishing_result = None  # Clear result after time is up
@@ -3659,7 +3659,7 @@ class CookingUI:
         self.font = pygame.font.SysFont("Times New Roman", 24)
         
         # Close button
-        self.close_button_rect = pygame.Rect(40, 35, 80, 30) #Close button
+        self.close_button_rect = pygame.Rect(180, 390, 80, 30) #Close button
 
         self.cooked_item = None  # Will hold (item_name, image)
         self.cooked_display_time = 0  # Timer to show the message
@@ -3791,7 +3791,7 @@ class CookingUI:
         
         # Draw title
         title = self.font.render("Ingredients", True, (255, 255, 255))
-        screen.blit(title, (self.ingredients_panel.x + 10, self.ingredients_panel.y - 60))
+        screen.blit(title, (self.ingredients_panel.x + 8, self.ingredients_panel.y - 56))
         
         # Draw ingredient slots
         for slot in self.ingredient_slots:
@@ -4672,7 +4672,7 @@ while running:
         inventory_menu.draw(screen)
     if show_house_prompt and not in_house:
         text = font.render("Press J to enter house", True, (255, 255, 255))
-        text_rect = text.get_rect(center=(screen.get_width()//2, screen.get_height()-10))
+        text_rect = text.get_rect(center=(screen.get_width()//2, screen.get_height()-160))
         screen.blit(text, text_rect)
     
     if not in_house:  # Only process these if player is outside
