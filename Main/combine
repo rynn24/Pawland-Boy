@@ -707,14 +707,14 @@ def loading_screen(screen, font):
                            screen.get_height() // 2 - text.get_height() // 2))
         pygame.display.flip()
         spritesheets = {
-            "movement": pygame.image.load("minting/TWALK.png").convert_alpha(),
-            "attack": pygame.image.load("minting/TATTACK.png").convert_alpha(),
-            "inventory": pygame.image.load("minting/TINVENTORY.png").convert_alpha(),
-            "fishing": pygame.image.load("minting/TFISH.png").convert_alpha(),
-            "enemy": pygame.image.load("minting/TENEMY.png").convert_alpha(),
-            "weapon": pygame.image.load("minting/TWEAPON.png").convert_alpha(),
+            "movement": pygame.image.load("minting/TWALK.jpg").convert_alpha(),
+            "attack": pygame.image.load("minting/TATTACK.jpg").convert_alpha(),
+            "inventory": pygame.image.load("minting/TINV.png").convert_alpha(),
+            "fishing": pygame.image.load("minting/TFISH.jpg").convert_alpha(),
+            "enemy": pygame.image.load("minting/TENEMY.jpg").convert_alpha(),
+            "weapon": pygame.image.load("minting/TWEAPON.jpg").convert_alpha(),
             "cook": pygame.image.load("minting/TCOOK.png").convert_alpha(),
-            "exp": pygame.image.load("minting/TEXP.png").convert_alpha(),
+            "exp": pygame.image.load("minting/TEXP.jpg").convert_alpha(),
             "craft": pygame.image.load("minting/TCRAFT.png").convert_alpha()
         }
 
@@ -724,16 +724,24 @@ def loading_screen(screen, font):
     return spritesheets
 
 class TutorialPage:
-    def __init__(self, title, text, spritesheet_surface, frame_width, frame_height):
+    def __init__(self, title, text, spritesheet_surface, frame_width, frame_height, max_frame_index=None):
         self.title = title
         self.text = text
         self.frames = []
         self.frame_index = 0
         self.frame_timer = 0
         self.frame_delay = 0.10
+        self.max_frame_index = max_frame_index if max_frame_index is not None else len(self.frames) - 1
 
-        if spritesheet_surface:  # Check if path is not None/empty
+
+        if spritesheet_surface:
             self.frames = self._extract_frames(spritesheet_surface, frame_width, frame_height)
+
+            # If no max_frame_index given, default to play all frames
+            if self.max_frame_index is None:
+                self.max_frame_index = len(self.frames) - 1  # Index-based
+            else:
+                self.max_frame_index = min(self.max_frame_index, len(self.frames) - 1)  # Clamp
 
     def _extract_frames(self, spritesheet_surface, frame_width, frame_height):
         frames = []
@@ -750,13 +758,15 @@ class TutorialPage:
 
 
     def update(self, dt):
+        if not self.frames:
+            return
+
         self.frame_timer += dt
         if self.frame_timer >= self.frame_delay:
             self.frame_timer = 0
-            if not self.frames:
-                return
-            self.frame_index = (self.frame_index + 1) % len(self.frames)
-
+            self.frame_index += 1
+            if self.frame_index > self.max_frame_index:
+                self.frame_index = 0
 
     def draw(self, surface, font, x, y, w, h):
         # Draw background
@@ -833,7 +843,7 @@ tutorial_pages = [
     TutorialPage("Movement", "Use W A S D to move and explore the island.", spritesheets["movement"], 1440, 1080),
     TutorialPage("Attack & Chop", "Press SPACE to attack enemies and chop trees.", spritesheets["attack"], 1440, 1080),
     TutorialPage("Inventory", "Press B to open and close your inventory. Different buttons interact with different items!", spritesheets["inventory"], 772, 590),
-    TutorialPage("Fishing", "Stand near the pond and press J to fish. You'll receive a random item. Goodluck!", spritesheets["fishing"], 1440, 1080),
+    TutorialPage("Fishing", "Stand near the pond and press J to fish. You'll receive a random item. Goodluck!", spritesheets["fishing"], 1440, 1080, max_frame_index=42),
     TutorialPage("Respawn", "If you fall in battle, you'll respawn... but the boss won't wait forever.", spritesheets["enemy"], 1440, 1080),
     TutorialPage("Weapon", "Press TAB to change between weapons.", spritesheets["weapon"], 1440, 1080),
     TutorialPage("Cooking", "Tap and pull the ingredient to cook. Try different ingredients!", spritesheets["cook"], 1440, 1080),
